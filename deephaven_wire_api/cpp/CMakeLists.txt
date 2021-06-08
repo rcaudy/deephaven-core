@@ -14,6 +14,7 @@ project(deephaven_cpp VERSION "${DH_BASE_VERSION}")
 find_package(Threads REQUIRED)
 find_package(Arrow REQUIRED)
 find_package(zstd REQUIRED)
+find_package(CURL REQUIRED)
 
 message(STATUS "Arrow version: ${ARROW_VERSION}")
 message(STATUS "Arrow SO version: ${ARROW_FULL_SO_VERSION}")
@@ -27,7 +28,7 @@ set(protobuf_MODULE_COMPATIBLE TRUE)
 find_package(protobuf CONFIG REQUIRED)
 message(STATUS "Protobuf version: ${Protobuf_VERSION}")
 
-find_package(FlatBuffers CONFIG REQUIRED)
+find_package(Flatbuffers CONFIG REQUIRED)
 
 set(_PROTOBUF_LIBPROTOBUF protobuf::libprotobuf)
 set(_REFLECTION gRPC::grpc++_reflection)
@@ -63,21 +64,25 @@ add_library(dh_grpc_proto
     ${PROTO_INC})
 target_link_libraries(dh_grpc_proto
     ${_REFLECTION}
-    ${_GRPC_GRPCPP}
-    ${_PROTOBUF_LIBPROTOBUF})
+#    ${_GRPC_GRPCPP}
+#    ${_PROTOBUF_LIBPROTOBUF}
+    CURL::libcurl
+)
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 
 foreach(_target example)
-  add_executable(${_target} "src/${_target}.cc")
+  add_library(${_target} "src/${_target}.cc")
   target_link_libraries(${_target}
     dh_grpc_proto
     ${_REFLECTION}
-    ${_GRPC_GRPCPP}
-    ${_PROTOBUF_LIBPROTOBUF}
+#    ${_GRPC_GRPCPP}
+#    ${_PROTOBUF_LIBPROTOBUF}
     Threads::Threads
-    arrow_static
+    arrow_shared
+    arrow_flight
     /usr/local/lib/libflatbuffers.a
     /usr/local/lib/libzstd.a
-    /usr/local/lib/libarrow_flight.a)
+    CURL::libcurl
+    )
 endforeach()

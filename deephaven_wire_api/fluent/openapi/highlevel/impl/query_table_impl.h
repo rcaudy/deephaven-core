@@ -1,0 +1,278 @@
+#pragma once
+
+#include <condition_variable>
+#include <future>
+#include <memory>
+#include <mutex>
+#include <optional>
+#include <map>
+#include <string>
+#include <boost/optional.hpp>
+#include <boost/utility/string_view.hpp>
+#include "core/callbacks.h"
+#include "highlevel/openapi.h"
+#include "lowlevel/generated/shared_objects.h"
+#include "utility/executor.h"
+#include "proto/session.pb.h"
+#include "proto/session.grpc.pb.h"
+#include "proto/table.pb.h"
+#include "proto/table.grpc.pb.h"
+
+namespace deephaven {
+namespace openAPI {
+namespace highlevel {
+namespace fluent {
+// TODO(kosak): Not sure I'm ok with this.
+class SortPair;
+namespace impl {
+class BooleanExpressionImpl;
+class ColumnImpl;
+class DateTimeColImpl;
+class NumColImpl;
+class StrColImpl;
+}  // namespace impl
+}  // namespace fluent
+namespace impl {
+class QueryScopeImpl;
+
+namespace internal {
+class LazyState final : public deephaven::openAPI::core::SFCallback<
+    std::shared_ptr<deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::InitialTableDefinition>> {
+  typedef deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::ColumnDefinition ColumnDefinition;
+  typedef deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::InitialTableDefinition InitialTableDefinition;
+  typedef deephaven::openAPI::utility::Executor Executor;
+
+  template<typename T>
+  using SFCallback = deephaven::openAPI::core::SFCallback<T>;
+
+public:
+  typedef SFCallback<std::shared_ptr<InitialTableDefinition>> waiter_t;
+
+  explicit LazyState(std::shared_ptr<Executor> executor);
+  ~LazyState() final;
+
+  const std::shared_ptr<InitialTableDefinition> &initialTableDefinition() {
+    // Ready is either "have ITD" or "have exception".
+    waitUntilReady();
+    return initialTableDefinition_;
+  }
+
+  const std::map<std::string, std::shared_ptr<ColumnDefinition>> &columnDefinitions() {
+    // Ready is either "have ITD" or "have exception".
+    waitUntilReady();
+    return columnDefinitions_;
+  }
+
+  bool ready();
+  void waitUntilReady();
+
+  void onSuccess(std::shared_ptr<InitialTableDefinition> item) final;
+  void onFailure(std::exception_ptr ep) final;
+
+  void invoke(std::shared_ptr<waiter_t> callback);
+
+  template<typename Callable>
+  void invokeCallable(Callable &&callable) {
+    invoke(waiter_t::createFromCallable(std::forward<Callable>(callable)));
+  }
+
+private:
+  bool readyLocked(std::unique_lock<std::mutex> */*lock*/);
+
+  std::mutex mutex_;
+  std::condition_variable condVar_;
+  // Error condition ('onException' has been called).
+  std::exception_ptr error_;
+  // Success condition ('onSuccess' has been called).
+  std::shared_ptr<InitialTableDefinition> initialTableDefinition_;
+  // This map is also populated when 'onSuccess' is called.
+  std::map<std::string, std::shared_ptr<ColumnDefinition>> columnDefinitions_;
+
+  std::vector<std::shared_ptr<waiter_t>> waiters_;
+  std::shared_ptr<Executor> executor_;
+};
+
+class LazyStateOss final : public deephaven::openAPI::core::SFCallback<io::deephaven::proto::backplane::grpc::ExportedTableCreationResponse> {
+  typedef arrow::flight::protocol::Ticket Ticket;
+  typedef io::deephaven::proto::backplane::grpc::ExportedTableCreationResponse ExportedTableCreationResponse;
+  typedef deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::ColumnDefinition ColumnDefinition;
+  typedef deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::InitialTableDefinition InitialTableDefinition;
+  typedef deephaven::openAPI::utility::Executor Executor;
+  typedef deephaven::openAPI::utility::Void Void;
+
+  template<typename T>
+  using SFCallback = deephaven::openAPI::core::SFCallback<T>;
+
+public:
+  typedef SFCallback<const Ticket &> waiter_t;
+
+  explicit LazyStateOss(std::shared_ptr<Executor> executor);
+  ~LazyStateOss() final;
+
+  bool ready();
+  void waitUntilReady();
+
+  void onSuccess(ExportedTableCreationResponse item) final;
+  void onFailure(std::exception_ptr ep) final;
+
+  void invoke(std::shared_ptr<waiter_t> callback);
+
+  template<typename Callable>
+  void invokeCallable(Callable &&callable) {
+    invoke(waiter_t::createFromCallable(std::forward<Callable>(callable)));
+  }
+
+private:
+  bool readyLocked(std::unique_lock<std::mutex> */*lock*/);
+
+  std::shared_ptr<Executor> executor_;
+
+  std::mutex mutex_;
+  std::condition_variable condVar_;
+  // Error condition ('onException' has been called).
+  std::exception_ptr error_;
+  // Success condition ('onSuccess' has been called).
+  bool success_ = false;
+  Ticket ticket_;
+
+  std::vector<std::shared_ptr<waiter_t>> waiters_;
+};
+
+class LowToHighSnapshotAdaptor;
+class LowToHighUpdateAdaptor;
+}  // namespace internal
+
+class QueryTableImpl {
+  struct Private {};
+  typedef arrow::flight::protocol::Ticket Ticket;
+  typedef deephaven::openAPI::highlevel::fluent::SortPair SortPair;
+  typedef deephaven::openAPI::highlevel::fluent::impl::ColumnImpl ColumnImpl;
+  typedef deephaven::openAPI::highlevel::fluent::impl::DateTimeColImpl DateTimeColImpl;
+  typedef deephaven::openAPI::highlevel::fluent::impl::NumColImpl NumColImpl;
+  typedef deephaven::openAPI::highlevel::fluent::impl::StrColImpl StrColImpl;
+  typedef deephaven::openAPI::highlevel::fluent::impl::BooleanExpressionImpl BooleanExpressionImpl;
+  typedef deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::batch::aggregates::AggregateDescriptor AggregateDescriptor;
+  typedef deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::batch::batchTableRequest::SerializedTableOps SerializedTableOps;
+  typedef deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::joinDescriptor::JoinType JoinType;
+  typedef deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::ColumnDefinition ColumnDefinition;
+  typedef deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::InitialTableDefinition InitialTableDefinition;
+  typedef deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::TableHandle TableHandle;
+  typedef deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::TableSnapshot TableSnapshot;
+  typedef deephaven::openAPI::utility::Executor Executor;
+  typedef deephaven::openAPI::utility::Void Void;
+
+  template<typename... Args>
+  using Callback = deephaven::openAPI::core::Callback<Args...>;
+  template<typename T>
+  using SFCallback = deephaven::openAPI::core::SFCallback<T>;
+public:
+  static std::shared_ptr<internal::LazyState> createItdCallback(std::shared_ptr<Executor> executor);
+  static std::shared_ptr<internal::LazyStateOss> createEtcCallback(std::shared_ptr<Executor> executor);
+
+  static std::shared_ptr<QueryTableImpl> create(std::shared_ptr<QueryScopeImpl> scope,
+      std::shared_ptr<TableHandle> tableHandle, std::shared_ptr<internal::LazyState> itdCallback);
+  static std::shared_ptr<QueryTableImpl> createOss(std::shared_ptr<QueryScopeImpl> scope,
+      Ticket ticket, std::shared_ptr<internal::LazyStateOss> etcCallback);
+  QueryTableImpl(Private, std::shared_ptr<QueryScopeImpl> scope,
+      std::shared_ptr<TableHandle> tableHandle, std::shared_ptr<internal::LazyState> lazyState);
+  QueryTableImpl(Private, std::shared_ptr<QueryScopeImpl> scope,
+      Ticket ticket, std::shared_ptr<internal::LazyStateOss> lazyStateOss);
+  ~QueryTableImpl();
+
+  std::shared_ptr<QueryTableImpl> freeze();
+  std::shared_ptr<QueryTableImpl> snapshot(std::shared_ptr<QueryTableImpl> targetTable,
+      bool doInitialSnapshot, std::vector<std::string> stampColumns);
+  std::shared_ptr<QueryTableImpl> select(std::vector<std::string> columnSpecs);
+  std::shared_ptr<QueryTableImpl> update(std::vector<std::string> columnSpecs);
+  std::shared_ptr<QueryTableImpl> view(std::vector<std::string> columnSpecs);
+  std::shared_ptr<QueryTableImpl> dropColumns(std::vector<std::string> columnSpecs);
+  std::shared_ptr<QueryTableImpl> updateView(std::vector<std::string> columnSpecs);
+  std::shared_ptr<QueryTableImpl> where(std::string condition);
+  std::shared_ptr<QueryTableImpl> sort(std::vector<SortPair> sortPairs);
+  std::shared_ptr<QueryTableImpl> preemptive(int32_t sampleIntervalMs);
+
+  std::shared_ptr<QueryTableImpl> by(std::vector<std::string> columnSpecs);
+  std::shared_ptr<QueryTableImpl> by(std::shared_ptr<std::vector<std::shared_ptr<AggregateDescriptor>>> descriptors,
+      std::vector<std::string> groupByColumns);
+  std::shared_ptr<QueryTableImpl> minBy(std::vector<std::string> columnSpecs);
+  std::shared_ptr<QueryTableImpl> maxBy(std::vector<std::string> columnSpecs);
+  std::shared_ptr<QueryTableImpl> sumBy(std::vector<std::string> columnSpecs);
+  std::shared_ptr<QueryTableImpl> absSumBy(std::vector<std::string> columnSpecs);
+  std::shared_ptr<QueryTableImpl> varBy(std::vector<std::string> columnSpecs);
+  std::shared_ptr<QueryTableImpl> stdBy(std::vector<std::string> columnSpecs);
+  std::shared_ptr<QueryTableImpl> avgBy(std::vector<std::string> columnSpecs);
+  std::shared_ptr<QueryTableImpl> lastBy(std::vector<std::string> columnSpecs);
+  std::shared_ptr<QueryTableImpl> firstBy(std::vector<std::string> columnSpecs);
+  std::shared_ptr<QueryTableImpl> medianBy(std::vector<std::string> columnSpecs);
+  std::shared_ptr<QueryTableImpl> percentileBy(double percentile, bool avgMedian,
+      std::vector<std::string> columnSpecs);
+  std::shared_ptr<QueryTableImpl> percentileBy(double percentile, std::vector<std::string> columnSpecs);
+  std::shared_ptr<QueryTableImpl> countBy(std::string countByColumn, std::vector<std::string> columnSpecs);
+  std::shared_ptr<QueryTableImpl> wAvgBy(std::string weightColumn, std::vector<std::string> columnSpecs);
+  std::shared_ptr<QueryTableImpl> tailBy(int64_t n, std::vector<std::string> columnSpecs);
+  std::shared_ptr<QueryTableImpl> headBy(int64_t n, std::vector<std::string> columnSpecs);
+
+  std::shared_ptr<QueryTableImpl> tail(int64_t n);
+  std::shared_ptr<QueryTableImpl> head(int64_t n);
+  std::shared_ptr<QueryTableImpl> ungroup(bool nullFill, std::vector<std::string> groupByColumns);
+  std::shared_ptr<QueryTableImpl> merge(std::string keyColumn,
+      std::shared_ptr<std::vector<std::shared_ptr<TableHandle>>> sourceHandles);
+
+  std::shared_ptr<QueryTableImpl> internalJoin(JoinType joinType, const QueryTableImpl &rightSide,
+      std::vector<std::string> columnsToMatch, std::vector<std::string> columnsToAdd);
+
+  void getTableDataAsync(int64_t first, int64_t last, std::vector<std::string> columns,
+      std::shared_ptr<SFCallback<std::shared_ptr<TableSnapshot>>> callback);
+  const std::shared_ptr<std::vector<std::shared_ptr<ColumnDefinition>>> &getColumnDefinitions() const {
+    return initialTableDefinition()->definition()->columns();
+  }
+
+  void subscribeAllAsync(std::vector<std::string> columns,
+      std::shared_ptr<SFCallback<Void>> callback);
+  void unsubscribeAsync(std::shared_ptr<SFCallback<Void>> callback);
+
+  void addTableUpdateHandler(const std::shared_ptr<QueryTable::updateCallback_t> &handler);
+  void removeTableUpdateHandler(const std::shared_ptr<QueryTable::updateCallback_t> &handler);
+
+  std::vector<std::shared_ptr<ColumnImpl>> getColumnImpls();
+  std::shared_ptr<StrColImpl> getStrColImpl(boost::string_view columnName);
+  std::shared_ptr<NumColImpl> getNumColImpl(boost::string_view columnName);
+  std::shared_ptr<DateTimeColImpl> getDateTimeColImpl(boost::string_view columnName);
+
+  void bindToVariableAsync(std::string variable, std::shared_ptr<SFCallback<Void>> callback);
+
+  // For debugging
+  void observe();
+
+  int64_t hackGetSizeFromTableDefinition() const {
+    return initialTableDefinition()->size();
+  }
+
+  const std::shared_ptr<InitialTableDefinition> &initialTableDefinition() const {
+    return lazyState_->initialTableDefinition();
+  }
+
+  const std::shared_ptr<QueryScopeImpl> &scope() const { return scope_; }
+  const Ticket &ticket() const { return ticket_; }
+
+private:
+  std::shared_ptr<QueryTableImpl> defaultAggregateByDescriptor(
+      std::shared_ptr<AggregateDescriptor> descriptor,
+      std::vector<std::string> groupByColumns);
+  std::shared_ptr<QueryTableImpl> defaultAggregateByType(std::string aggregateType,
+      std::vector<std::string> groupByColumns);
+
+  std::shared_ptr<QueryTableImpl> headOrTailHelper(bool head, int64_t n);
+
+  std::shared_ptr<QueryScopeImpl> scope_;
+  Ticket ticket_;
+  std::shared_ptr<internal::LazyState> lazyState_;
+  std::shared_ptr<internal::LazyStateOss> lazyStateOss_;
+  std::mutex mutex_;
+  std::vector<std::shared_ptr<internal::LowToHighUpdateAdaptor>> adaptors_;
+  std::weak_ptr<QueryTableImpl> weakSelf_;
+};
+}  // namespace impl
+}  // namespace highlevel
+}  // namespace openAPI
+}  // namespace deephaven

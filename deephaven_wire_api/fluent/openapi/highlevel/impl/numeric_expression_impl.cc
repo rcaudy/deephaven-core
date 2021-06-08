@@ -1,0 +1,156 @@
+#include "highlevel/impl/numeric_expression_impl.h"
+
+#include <iomanip>
+#include "highlevel/impl/boolean_expression_impl.h"
+#include "utility/utility.h"
+
+using deephaven::openAPI::utility::MyOstringStream;
+
+namespace deephaven {
+namespace openAPI {
+namespace highlevel {
+namespace fluent {
+namespace impl {
+namespace {
+class NumericUnaryOperatorImpl final : public NumericExpressionImpl {
+public:
+  NumericUnaryOperatorImpl(char op, std::shared_ptr<NumericExpressionImpl> &&child) : op_(op),
+      child_(std::move(child)) {}
+  ~NumericUnaryOperatorImpl() final;
+
+  void appendIrisRepresentation(std::string *result) const final;
+
+  char op() const { return op_; }
+  const std::shared_ptr<NumericExpressionImpl> &child() const { return child_; }
+
+private:
+  char op_ = 0;
+  std::shared_ptr<NumericExpressionImpl> child_;
+};
+
+class NumericBinaryOperatorImpl final : public NumericExpressionImpl {
+public:
+  NumericBinaryOperatorImpl(std::shared_ptr<NumericExpressionImpl> &&lhs, char op,
+      std::shared_ptr<NumericExpressionImpl> &&rhs) : lhs_(std::move(lhs)), op_(op), rhs_(std::move(rhs)) {}
+  ~NumericBinaryOperatorImpl() final;
+
+  void appendIrisRepresentation(std::string *result) const final;
+
+private:
+  std::shared_ptr<NumericExpressionImpl> lhs_;
+  char op_ = 0;
+  std::shared_ptr<NumericExpressionImpl> rhs_;
+};
+
+class NumericComparisonOperatorImpl final : public BooleanExpressionImpl {
+public:
+  NumericComparisonOperatorImpl(std::shared_ptr<NumericExpressionImpl> &&lhs, const char *op,
+      std::shared_ptr<NumericExpressionImpl> &&rhs) : lhs_(std::move(lhs)), op_(op), rhs_(std::move(rhs)) {}
+  ~NumericComparisonOperatorImpl() final;
+
+  void appendIrisRepresentation(std::string *result) const final;
+
+private:
+  std::shared_ptr<NumericExpressionImpl> lhs_;
+  const char *op_ = nullptr;
+  std::shared_ptr<NumericExpressionImpl> rhs_;
+};
+
+class Int64LiteralImpl final : public NumericExpressionImpl {
+public:
+  Int64LiteralImpl(int64_t value) : value_(value) {}
+  ~Int64LiteralImpl() final;
+
+  void appendIrisRepresentation(std::string *result) const final;
+
+private:
+  int64_t value_ = 0;
+};
+
+class DoubleLiteralImpl final : public NumericExpressionImpl {
+public:
+  DoubleLiteralImpl(double value) : value_(value) {}
+  ~DoubleLiteralImpl() final;
+
+  void appendIrisRepresentation(std::string *result) const final;
+
+private:
+  double value_ = 0;
+};
+}  // namespace
+
+std::shared_ptr<NumericExpressionImpl> NumericExpressionImpl::createUnaryOperator(char op,
+    std::shared_ptr<NumericExpressionImpl> child) {
+  if (op == '+') {
+    // Strip leading unary +
+    return child;
+  }
+
+  if (op == '-') {
+    const auto *childAsUnary = dynamic_cast<const NumericUnaryOperatorImpl*>(child.get());
+    if (childAsUnary != nullptr && childAsUnary->op() == '-') {
+      return childAsUnary->child();
+    }
+  }
+
+  return std::make_shared<NumericUnaryOperatorImpl>(op, std::move(child));
+}
+
+std::shared_ptr<NumericExpressionImpl> NumericExpressionImpl::createBinaryOperator(
+    std::shared_ptr<NumericExpressionImpl> lhs, char op, std::shared_ptr<NumericExpressionImpl> rhs) {
+  return std::make_shared<NumericBinaryOperatorImpl>(std::move(lhs), op, std::move(rhs));
+}
+
+std::shared_ptr<BooleanExpressionImpl> NumericExpressionImpl::createComparisonOperator(
+    std::shared_ptr<NumericExpressionImpl> lhs, const char *op, std::shared_ptr<NumericExpressionImpl> rhs) {
+  return std::make_shared<NumericComparisonOperatorImpl>(std::move(lhs), op, std::move(rhs));
+}
+
+std::shared_ptr<NumericExpressionImpl> NumericExpressionImpl::createInt64Literal(int64_t value) {
+  return std::make_shared<Int64LiteralImpl>(value);
+}
+
+std::shared_ptr<NumericExpressionImpl> NumericExpressionImpl::createDoubleLiteral(double value) {
+  return std::make_shared<DoubleLiteralImpl>(value);
+}
+
+NumericExpressionImpl::~NumericExpressionImpl() = default;
+
+namespace {
+NumericUnaryOperatorImpl::~NumericUnaryOperatorImpl() = default;
+void NumericUnaryOperatorImpl::appendIrisRepresentation(std::string *result) const {
+  result->push_back(op_);
+  child_->appendIrisRepresentation(result);
+}
+
+NumericBinaryOperatorImpl::~NumericBinaryOperatorImpl() = default;
+void NumericBinaryOperatorImpl::appendIrisRepresentation(std::string *result) const {
+  lhs_->appendIrisRepresentation(result);
+  result->push_back(op_);
+  rhs_->appendIrisRepresentation(result);
+}
+
+NumericComparisonOperatorImpl::~NumericComparisonOperatorImpl() = default;
+void NumericComparisonOperatorImpl::appendIrisRepresentation(std::string *result) const {
+  lhs_->appendIrisRepresentation(result);
+  result->append(op_);
+  rhs_->appendIrisRepresentation(result);
+}
+
+Int64LiteralImpl::~Int64LiteralImpl() = default;
+void Int64LiteralImpl::appendIrisRepresentation(std::string *result) const {
+  MyOstringStream oss(result);
+  oss << value_;
+}
+
+DoubleLiteralImpl::~DoubleLiteralImpl() = default;
+void DoubleLiteralImpl::appendIrisRepresentation(std::string *result) const {
+  MyOstringStream oss(result);
+  oss << std::setprecision(std::numeric_limits<double>::max_digits10) << value_;
+}
+}  // namespace
+}  // namespace impl
+}  // namespace fluent
+}  // namespace highlevel
+}  // namespace openAPI
+}  // namespace deephaven

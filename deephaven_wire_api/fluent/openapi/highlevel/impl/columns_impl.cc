@@ -1,0 +1,58 @@
+#include "highlevel/impl/columns_impl.h"
+
+namespace deephaven {
+namespace openAPI {
+namespace highlevel {
+namespace fluent {
+namespace impl {
+std::shared_ptr<ColumnImpl> ColumnImpl::create(std::string name) {
+  return std::make_shared<ColumnImpl>(Private(), std::move(name));
+}
+
+ColumnImpl::ColumnImpl(Private, std::string name) : name_(std::move(name)) {}
+ColumnImpl::~ColumnImpl() = default;
+
+void ColumnImpl::appendIrisRepresentation(std::string *result) const {
+  result->append(name_);
+}
+
+std::shared_ptr<NumColImpl> NumColImpl::create(std::string name) {
+  return std::make_shared<NumColImpl>(Private(), std::move(name));
+}
+
+NumColImpl::NumColImpl(Private, std::string name) : ColumnImpl(Private(), std::move(name)) {}
+NumColImpl::~NumColImpl() = default;
+
+std::shared_ptr<StrColImpl> StrColImpl::create(std::string name) {
+  return std::make_shared<StrColImpl>(Private(), std::move(name));
+}
+
+StrColImpl::StrColImpl(Private, std::string name) : ColumnImpl(Private(), std::move(name)) {}
+StrColImpl::~StrColImpl() = default;
+
+std::shared_ptr<DateTimeColImpl> DateTimeColImpl::create(std::string name) {
+  return std::make_shared<DateTimeColImpl>(Private(), std::move(name));
+}
+
+DateTimeColImpl::DateTimeColImpl(Private, std::string name) : ColumnImpl(Private(), std::move(name)) {}
+DateTimeColImpl::~DateTimeColImpl() = default;
+
+std::shared_ptr<AssignedColumnImpl> AssignedColumnImpl::create(std::string name,
+    std::shared_ptr<ExpressionImpl> expr) {
+  return std::make_shared<AssignedColumnImpl>(Private(), std::move(name), std::move(expr));
+}
+
+AssignedColumnImpl::AssignedColumnImpl(Private, std::string name, std::shared_ptr<ExpressionImpl> expr)
+    : name_(std::move(name)), expr_(std::move(expr)) {}
+AssignedColumnImpl::~AssignedColumnImpl() = default;
+
+void AssignedColumnImpl::appendIrisRepresentation(std::string *result) const {
+  result->append(name_);
+  result->append(" = ");
+  expr_->appendIrisRepresentation(result);
+}
+}  // namespace impl
+}  // namespace fluent
+}  // namespace highlevel
+}  // namespace openAPI
+}  // namespace deephaven
