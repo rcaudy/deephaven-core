@@ -9,6 +9,7 @@ using namespace std;
 using deephaven::openAPI::core::SFCallback;
 using deephaven::openAPI::utility::streamf;
 using deephaven::openAPI::utility::streamSeparatedList;
+using deephaven::openAPI::utility::stringf;
 using deephaven::openAPI::highlevel::data::ColumnData;
 using deephaven::openAPI::highlevel::fluent::Column;
 
@@ -21,11 +22,15 @@ void dumpHeaders(std::ostream &s, const std::vector<string> &columns);
 void dumpRows(std::ostream &s, int64_t rows,
     const std::vector<std::shared_ptr<ColumnData>> &columnData);
 std::vector<std::string> asStrings(const std::vector<Column> &columns);
+std::atomic<size_t> nextTableId(0);
 }  // namespace
 
 void PrintUtils::printTableData(std::ostream &s, const QueryTable &queryTable) {
-  auto columns = queryTable.getColumns();
-  printTableData(s, queryTable, columns);
+  std::string var = stringf("result%o", nextTableId++);
+  streamf(s, "********* Not printing data. Instead binding to variable %o\n", var);
+  queryTable.bindToVariable(var);
+//  auto columns = queryTable.getColumns();
+//  printTableData(s, queryTable, columns);
 }
 
 void PrintUtils::printTableData(std::ostream &s, const QueryTable &table,

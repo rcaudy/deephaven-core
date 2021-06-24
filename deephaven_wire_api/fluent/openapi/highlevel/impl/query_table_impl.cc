@@ -178,24 +178,21 @@ std::shared_ptr<QueryTableImpl> QueryTableImpl::snapshot(
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::select(std::vector<std::string> columnSpecs) {
-  auto itdCallback = QueryTableImpl::createEtcCallback(scope_->lowLevelSession()->executor());
-  auto resultTicket = scope_->lowLevelSession()->selectAsync(ticket_, std::move(columnSpecs),
-      itdCallback);
-  return QueryTableImpl::createOss(scope_, std::move(resultTicket), std::move(itdCallback));
+  auto cb = QueryTableImpl::createEtcCallback(scope_->lowLevelSession()->executor());
+  auto resultTicket = scope_->lowLevelSession()->selectAsync(ticket_, std::move(columnSpecs), cb);
+  return QueryTableImpl::createOss(scope_, std::move(resultTicket), std::move(cb));
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::update(std::vector<std::string> columnSpecs) {
-  auto itdCallback = QueryTableImpl::createEtcCallback(scope_->lowLevelSession()->executor());
-  auto resultTicket = scope_->lowLevelSession()->updateAsync(ticket_, std::move(columnSpecs),
-      itdCallback);
-  return QueryTableImpl::createOss(scope_, std::move(resultTicket), std::move(itdCallback));
+  auto cb = QueryTableImpl::createEtcCallback(scope_->lowLevelSession()->executor());
+  auto resultTicket = scope_->lowLevelSession()->updateAsync(ticket_, std::move(columnSpecs), cb);
+  return QueryTableImpl::createOss(scope_, std::move(resultTicket), std::move(cb));
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::view(std::vector<std::string> columnSpecs) {
-  auto itdCallback = QueryTableImpl::createEtcCallback(scope_->lowLevelSession()->executor());
-  auto resultTicket = scope_->lowLevelSession()->viewAsync(ticket_, std::move(columnSpecs),
-      itdCallback);
-  return QueryTableImpl::createOss(scope_, std::move(resultTicket), std::move(itdCallback));
+  auto cb = QueryTableImpl::createEtcCallback(scope_->lowLevelSession()->executor());
+  auto resultTicket = scope_->lowLevelSession()->viewAsync(ticket_, std::move(columnSpecs), cb);
+  return QueryTableImpl::createOss(scope_, std::move(resultTicket), std::move(cb));
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::dropColumns(std::vector<std::string> columnSpecs) {
@@ -208,19 +205,15 @@ std::shared_ptr<QueryTableImpl> QueryTableImpl::dropColumns(std::vector<std::str
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::updateView(std::vector<std::string> columnSpecs) {
-  auto itdCallback = QueryTableImpl::createEtcCallback(scope_->lowLevelSession()->executor());
-  auto resultTicket = scope_->lowLevelSession()->updateViewAsync(ticket_, std::move(columnSpecs),
-      itdCallback);
-  return QueryTableImpl::createOss(scope_, std::move(resultTicket), std::move(itdCallback));
+  auto cb = QueryTableImpl::createEtcCallback(scope_->lowLevelSession()->executor());
+  auto resultTicket = scope_->lowLevelSession()->updateViewAsync(ticket_, std::move(columnSpecs), cb);
+  return QueryTableImpl::createOss(scope_, std::move(resultTicket), std::move(cb));
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::where(std::string condition) {
-  throw std::runtime_error("SAD");
-//  auto itdCallback = QueryTableImpl::createItdCallback(scope_->lowLevelSession()->executor());
-//  auto spCondition = std::make_shared<std::string>(std::move(condition));
-//  auto resultHandle = scope_->lowLevelSession()->whereAsync(tableHandle_, std::move(spCondition),
-//      itdCallback);
-//  return QueryTableImpl::create(scope_, std::move(resultHandle), std::move(itdCallback));
+  auto cb = QueryTableImpl::createEtcCallback(scope_->lowLevelSession()->executor());
+  auto resultTicket = scope_->lowLevelSession()->whereAsync(ticket_, std::move(condition), cb);
+  return QueryTableImpl::createOss(scope_, std::move(resultTicket), std::move(cb));
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::sort(std::vector<SortPair> sortPairs) {
@@ -551,35 +544,35 @@ std::vector<std::shared_ptr<ColumnImpl>> QueryTableImpl::getColumnImpls() {
 }
 
 std::shared_ptr<NumColImpl> QueryTableImpl::getNumColImpl(boost::string_view columnName) {
-  const auto &colDefs = lazyState_->columnDefinitions();
-  // TODO(kosak): save yourself this copy
+//  const auto &colDefs = lazyState_->columnDefinitions();
+//  // TODO(kosak): save yourself this copy
   std::string temp = columnName.to_string();
-  auto ip = colDefs.find(temp);
-  if (ip == colDefs.end()) {
-    throw std::runtime_error(stringf(R"(Column name "%o" is not in the table)", columnName));
-  }
+//  auto ip = colDefs.find(temp);
+//  if (ip == colDefs.end()) {
+//    throw std::runtime_error(stringf(R"(Column name "%o" is not in the table)", columnName));
+//  }
   return NumColImpl::create(std::move(temp));
 }
 
 std::shared_ptr<StrColImpl> QueryTableImpl::getStrColImpl(boost::string_view columnName) {
-  const auto &colDefs = lazyState_->columnDefinitions();
-  // TODO(kosak): save yourself this copy
+//  const auto &colDefs = lazyState_->columnDefinitions();
+//  // TODO(kosak): save yourself this copy
   std::string temp = columnName.to_string();
-  auto ip = colDefs.find(temp);
-  if (ip == colDefs.end()) {
-    throw std::runtime_error(stringf(R"(Column name "%o" is not in the table)", columnName));
-  }
+//  auto ip = colDefs.find(temp);
+//  if (ip == colDefs.end()) {
+//    throw std::runtime_error(stringf(R"(Column name "%o" is not in the table)", columnName));
+//  }
   return StrColImpl::create(std::move(temp));
 }
 
 std::shared_ptr<DateTimeColImpl> QueryTableImpl::getDateTimeColImpl(boost::string_view columnName) {
-  const auto &colDefs = lazyState_->columnDefinitions();
-  // TODO(kosak): save yourself this copy
+//  const auto &colDefs = lazyState_->columnDefinitions();
+//  // TODO(kosak): save yourself this copy
   std::string temp = columnName.to_string();
-  auto ip = colDefs.find(temp);
-  if (ip == colDefs.end()) {
-    throw std::runtime_error(stringf(R"(Column name "%o" is not in the table)", columnName));
-  }
+//  auto ip = colDefs.find(temp);
+//  if (ip == colDefs.end()) {
+//    throw std::runtime_error(stringf(R"(Column name "%o" is not in the table)", columnName));
+//  }
   return DateTimeColImpl::create(std::move(temp));
 }
 
@@ -591,17 +584,15 @@ void QueryTableImpl::bindToVariableAsync(std::string variable,
         variable_(std::move(variable)), outerCb_(std::move(outerCb)) {}
 
     void onSuccess(const Ticket &ticket) final {
-      std::cerr << "succ1 happened\n";
+      std::cerr << "This is completely unnecessary, as ticket is known already...lazystateoss doesn't even need a ticketeroo\n";
       scope_->lowLevelSession()->bindToVariableAsync(ticket, std::move(variable_), weakSelf_.lock());
     }
 
     void onSuccess(BindTableToVariableResponse /*item*/) final {
-      std::cerr << "succ2 happened\n";
       outerCb_->onSuccess(Void());
     }
 
     void onFailure(std::exception_ptr ep) override {
-      std::cerr << "fail happened\n";
       outerCb_->onFailure(std::move(ep));
     }
 
@@ -736,7 +727,6 @@ LazyStateOss::~LazyStateOss() = default;
 //}
 
 void LazyStateOss::onSuccess(ExportedTableCreationResponse item) {
-  std::cerr << "DID I GET AN ON_SUCCESS OR NOT\n";
   if (!item.result_id().has_ticket()) {
     auto ep = std::make_exception_ptr(std::runtime_error(
         "ExportedTableCreationResponse did not contain a ticket"));
@@ -751,7 +741,6 @@ void LazyStateOss::onSuccess(ExportedTableCreationResponse item) {
 
   ticket_ = std::move(*item.mutable_result_id()->mutable_ticket());
   success_ = true;
-  std::cerr << "I SET SUCCESS TO TRUE!  I DID\n";
 
   // Notify any waiters
   auto spLocalWaiters = std::make_shared<std::vector<std::shared_ptr<waiter_t>>>();
@@ -773,7 +762,6 @@ void LazyStateOss::onSuccess(ExportedTableCreationResponse item) {
 }
 
 void LazyStateOss::onFailure(std::exception_ptr error) {
-  std::cerr << "NO I GOT AN ON FAILURE\n";
   std::unique_lock<std::mutex> lock(mutex_);
   if (readyLocked(&lock)) {
     return;
@@ -800,7 +788,6 @@ void LazyStateOss::onFailure(std::exception_ptr error) {
 void LazyStateOss::invoke(std::shared_ptr<waiter_t> callback) {
   std::unique_lock<std::mutex> lock(mutex_);
   if (!readyLocked(&lock)) {
-    std::cerr << "It's the pushback party\n";
     waiters_.push_back(std::move(callback));
     return;
   }
@@ -816,15 +803,12 @@ void LazyStateOss::invoke(std::shared_ptr<waiter_t> callback) {
 }
 
 void LazyStateOss::waitUntilReady() {
-  std::cerr << "Waiting until ready\n";
   std::unique_lock<std::mutex> lock(mutex_);
   while (true) {
     if (error_ != nullptr) {
-      std::cerr << "I'm ready all right... with an exception\n";
       std::rethrow_exception(error_);
     }
     if (success_) {
-      std::cerr << "I'm ready ... SUCCESS\n";
       return;
     }
     condVar_.wait(lock);

@@ -185,9 +185,14 @@ QueryScope::~QueryScope() {
   std::cerr << "tear down query scope\n";
 }
 
-QueryTable QueryScope::emptyTable(size_t size, std::vector<std::string> columnNames,
+QueryTable QueryScope::emptyTable(int64_t size, std::vector<std::string> columnNames,
     std::vector<std::string> columnTypes) const {
   auto qsImpl = impl_->emptyTable(size, std::move(columnNames), std::move(columnTypes));
+  return QueryTable(std::move(qsImpl));
+}
+
+QueryTable QueryScope::fetchTable(std::string tableName) const {
+  auto qsImpl = impl_->fetchTable(std::move(tableName));
   return QueryTable(std::move(qsImpl));
 }
 
@@ -773,14 +778,14 @@ QueryTable QueryTable::reverseAsOfJoin(const QueryTable &rightSide,
   return internalJoin(JoinType::ReverseAJ, rightSide, std::move(columnsToMatch), std::move(columnsToAdd));
 }
 
-void QueryTable::bindToVariable(std::string variable) {
+void QueryTable::bindToVariable(std::string variable) const {
   auto res = SFCallback<Void>::createForFuture();
   bindToVariableAsync(std::move(variable), std::move(res.first));
   res.second.get();
 }
 
 void QueryTable::bindToVariableAsync(std::string variable,
-    std::shared_ptr<SFCallback<Void>> callback) {
+    std::shared_ptr<SFCallback<Void>> callback) const {
   return impl_->bindToVariableAsync(std::move(variable), std::move(callback));
 }
 

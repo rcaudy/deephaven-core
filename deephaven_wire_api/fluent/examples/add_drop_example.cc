@@ -61,16 +61,27 @@ void test1(const QueryScope &scope) {
 
 void test2(const QueryScope &scope) {
   auto et = scope.emptyTable(10, {"x"}, {"int"});
-  et.observe();
-  // et.bindToVariable("etvar");
+  et.bindToVariable("etvar");
   streamf(std::cerr, "et done\n");
 
   auto t2 = et.updateView(NumericExpression(3).as("MyVal"));
   auto t3 = t2.updateView("Zamboni = ii");
   t3.bindToVariable("jjj");
+
+  std::cerr << "Fetching table\n";
+  auto t4 = scope.fetchTable("jjj");
+  std::cerr << "Done fetching table... observing\n";
+  t4.observe();
+  std::cerr << "Done observing\n";
+  auto t5 = t4.updateView("SuperZamboni = 100 + ii");
+  t5.observe();
+  t5.bindToVariable("kkk");
 }
 
 void test3(const QueryScope &scope) {
+  std::cerr << "Fetching table\n";
+  auto t4 = scope.fetchTable("mycsv");
+  std::cerr << "Done fetching table... observing\n";
 }
 
 }  // namespace

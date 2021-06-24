@@ -241,6 +241,8 @@ public:
 
   void bindToVariableAsync(std::string variable, std::shared_ptr<SFCallback<Void>> callback);
 
+  std::shared_ptr<QueryTableImpl> fetchTable(std::string tableName);
+
   // For debugging
   void observe();
 

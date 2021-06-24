@@ -86,23 +86,23 @@ public:
       bool doInitialSnapshot, std::shared_ptr<std::vector<std::shared_ptr<std::string>>> stampColumns,
       std::shared_ptr<ItdCallback> itdCallback);
 
-  Ticket selectAsync(const Ticket &parentTicket, std::vector<std::string> columnSpecs,
+  Ticket selectAsync(Ticket parentTicket, std::vector<std::string> columnSpecs,
       std::shared_ptr<EtcCallback> etcCallback);
 
-  Ticket updateAsync(const Ticket &parentTicket, std::vector<std::string> columnSpecs,
+  Ticket updateAsync(Ticket parentTicket, std::vector<std::string> columnSpecs,
       std::shared_ptr<EtcCallback> etcCallback);
 
-  Ticket viewAsync(const Ticket &parentTicket, std::vector<std::string> columnSpecs,
+  Ticket viewAsync(Ticket parentTicket, std::vector<std::string> columnSpecs,
       std::shared_ptr<EtcCallback> etcCallback);
 
-  Ticket updateViewAsync(const Ticket &parentTicket, std::vector<std::string> columnSpecs,
+  Ticket updateViewAsync(Ticket parentTicket, std::vector<std::string> columnSpecs,
       std::shared_ptr<EtcCallback> etcCallback);
 
   std::shared_ptr<TableHandle> dropColumnsAsync(std::shared_ptr<TableHandle> parentTableHandle,
       std::shared_ptr<std::vector<std::shared_ptr<std::string>>> columnSpecs, std::shared_ptr<ItdCallback> itdCallback);
 
-  std::shared_ptr<TableHandle> whereAsync(std::shared_ptr<TableHandle> parentTableHandle,
-      std::shared_ptr<std::string> condition, std::shared_ptr<ItdCallback> itdCallback);
+  Ticket whereAsync(Ticket parentTicket, std::string condition,
+      std::shared_ptr<EtcCallback> etcCallback);
 
   std::shared_ptr<TableHandle> sortAsync(std::shared_ptr<TableHandle> parentTableHandle,
       std::shared_ptr<std::vector<std::shared_ptr<SortDescriptor>>> sortDescriptors,
@@ -159,6 +159,8 @@ public:
 
   void bindToVariableAsync(const Ticket &tableId, std::string variable,
       std::shared_ptr<SFCallback<BindTableToVariableResponse>> callback);
+
+  Ticket fetchTableAsync(std::string tableName, std::shared_ptr<EtcCallback> callback);
 
   void addTableSnapshotHandler(const std::shared_ptr<TableHandle> &tableHandle,
       const std::shared_ptr<snapshotCallback_t> &handler);

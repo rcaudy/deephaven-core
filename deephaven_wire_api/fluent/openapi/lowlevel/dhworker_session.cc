@@ -16,7 +16,9 @@ using io::deephaven::proto::backplane::grpc::HeadOrTailRequest;
 using io::deephaven::proto::backplane::grpc::ExportedTableCreationResponse;
 using io::deephaven::proto::backplane::grpc::SelectOrUpdateRequest;
 using io::deephaven::proto::backplane::grpc::TableService;
+using io::deephaven::proto::backplane::grpc::UnstructuredFilterTableRequest;
 using io::deephaven::proto::backplane::script::grpc::BindTableToVariableRequest;
+using io::deephaven::proto::backplane::script::grpc::FetchTableRequest;
 using io::deephaven::proto::backplane::script::grpc::ConsoleService;
 using deephaven::openAPI::core::Callback;
 using deephaven::openAPI::core::SFCallback;
@@ -166,6 +168,18 @@ Ticket DHWorkerSession::emptyTableAsync(int64_t size, std::vector<std::string> c
   return result;
 }
 
+Ticket DHWorkerSession::fetchTableAsync(std::string tableName,
+    std::shared_ptr<EtcCallback> callback) {
+  auto result = server_->newTicket();
+  FetchTableRequest req;
+  *req.mutable_console_id() = consoleId_;
+  *req.mutable_table_id() = result;
+  req.set_table_name(std::move(tableName));
+  server_->sendRpc(req, std::move(callback), server_->consoleStub(),
+      &ConsoleService::Stub::AsyncFetchTable, true);
+  return result;
+}
+
 std::shared_ptr<TableHandle> DHWorkerSession::historicalTableAsync(
     std::shared_ptr<std::string> nameSpace, std::shared_ptr<std::string> tableName,
     std::shared_ptr<ItdCallback> itdCallback) {
@@ -207,12 +221,12 @@ std::shared_ptr<TableHandle> DHWorkerSession::snapshotAsync(std::shared_ptr<Tabl
 //  return resultHandle;
 }
 
-Ticket DHWorkerSession::selectAsync(const Ticket &parentTicket,
+Ticket DHWorkerSession::selectAsync(Ticket parentTicket,
     std::vector<std::string> columnSpecs, std::shared_ptr<EtcCallback> etcCallback) {
   auto result = server_->newTicket();
   SelectOrUpdateRequest req;
   *req.mutable_result_id() = result;
-  *req.mutable_source_id()->mutable_ticket() = parentTicket;
+  *req.mutable_source_id()->mutable_ticket() = std::move(parentTicket);
   for (auto &cs : columnSpecs) {
     *req.mutable_column_specs()->Add() = std::move(cs);
   }
@@ -221,12 +235,12 @@ Ticket DHWorkerSession::selectAsync(const Ticket &parentTicket,
   return result;
 }
 
-Ticket DHWorkerSession::updateAsync(const Ticket &parentTicket,
+Ticket DHWorkerSession::updateAsync(Ticket parentTicket,
     std::vector<std::string> columnSpecs, std::shared_ptr<EtcCallback> etcCallback) {
   auto result = server_->newTicket();
   SelectOrUpdateRequest req;
   *req.mutable_result_id() = result;
-  *req.mutable_source_id()->mutable_ticket() = parentTicket;
+  *req.mutable_source_id()->mutable_ticket() = std::move(parentTicket);
   for (auto &cs : columnSpecs) {
     *req.mutable_column_specs()->Add() = std::move(cs);
   }
@@ -235,12 +249,12 @@ Ticket DHWorkerSession::updateAsync(const Ticket &parentTicket,
   return result;
 }
 
-Ticket DHWorkerSession::viewAsync(const Ticket &parentTicket, std::vector<std::string> columnSpecs,
+Ticket DHWorkerSession::viewAsync(Ticket parentTicket, std::vector<std::string> columnSpecs,
     std::shared_ptr<EtcCallback> etcCallback) {
   auto result = server_->newTicket();
   SelectOrUpdateRequest req;
   *req.mutable_result_id() = result;
-  *req.mutable_source_id()->mutable_ticket() = parentTicket;
+  *req.mutable_source_id()->mutable_ticket() = std::move(parentTicket);
   for (auto &cs : columnSpecs) {
     *req.mutable_column_specs()->Add() = std::move(cs);
   }
@@ -249,12 +263,12 @@ Ticket DHWorkerSession::viewAsync(const Ticket &parentTicket, std::vector<std::s
   return result;
 }
 
-Ticket DHWorkerSession::updateViewAsync(const Ticket &parentTicket,
+Ticket DHWorkerSession::updateViewAsync(Ticket parentTicket,
     std::vector<std::string> columnSpecs, std::shared_ptr<EtcCallback> etcCallback) {
   auto result = server_->newTicket();
   SelectOrUpdateRequest req;
   *req.mutable_result_id() = result;
-  *req.mutable_source_id()->mutable_ticket() = parentTicket;
+  *req.mutable_source_id()->mutable_ticket() = std::move(parentTicket);
   for (auto &cs : columnSpecs) {
     *req.mutable_column_specs()->Add() = std::move(cs);
   }
@@ -283,28 +297,17 @@ std::shared_ptr<TableHandle> DHWorkerSession::dropColumnsAsync(std::shared_ptr<T
   return resultHandle;
 }
 
-std::shared_ptr<TableHandle> DHWorkerSession::whereAsync(std::shared_ptr<TableHandle> parentTableHandle,
-    std::shared_ptr<std::string> condition, std::shared_ptr<ItdCallback> itdCallback) {
-  auto conditions = std::make_shared<std::vector<std::shared_ptr<std::string>>>();
-  conditions->reserve(1);
-  conditions->emplace_back(std::move(condition));
-
-  auto resultHandle = createTableHandle();
-  auto handleMapping = HandleMapping::create(std::move(parentTableHandle), resultHandle);
-  auto tableOps = SerializedTableOps::create(
-      nullptr,
-      nullptr,
-      std::move(handleMapping),
-      nullptr,
-      std::move(conditions),
-      nullptr,
-      nullptr,
-      nullptr,
-      false,
-      0
-  );
-  processBatchOperation(std::move(tableOps), resultHandle, std::move(itdCallback));
-  return resultHandle;
+Ticket DHWorkerSession::whereAsync(Ticket parentTicket, std::string condition,
+    std::shared_ptr<EtcCallback> etcCallback) {
+  streamf(std::cerr, "Zamboni time condition %o\n", condition);
+  auto result = server_->newTicket();
+  UnstructuredFilterTableRequest req;
+  *req.mutable_result_id() = result;
+  *req.mutable_source_id()->mutable_ticket() = std::move(parentTicket);
+  *req.mutable_filters()->Add() = std::move(condition);
+  server_->sendRpc(req, std::move(etcCallback), server_->tableStub(),
+      &TableService::Stub::AsyncUnstructuredFilter, true);
+  return result;
 }
 
 std::shared_ptr<TableHandle> DHWorkerSession::sortAsync(std::shared_ptr<TableHandle> parentTableHandle,
@@ -476,7 +479,6 @@ std::shared_ptr<TableHandle> DHWorkerSession::catalogTableAsync(
 
 void DHWorkerSession::bindToVariableAsync(const Ticket &tableId, std::string variable,
     std::shared_ptr<SFCallback<BindTableToVariableResponse>> callback) {
-  auto result = server_->newTicket();
   BindTableToVariableRequest req;
   *req.mutable_console_id() = consoleId_;
   req.set_variable_name(std::move(variable));

@@ -55,8 +55,8 @@ public:
   ~ServerResponseHolder() final = default;
 
   void onSuccess() final {
-    deephaven::openAPI::utility::streamf(std::cerr, "*** RESPONSE %o\n%o\n*** END RESPONSE ***\n",
-        typeid(Response).name(), resp_.DebugString());
+//    deephaven::openAPI::utility::streamf(std::cerr, "*** RESPONSE %o\n%o\n*** END RESPONSE ***\n",
+//        typeid(Response).name(), resp_.DebugString());
     callback_->onSuccess(std::move(resp_));
   }
 
@@ -123,7 +123,7 @@ template<typename TReq, typename TResp, typename TStub, typename TPtrToMember>
 void Server::sendRpc(const TReq &req, std::shared_ptr<SFCallback<TResp>> responseCallback,
     TStub *stub, const TPtrToMember &pm, bool needAuth) {
   using deephaven::openAPI::utility::streamf;
-  streamf(std::cerr, "*** REQUEST %o\n%o\n*** END REQUEST ***\n", typeid(TReq).name(), req.DebugString());
+  // streamf(std::cerr, "*** REQUEST %o\n%o\n*** END REQUEST ***\n", typeid(TReq).name(), req.DebugString());
   auto *response = new ServerResponseHolder<TResp>(std::move(responseCallback));
   if (needAuth) {
     if (!haveAuth_) {

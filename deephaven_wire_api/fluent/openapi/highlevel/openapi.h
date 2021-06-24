@@ -164,8 +164,9 @@ public:
   QueryScope &operator=(QueryScope &&other) noexcept;
   ~QueryScope();
 
-  QueryTable emptyTable(size_t size, std::vector<std::string> columnNames,
+  QueryTable emptyTable(int64_t size, std::vector<std::string> columnNames,
       std::vector<std::string> columnTypes) const;
+  QueryTable fetchTable(std::string tableName) const;
   QueryTable historicalTable(std::string nameSpace, std::string tableName) const;
   QueryTable tempTable(const std::vector<ColumnDataHolder> &columnDataHolders) const;
   QueryTable timeTable(int64_t startTimeNanos, int64_t periodNanos) const;
@@ -543,8 +544,8 @@ public:
   QueryTable reverseAsOfJoin(const QueryTable &rightSide, std::vector<MatchWithColumn> columnsToMatch,
       std::vector<SelectColumn> columnsToAdd) const;
 
-  void bindToVariable(std::string variable);
-  void bindToVariableAsync(std::string variable, std::shared_ptr<SFCallback<Void>> callback);
+  void bindToVariable(std::string variable) const;
+  void bindToVariableAsync(std::string variable, std::shared_ptr<SFCallback<Void>> callback) const;
 
   TableData getTableData() const {
     return getTableData(0, std::numeric_limits<int64_t>::max(), {});

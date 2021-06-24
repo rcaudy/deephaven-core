@@ -36,8 +36,9 @@ public:
       std::shared_ptr<DHWorkerSession> lowLevelSession, std::shared_ptr<Executor> executor);
   ~QueryScopeImpl();
 
-  std::shared_ptr<QueryTableImpl> emptyTable(size_t size, std::vector<std::string> columnNames,
+  std::shared_ptr<QueryTableImpl> emptyTable(int64_t size, std::vector<std::string> columnNames,
       std::vector<std::string> columnTypes);
+  std::shared_ptr<QueryTableImpl> fetchTable(std::string tableName);
   std::shared_ptr<QueryTableImpl> historicalTable(std::string nameSpace, std::string tableName);
   std::shared_ptr<QueryTableImpl> tempTable(const std::vector<ColumnDataHolder> &columnDataHolders);
   std::shared_ptr<QueryTableImpl> timeTable(int64_t startTimeNanos, int64_t periodNanos);

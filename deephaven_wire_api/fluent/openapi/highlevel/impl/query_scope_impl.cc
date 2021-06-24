@@ -26,12 +26,18 @@ QueryScopeImpl::QueryScopeImpl(Private, std::shared_ptr<WorkerSessionImpl> sessi
     executor_(std::move(executor)) {}
 QueryScopeImpl::~QueryScopeImpl() = default;
 
-std::shared_ptr<QueryTableImpl> QueryScopeImpl::emptyTable(size_t size,
+std::shared_ptr<QueryTableImpl> QueryScopeImpl::emptyTable(int64_t size,
     std::vector<std::string> columnNames, std::vector<std::string> columnTypes) {
-  auto etcCallback = QueryTableImpl::createEtcCallback(executor_);
+  auto cb = QueryTableImpl::createEtcCallback(executor_);
   auto resultTicket = lowlevelSession_->emptyTableAsync(size, std::move(columnNames),
-      std::move(columnTypes), etcCallback);
-  return QueryTableImpl::createOss(self_.lock(), std::move(resultTicket), std::move(etcCallback));
+      std::move(columnTypes), cb);
+  return QueryTableImpl::createOss(self_.lock(), std::move(resultTicket), std::move(cb));
+}
+
+std::shared_ptr<QueryTableImpl> QueryScopeImpl::fetchTable(std::string tableName) {
+  auto cb = QueryTableImpl::createEtcCallback(executor_);
+  auto resultTicket = lowlevelSession_->fetchTableAsync(std::move(tableName), cb);
+  return QueryTableImpl::createOss(self_.lock(), std::move(resultTicket), std::move(cb));
 }
 
 std::shared_ptr<QueryTableImpl> QueryScopeImpl::historicalTable(std::string nameSpace,
