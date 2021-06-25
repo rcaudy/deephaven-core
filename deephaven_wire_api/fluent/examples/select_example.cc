@@ -34,21 +34,22 @@ void test5(const QueryTable &table);
 
 void SelectExample::run(const QueryScope &scope) {
   auto table = scope.fetchTable("demo");
-  test0(scope);
+  // test0(scope);
   test1(table);
   test2(table);
   test2a_err(table);
-  test3(table);
-  test4(table);
-  test5(table);
+
+//  test3(table);
+//  test4(table);
+//  test5(table);
+  (void)&test0;
+  (void)&test3;
+  (void)&test4;
+  (void)&test5;
 }
 
 namespace {
 void test0(const QueryScope &scope) {
-  if (true) {
-    std::cerr << "test0: no because column data\n";
-    return;
-  }
   std::vector<int> intData = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
   std::vector<double> doubleData = {0.0, 1.1, 2.2, 3.3, 4.4, 5.5, 6.6, 7.7, 8.8, 9.9};
   std::vector<ColumnDataHolder> columnDataHolders;
@@ -70,15 +71,20 @@ void test1(const QueryTable &table) {
   auto importDate = table.getStrCol("ImportDate");
   auto ticker = table.getStrCol("Ticker");
   auto volume = table.getNumCol("Volume");
+  // if we allowed C++17 we could do something like
+  // auto [importDate, ticker, volume] = table.getCol<StrCol, StrCol, NumCol>("ImportDate", "Ticker", "Volume");
+
   auto t2 = table.where(importDate == "2017-11-01" && ticker == "IBM")
       .select(ticker, volume);
-  PrintUtils::printTableData(std::cout,t2);
+  PrintUtils::printTableData(std::cout, t2);
+  std::cerr << "test1 done\n";
 }
 
 // Select a few columns
 void test2(const QueryTable &table) {
   auto t1 = table.where("ImportDate == `2017-11-01` && Ticker == `AAPL`")
-      .select("Ticker", "Close", "Volume");
+      .select("Ticker", "Close", "Volume")
+      .head(2);
   PrintUtils::printTableData(std::cout,t1);
 
   // Symbolically
@@ -87,8 +93,10 @@ void test2(const QueryTable &table) {
   auto close = table.getNumCol("Close");
   auto volume = table.getNumCol("Volume");
   auto t2 = table.where(importDate == "2017-11-01" && ticker == "AAPL")
-      .select(ticker, close, volume);
-  PrintUtils::printTableData(std::cout,t2);
+      .select(ticker, close, volume)
+      .head(2);
+  PrintUtils::printTableData(std::cout, t2);
+  std::cerr << "test2 done\n";
 }
 
 // Simple Where with syntax error
@@ -96,10 +104,11 @@ void test2a_err(const QueryTable &table) {
   try {
     // String literal
     auto t1 = table.where(")))))");
-    PrintUtils::printTableData(std::cout,t1);
+    PrintUtils::printTableData(std::cout, t1);
   } catch (const std::exception &e) {
     // Expected
     streamf(std::cerr, "Caught *expected* exception %o\n", e.what());
+    std::cerr << "test3 done\n";
     return;
   }
   throw std::runtime_error("Expected a failure, but didn't experience one");
