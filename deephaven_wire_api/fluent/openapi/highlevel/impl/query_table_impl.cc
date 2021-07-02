@@ -284,50 +284,52 @@ std::shared_ptr<QueryTableImpl> QueryTableImpl::by(
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::minBy(std::vector<std::string> columnSpecs) {
-  return defaultAggregateByType(ApplyAggregatesOperation::AggType::Min, std::move(columnSpecs));
+  return defaultAggregateByType(ComboAggregateRequest::MIN, std::move(columnSpecs));
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::maxBy(std::vector<std::string> columnSpecs) {
-  return defaultAggregateByType(ApplyAggregatesOperation::AggType::Max, std::move(columnSpecs));
+  return defaultAggregateByType(ComboAggregateRequest::MAX, std::move(columnSpecs));
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::sumBy(std::vector<std::string> columnSpecs) {
-  return defaultAggregateByType(ApplyAggregatesOperation::AggType::Sum, std::move(columnSpecs));
+  return defaultAggregateByType(ComboAggregateRequest::SUM, std::move(columnSpecs));
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::absSumBy(std::vector<std::string> columnSpecs) {
-  return defaultAggregateByType(ApplyAggregatesOperation::AggType::AbsSum, std::move(columnSpecs));
+  return defaultAggregateByType(ComboAggregateRequest::ABS_SUM, std::move(columnSpecs));
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::varBy(std::vector<std::string> columnSpecs) {
-  return defaultAggregateByType(ApplyAggregatesOperation::AggType::Var, std::move(columnSpecs));
+  return defaultAggregateByType(ComboAggregateRequest::VAR, std::move(columnSpecs));
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::stdBy(std::vector<std::string> columnSpecs) {
-  return defaultAggregateByType(ApplyAggregatesOperation::AggType::Std, std::move(columnSpecs));
+  return defaultAggregateByType(ComboAggregateRequest::STD, std::move(columnSpecs));
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::avgBy(std::vector<std::string> columnSpecs) {
-  return defaultAggregateByType(ApplyAggregatesOperation::AggType::Avg, std::move(columnSpecs));
+  return defaultAggregateByType(ComboAggregateRequest::AVG, std::move(columnSpecs));
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::lastBy(std::vector<std::string> columnSpecs) {
-  return defaultAggregateByType(ApplyAggregatesOperation::AggType::Last, std::move(columnSpecs));
+  return defaultAggregateByType(ComboAggregateRequest::LAST, std::move(columnSpecs));
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::firstBy(std::vector<std::string> columnSpecs) {
-  return defaultAggregateByType(ApplyAggregatesOperation::AggType::First, std::move(columnSpecs));
+  return defaultAggregateByType(ComboAggregateRequest::FIRST, std::move(columnSpecs));
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::medianBy(std::vector<std::string> columnSpecs) {
-  return defaultAggregateByType(ApplyAggregatesOperation::AggType::Median, std::move(columnSpecs));
+  return defaultAggregateByType(ComboAggregateRequest::MEDIAN, std::move(columnSpecs));
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::percentileBy(double percentile, bool avgMedian,
     std::vector<std::string> columnSpecs) {
-  auto pd = PercentileDescriptor::create(percentile, avgMedian);
-  auto spAggType = std::make_shared<std::string>(ApplyAggregatesOperation::AggType::Percentile);
-  auto descriptor = AggregateDescriptor::create(std::move(spAggType), nullptr, nullptr, std::move(pd));
+  ComboAggregateRequest::Aggregate descriptor;
+  descriptor.set_type(ComboAggregateRequest::PERCENTILE);
+  descriptor.set_percentile(percentile);
+  descriptor.set_avg_median(avgMedian);
+  return defaultAggregateByDescriptor(std::move(descriptor), std::move(columnSpecs));
   return defaultAggregateByDescriptor(std::move(descriptor), std::move(columnSpecs));
 }
 
