@@ -330,7 +330,6 @@ std::shared_ptr<QueryTableImpl> QueryTableImpl::percentileBy(double percentile, 
   descriptor.set_percentile(percentile);
   descriptor.set_avg_median(avgMedian);
   return defaultAggregateByDescriptor(std::move(descriptor), std::move(columnSpecs));
-  return defaultAggregateByDescriptor(std::move(descriptor), std::move(columnSpecs));
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::percentileBy(double percentile,
@@ -340,18 +339,17 @@ std::shared_ptr<QueryTableImpl> QueryTableImpl::percentileBy(double percentile,
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::countBy(std::string countByColumn,
     std::vector<std::string> columnSpecs) {
-  auto spAggType = std::make_shared<std::string>(ApplyAggregatesOperation::AggType::Count);
-  auto spColumn = std::make_shared<std::string>(std::move(countByColumn));
-  auto descriptor = AggregateDescriptor::create(std::move(spAggType), nullptr, spColumn, nullptr);
+  ComboAggregateRequest::Aggregate descriptor;
+  descriptor.set_type(ComboAggregateRequest::COUNT);
+  descriptor.set_column_name(std::move(countByColumn));
   return defaultAggregateByDescriptor(std::move(descriptor), std::move(columnSpecs));
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::wAvgBy(std::string weightColumn,
     std::vector<std::string> columnSpecs) {
-  auto spAggType = std::make_shared<std::string>(ApplyAggregatesOperation::AggType::WeightedAvg);
-  auto spColumn = std::make_shared<std::string>(std::move(weightColumn));
-  auto descriptor = AggregateDescriptor::create(std::move(spAggType), nullptr,
-      std::move(spAggType), nullptr);
+  ComboAggregateRequest::Aggregate descriptor;
+  descriptor.set_type(ComboAggregateRequest::WEIGHTED_AVG);
+  descriptor.set_column_name(std::move(weightColumn));
   return defaultAggregateByDescriptor(std::move(descriptor), std::move(columnSpecs));
 }
 
