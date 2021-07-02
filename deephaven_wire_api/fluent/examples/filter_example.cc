@@ -16,8 +16,7 @@ namespace openAPI {
 namespace examples {
 
 void FilterExample::run(const QueryScope &scope) {
-  auto table = scope.historicalTable(DemoConstants::historicalNamespace,
-      DemoConstants::historicalTable);
+  auto table = scope.fetchTable("demo");
   auto importDate = table.getStrCol("ImportDate");
   auto ticker = table.getStrCol("Ticker");
   auto close = table.getNumCol("Close");

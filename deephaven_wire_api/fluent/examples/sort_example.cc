@@ -26,8 +26,7 @@ namespace deephaven {
 namespace openAPI {
 namespace examples {
 void SortExample::run(const QueryScope &scope) {
-  auto table = scope.historicalTable(DemoConstants::historicalNamespace,
-      DemoConstants::historicalTable);
+  auto table = scope.fetchTable("demo");
 
   auto importDate = table.getStrCol("ImportDate");
   auto ticker = table.getStrCol("Ticker");

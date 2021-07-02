@@ -42,7 +42,7 @@ std::shared_ptr<QueryTableImpl> QueryScopeImpl::fetchTable(std::string tableName
 
 std::shared_ptr<QueryTableImpl> QueryScopeImpl::historicalTable(std::string nameSpace,
     std::string tableName) {
-  throw std::runtime_error("SAD102");
+  throw std::runtime_error("TODO(kosak): Historical table?");
 //  auto itdCallback = QueryTableImpl::createItdCallback(lowlevelSession_->executor());
 //  auto spNamespace = std::make_shared<std::string>(std::move(nameSpace));
 //  auto spTableName = std::make_shared<std::string>(std::move(tableName));

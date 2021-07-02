@@ -28,8 +28,7 @@ namespace examples {
 // need to worry about this, but you may want to destroy some tables more eagerly if you find you
 // are using too much resources at the server.
 void TableCleanupExample::run(const QueryScope &scope) {
-  auto table = scope.historicalTable(DemoConstants::historicalNamespace,
-      DemoConstants::historicalTable);
+  auto table = scope.fetchTable("demo");
   auto importDate = table.getStrCol("ImportDate");
   auto ticker = table.getStrCol("Ticker");
   // This example will dispose each table individually. This might be handy

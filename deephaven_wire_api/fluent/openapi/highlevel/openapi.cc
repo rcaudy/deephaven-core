@@ -469,8 +469,8 @@ QueryTable QueryTable::sort(std::vector<SortPair> sortPairs) const {
 }
 
 QueryTable QueryTable::preemptive(int sampleIntervalMs) {
-  auto qtImpl = impl_->preemptive(sampleIntervalMs);
-  return QueryTable(std::move(qtImpl));
+  std::cerr << "TODO(kosak): what to do about preemptive?\n";
+  return QueryTable(impl_);
 }
 
 TableData QueryTable::getTableData(long first, long last, std::vector<std::string> columns) const {

@@ -75,11 +75,9 @@ void testWheres(const QueryScope &scope) {
   std::chrono::seconds duration(10);
   auto durationNanos = std::chrono::duration_cast<std::chrono::nanoseconds>(duration).count();
 
-  std::cerr << "TODO(kosak): do we support preemptive\n";
-
   auto dynamicTable = scope.timeTable(nowNanos, durationNanos)
-      .update("X = 12", "S = `hello`");
-      // .preemptive(100);
+      .update("X = 12", "S = `hello`")
+      .preemptive(100);
   // "badWheresWhenDynamic" are bad for dynamic tables
   testWheresHelper("dynamic table", dynamicTable, concat(badWheres, badWheresWhenDynamic),
       goodWheres);
@@ -92,7 +90,8 @@ void testWheresHelper(boost::string_view what, const QueryTable &table,
     try {
       streamf(std::cerr, "hi... trying %o %o\n", what, bw);
       auto t1 = table.where(bw);
-      auto t2 = t1.getTableData();
+      t1.observe();
+      // auto t2 = t1.getTableData();
     } catch (const std::exception &e) {
       streamf(std::cerr, "%o: %o: Failed *as expected* with: %o\n", what, bw, e.what());
       continue;
@@ -102,7 +101,7 @@ void testWheresHelper(boost::string_view what, const QueryTable &table,
   }
 
   for (const auto &gw : goodWheres) {
-    table.where(gw).getTableData();
+    table.where(gw).observe();
     streamf(std::cerr, "%o: %o: Succeeded as expected\n", what, gw);
   }
 }
@@ -151,7 +150,7 @@ void testSelectsHelper(boost::string_view what, const QueryTable &table,
   for (const auto &bs : badSelects) {
     auto selection = makeSeparatedList(bs.begin(), bs.end(), ", ");
     try {
-      auto _ = table.select(bs).getTableData();
+      table.select(bs).observe();
     }
     catch (const std::exception &e) {
       streamf(std::cerr, "%o: %o: Failed as expected with: %o\n", what, selection, e.what());
@@ -162,7 +161,7 @@ void testSelectsHelper(boost::string_view what, const QueryTable &table,
 
   for (const auto &gs : goodSelects) {
     auto selection = makeSeparatedList(gs.begin(), gs.end(), ", ");
-    auto _ = table.select(gs).getTableData();
+    table.select(gs).observe();
     streamf(std::cerr, "%o: %o: Succeeded as expected\n", what, selection);
   }
 }
