@@ -16,14 +16,14 @@ namespace deephaven {
 namespace openAPI {
 namespace examples {
 void UngroupExample::run(const QueryScope &scope) {
-  auto table = scope.historicalTable(DemoConstants::historicalNamespace,
-      DemoConstants::historicalTable);
+  auto table = scope.fetchTable("demo");
   auto importDate = table.getStrCol("ImportDate");
   auto ticker = table.getStrCol("Ticker");
 
   table = table.where(importDate == "2017-11-01");
 
   auto byTable = table.where(ticker == "AAPL").view("Ticker", "Close").by("Ticker");
+  PrintUtils::printTableData(std::cout, byTable);
 
   auto ungrouped = byTable.ungroup("Close");
   PrintUtils::printTableData(std::cout, ungrouped);

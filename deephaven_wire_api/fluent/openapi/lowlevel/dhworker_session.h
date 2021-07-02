@@ -122,9 +122,8 @@ public:
   Ticket headOrTailAsync(Ticket parentTicket,
       bool head, int64_t n, std::shared_ptr<EtcCallback> etcCallback);
 
-  std::shared_ptr<TableHandle> ungroupAsync(std::shared_ptr<TableHandle> parentTableHandle,
-      bool nullFill, std::shared_ptr<std::vector<std::shared_ptr<std::string>>> groupByColumns,
-      std::shared_ptr<ItdCallback> itdCallback);
+  Ticket ungroupAsync(Ticket parentTicket, bool nullFill, std::vector<std::string> groupByColumns,
+      std::shared_ptr<EtcCallback> etcCallback);
 
   std::shared_ptr<TableHandle> mergeAsync(
       std::shared_ptr<std::vector<std::shared_ptr<TableHandle>>> sourceHandles,

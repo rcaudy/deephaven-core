@@ -21,6 +21,7 @@ using io::deephaven::proto::backplane::grpc::SortDescriptor;
 using io::deephaven::proto::backplane::grpc::SortTableRequest;
 using io::deephaven::proto::backplane::grpc::TableService;
 using io::deephaven::proto::backplane::grpc::TimeTableRequest;
+using io::deephaven::proto::backplane::grpc::UngroupRequest;
 using io::deephaven::proto::backplane::grpc::UnstructuredFilterTableRequest;
 using io::deephaven::proto::backplane::script::grpc::BindTableToVariableRequest;
 using io::deephaven::proto::backplane::script::grpc::FetchTableRequest;
@@ -397,15 +398,25 @@ Ticket DHWorkerSession::headOrTailAsync(Ticket parentTicket,
   return result;
 }
 
-std::shared_ptr<TableHandle> DHWorkerSession::ungroupAsync(
-    std::shared_ptr<TableHandle> parentTableHandle, bool nullFill,
-    std::shared_ptr<std::vector<std::shared_ptr<std::string>>> groupByColumns, std::shared_ptr<ItdCallback> itdCallback) {
-  throw std::runtime_error("SAD008");
-//  auto resultHandle = createTableHandle();
-//  auto req = Ungroup::create(std::move(parentTableHandle), resultHandle, nullFill,
-//      std::move(groupByColumns));
-//  dhWorker_->invoke(std::move(req), std::move(itdCallback));
-//  return resultHandle;
+namespace {
+void moveVectorData(std::vector<std::string> src, google::protobuf::RepeatedPtrField<std::string> *dest) {
+  for (auto &s : src) {
+    dest->Add(std::move(s));
+  }
+}
+}  // namespace
+
+Ticket DHWorkerSession::ungroupAsync(Ticket parentTicket, bool nullFill,
+    std::vector<std::string> groupByColumns, std::shared_ptr<EtcCallback> etcCallback) {
+  auto result = server_->newTicket();
+  UngroupRequest req;
+  *req.mutable_result_id() = result;
+  *req.mutable_source_id()->mutable_ticket() = std::move(parentTicket);
+  req.set_null_fill(nullFill);
+  moveVectorData(std::move(groupByColumns), req.mutable_columns_to_ungroup());
+  server_->sendRpc(req, std::move(etcCallback), server_->tableStub(),
+      &TableService::Stub::AsyncUngroup, true);
+  return result;
 }
 
 std::shared_ptr<TableHandle> DHWorkerSession::mergeAsync(

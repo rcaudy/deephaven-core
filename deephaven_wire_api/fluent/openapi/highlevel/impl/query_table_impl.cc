@@ -378,12 +378,10 @@ std::shared_ptr<QueryTableImpl> QueryTableImpl::headOrTailHelper(bool head, int6
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::ungroup(bool nullFill,
     std::vector<std::string> groupByColumns) {
-  throw std::runtime_error("SAD208");
-//  auto spCols = stringVecToShared(std::move(groupByColumns));
-//  auto itdCallback = QueryTableImpl::createItdCallback(scope_->lowLevelSession()->executor());
-//  auto resultHandle = scope_->lowLevelSession()->ungroupAsync(tableHandle_, nullFill, std::move(spCols),
-//      itdCallback);
-//  return QueryTableImpl::create(scope_, std::move(resultHandle), std::move(itdCallback));
+  auto cb = QueryTableImpl::createEtcCallback(scope_->lowLevelSession()->executor());
+  auto resultTicket = scope_->lowLevelSession()->ungroupAsync(ticket_, nullFill, std::move(groupByColumns),
+      cb);
+  return QueryTableImpl::createOss(scope_, std::move(resultTicket), std::move(cb));
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::merge(std::string keyColumn,
