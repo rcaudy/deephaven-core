@@ -32,7 +32,6 @@ class DHWorkerSession {
   typedef io::deephaven::proto::backplane::script::grpc::BindTableToVariableResponse BindTableToVariableResponse;
 
   typedef deephaven::openAPI::core::remoting::Server Server;
-  typedef deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::batch::aggregates::AggregateDescriptor AggregateDescriptor;
   typedef deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::batch::batchTableRequest::SerializedTableOps SerializedTableOps;
   typedef deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::batch::BatchTableRequest BatchTableRequest;
   typedef deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::batch::BatchTableResponse BatchTableResponse;
@@ -117,15 +116,10 @@ public:
       std::vector<std::string> groupByColumns, bool forceCombo,
       std::shared_ptr<EtcCallback> etcCallback);
 
-  std::shared_ptr<TableHandle> tailByAsync(std::shared_ptr<TableHandle> parentTableHandle,
-      int64_t n, std::shared_ptr<std::vector<std::shared_ptr<std::string>>> columnSpecs,
-      std::shared_ptr<ItdCallback> itdCallback);
+  Ticket headOrTailByAsync(Ticket parentTicket, bool head, int64_t n,
+      std::vector<std::string> columnSpecs, std::shared_ptr<EtcCallback> etcCallback);
 
-  std::shared_ptr<TableHandle> headByAsync(std::shared_ptr<TableHandle> parentTableHandle,
-      int64_t n, std::shared_ptr<std::vector<std::shared_ptr<std::string>>> columnSpecs,
-      std::shared_ptr<ItdCallback> itdCallback);
-
-  Ticket headOrTailAsync(const Ticket &parentTicket,
+  Ticket headOrTailAsync(Ticket parentTicket,
       bool head, int64_t n, std::shared_ptr<EtcCallback> etcCallback);
 
   std::shared_ptr<TableHandle> ungroupAsync(std::shared_ptr<TableHandle> parentTableHandle,

@@ -6,20 +6,20 @@ namespace highlevel {
 namespace impl {
 
 std::shared_ptr<AggregateImpl> AggregateImpl::create(
-    std::shared_ptr<AggregateDescriptor> descriptor) {
+    ComboAggregateRequest::Aggregate descriptor) {
   return std::make_shared<AggregateImpl>(Private(), std::move(descriptor));
 }
 
-AggregateImpl::AggregateImpl(Private, std::shared_ptr<AggregateDescriptor> descriptor) :
+AggregateImpl::AggregateImpl(Private, ComboAggregateRequest::Aggregate descriptor) :
     descriptor_(std::move(descriptor)) {}
 
 std::shared_ptr<AggregateComboImpl> AggregateComboImpl::create(
-    std::shared_ptr<std::vector<std::shared_ptr<AggregateDescriptor>>> aggregates) {
+    std::vector<ComboAggregateRequest::Aggregate> aggregates) {
   return std::make_shared<AggregateComboImpl>(Private(), std::move(aggregates));
 }
 
 AggregateComboImpl::AggregateComboImpl(Private,
-    std::shared_ptr<std::vector<std::shared_ptr<AggregateDescriptor>>> aggregates) :
+    std::vector<ComboAggregateRequest::Aggregate> aggregates) :
     aggregates_(std::move(aggregates)) {}
 }  // namespace impl
 }  // namespace highlevel

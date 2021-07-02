@@ -28,7 +28,6 @@ using deephaven::openAPI::lowlevel::remoting::DHWorker;
 using deephaven::openAPI::lowlevel::remoting::DHWorkerAPIListenerDefault;
 using deephaven::openAPI::lowlevel::remoting::DHWorkerSession;
 using deephaven::openAPI::lowlevel::remoting::generated::java::util::BitSet;
-using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::batch::aggregates::AggregateDescriptor;
 using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::batch::aggregates::ComboAggregateDescriptor;
 using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::batch::aggregates::PercentileDescriptor;
 using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::ColumnDefinition;
@@ -263,21 +262,16 @@ std::shared_ptr<QueryTableImpl> QueryTableImpl::defaultAggregateByType(
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::by(std::vector<std::string> columnSpecs) {
-  throw std::runtime_error("SAD204");
-//  return defaultAggregateByType(ApplyAggregatesOperation::AggType::Array, std::move(columnSpecs));
+  return defaultAggregateByType(ComboAggregateRequest::ARRAY, std::move(columnSpecs));
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::by(
-    std::shared_ptr<std::vector<std::shared_ptr<AggregateDescriptor>>> descriptors,
+    std::vector<ComboAggregateRequest::Aggregate> descriptors,
     std::vector<std::string> groupByColumns) {
-  throw std::runtime_error("SAD205");
-//  auto spCols = stringVecToShared(std::move(groupByColumns));
-//  auto aggStrategy = std::make_shared<std::string>(ApplyAggregatesOperation::Strategy::Default);
-//
-//  auto itdCallback = QueryTableImpl::createItdCallback(scope_->lowLevelSession()->executor());
-//  auto resultHandle = scope_->lowLevelSession()->comboAggregateDescriptorAsync(tableHandle_,
-//      std::move(aggStrategy), std::move(descriptors), std::move(spCols), false, itdCallback);
-//  return QueryTableImpl::create(scope_, std::move(resultHandle), std::move(itdCallback));
+  auto cb = QueryTableImpl::createEtcCallback(scope_->lowLevelSession()->executor());
+  auto resultTicket = scope_->lowLevelSession()->comboAggregateDescriptorAsync(ticket_,
+      std::move(descriptors), std::move(groupByColumns), false, cb);
+  return QueryTableImpl::createOss(scope_, std::move(resultTicket), std::move(cb));
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::minBy(std::vector<std::string> columnSpecs) {
@@ -352,22 +346,20 @@ std::shared_ptr<QueryTableImpl> QueryTableImpl::wAvgBy(std::string weightColumn,
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::tailBy(int64_t n,
     std::vector<std::string> columnSpecs) {
-  throw std::runtime_error("SAD206");
-//  auto spColumnSpecs = stringVecToShared(std::move(columnSpecs));
-//  auto itdCallback = QueryTableImpl::createItdCallback(scope_->lowLevelSession()->executor());
-//  auto resultHandle = scope_->lowLevelSession()->tailByAsync(tableHandle_, n, std::move(spColumnSpecs),
-//      itdCallback);
-//  return QueryTableImpl::create(scope_, std::move(resultHandle), std::move(itdCallback));
+  return headOrTailByHelper(n, false, std::move(columnSpecs));
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::headBy(int64_t n,
     std::vector<std::string> columnSpecs) {
-  throw std::runtime_error("SAD207");
-//  auto spColumnSpecs = stringVecToShared(std::move(columnSpecs));
-//  auto itdCallback = QueryTableImpl::createItdCallback(scope_->lowLevelSession()->executor());
-//  auto resultHandle = scope_->lowLevelSession()->headByAsync(tableHandle_, n, std::move(spColumnSpecs),
-//      itdCallback);
-//  return QueryTableImpl::create(scope_, std::move(resultHandle), std::move(itdCallback));
+  return headOrTailByHelper(n, true, std::move(columnSpecs));
+}
+
+std::shared_ptr<QueryTableImpl> QueryTableImpl::headOrTailByHelper(int64_t n, bool head,
+    std::vector<std::string> columnSpecs) {
+  auto cb = QueryTableImpl::createEtcCallback(scope_->lowLevelSession()->executor());
+  auto resultTicket = scope_->lowLevelSession()->headOrTailByAsync(ticket_, head, n,
+      std::move(columnSpecs), cb);
+  return QueryTableImpl::createOss(scope_, std::move(resultTicket), std::move(cb));
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::tail(int64_t n) {
@@ -379,9 +371,9 @@ std::shared_ptr<QueryTableImpl> QueryTableImpl::head(int64_t n) {
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::headOrTailHelper(bool head, int64_t n) {
-  auto itdCallback = QueryTableImpl::createEtcCallback(scope_->lowLevelSession()->executor());
-  auto resultTicket = scope_->lowLevelSession()->headOrTailAsync(ticket_, head, n, itdCallback);
-  return QueryTableImpl::createOss(scope_, std::move(resultTicket), std::move(itdCallback));
+  auto cb = QueryTableImpl::createEtcCallback(scope_->lowLevelSession()->executor());
+  auto resultTicket = scope_->lowLevelSession()->headOrTailAsync(ticket_, head, n, cb);
+  return QueryTableImpl::createOss(scope_, std::move(resultTicket), std::move(cb));
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::ungroup(bool nullFill,

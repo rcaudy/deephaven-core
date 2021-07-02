@@ -15,18 +15,17 @@ namespace deephaven {
 namespace openAPI {
 namespace examples {
 void HeadAndTailExample::run(const QueryScope &scope) {
-  auto table = scope.historicalTable(DemoConstants::historicalNamespace,
-      DemoConstants::historicalTable);
+  auto table = scope.fetchTable("demo");
 
   auto importDate = table.getStrCol("ImportDate");
 
   table = table.where(importDate == "2017-11-01");
 
-  std::cout << "==== Head(100) ====\n";
-  PrintUtils::printTableData(std::cout, table.head(100));
+  std::cout << "==== Head(2) ====\n";
+  PrintUtils::printTableData(std::cout, table.head(2));
 
-  std::cout << "==== Tail(100) ====\n";
-  PrintUtils::printTableData(std::cout, table.tail(100));
+  std::cout << "==== Tail(2) ====\n";
+  PrintUtils::printTableData(std::cout, table.tail(2));
 }
 }  // namespace examples
 }  // namespace openAPI

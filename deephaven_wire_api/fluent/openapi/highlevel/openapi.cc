@@ -16,6 +16,7 @@
 using grpc::Channel;
 using grpc::ClientContext;
 using grpc::ClientReader;
+using io::deephaven::proto::backplane::grpc::ComboAggregateRequest;
 using io::deephaven::proto::backplane::grpc::HandshakeRequest;
 using io::deephaven::proto::backplane::grpc::HandshakeResponse;
 using deephaven::openAPI::core::SFCallback;
@@ -261,158 +262,119 @@ QueryTable QueryScope::catalogTable() const {
 }
 
 namespace {
-class AggType {
-public:
-  static constexpr const char count[] = "Count";
-  static constexpr const char min[] = "Min";
-  static constexpr const char max[] = "Max";
-  static constexpr const char sum[] = "Sum";
-  static constexpr const char absSum[] = "AbsSum";
-  static constexpr const char var[] = "Var";
-  static constexpr const char avg[] = "Avg";
-  static constexpr const char std[] = "Std";
-  static constexpr const char first[] = "First";
-  static constexpr const char last[] = "Last";
-  static constexpr const char array[] = "Array";
-  static constexpr const char percentile[] = "Percentile";
-  static constexpr const char weightedAvg[] = "WeightedAvg";
-  static constexpr const char median[] = "Median";
-};
-
-const char AggType::count[];
-const char AggType::min[];
-const char AggType::max[];
-const char AggType::sum[];
-const char AggType::absSum[];
-const char AggType::var[];
-const char AggType::avg[];
-const char AggType::std[];
-const char AggType::first[];
-const char AggType::last[];
-const char AggType::array[];
-const char AggType::percentile[];
-const char AggType::weightedAvg[];
-const char AggType::median[];
-
-std::shared_ptr<AggregateDescriptor> createDescForMatchPairs(const char *aggregateType,
+ComboAggregateRequest::Aggregate
+createDescForMatchPairs(ComboAggregateRequest::AggType aggregateType,
     std::vector<std::string> columnSpecs) {
-  auto spAggType = std::make_shared<std::string>(aggregateType);
-  auto spMatchPairs = stringVecToShared(std::move(columnSpecs));
-  return AggregateDescriptor::create(std::move(spAggType), std::move(spMatchPairs), nullptr, nullptr);
+  ComboAggregateRequest::Aggregate result;
+  result.set_type(aggregateType);
+  for (auto &cs : columnSpecs) {
+    result.mutable_match_pairs()->Add(std::move(cs));
+  }
+  return result;
 }
 
-std::shared_ptr<AggregateDescriptor> createDescForColumn(const char *aggregateType,
+ComboAggregateRequest::Aggregate createDescForColumn(ComboAggregateRequest::AggType aggregateType,
     std::string columnSpec) {
-  auto spAggType = std::make_shared<std::string>(aggregateType);
-  auto spColSpec = std::make_shared<std::string>(std::move(columnSpec));
-  return AggregateDescriptor::create(std::move(spAggType), nullptr, std::move(spColSpec), nullptr);
+  ComboAggregateRequest::Aggregate result;
+  result.set_type(aggregateType);
+  result.set_column_name(std::move(columnSpec));
+  return result;
 }
+
+Aggregate createAggForMatchPairs(ComboAggregateRequest::AggType aggregateType, std::vector<std::string> columnSpecs) {
+  auto ad = createDescForMatchPairs(aggregateType, std::move(columnSpecs));
+  auto impl = AggregateImpl::create(std::move(ad));
+  return Aggregate(std::move(impl));
 }
+}  // namespace
 
 Aggregate::Aggregate(std::shared_ptr<impl::AggregateImpl> impl) : impl_(std::move(impl)) {
 }
 
 Aggregate Aggregate::absSum(std::vector<std::string> columnSpecs) {
-  auto ad = createDescForMatchPairs(AggType::array, std::move(columnSpecs));
-  auto impl = AggregateImpl::create(std::move(ad));
-  return Aggregate(std::move(impl));
+  return createAggForMatchPairs(ComboAggregateRequest::ABS_SUM, std::move(columnSpecs));
 }
 
 Aggregate Aggregate::avg(std::vector<std::string> columnSpecs) {
-  auto ad = createDescForMatchPairs(AggType::avg, std::move(columnSpecs));
-  auto impl = AggregateImpl::create(std::move(ad));
-  return Aggregate(std::move(impl));
+  return createAggForMatchPairs(ComboAggregateRequest::AVG, std::move(columnSpecs));
 }
 
 Aggregate Aggregate::count(std::string columnSpec) {
-  auto ad = createDescForColumn(AggType::count, std::move(columnSpec));
+  auto ad = createDescForColumn(ComboAggregateRequest::COUNT, std::move(columnSpec));
   auto impl = AggregateImpl::create(std::move(ad));
   return Aggregate(std::move(impl));
 }
 
 Aggregate Aggregate::first(std::vector<std::string> columnSpecs) {
-  auto ad = createDescForMatchPairs(AggType::first, std::move(columnSpecs));
-  auto impl = AggregateImpl::create(std::move(ad));
-  return Aggregate(std::move(impl));
+  return createAggForMatchPairs(ComboAggregateRequest::FIRST, std::move(columnSpecs));
 }
 
 Aggregate Aggregate::last(std::vector<std::string> columnSpecs) {
-  auto ad = createDescForMatchPairs(AggType::last, std::move(columnSpecs));
-  auto impl = AggregateImpl::create(std::move(ad));
-  return Aggregate(std::move(impl));
+  return createAggForMatchPairs(ComboAggregateRequest::LAST, std::move(columnSpecs));
 }
 
 Aggregate Aggregate::max(std::vector<std::string> columnSpecs) {
-  auto ad = createDescForMatchPairs(AggType::max, std::move(columnSpecs));
-  auto impl = AggregateImpl::create(std::move(ad));
-  return Aggregate(std::move(impl));
+  return createAggForMatchPairs(ComboAggregateRequest::MAX, std::move(columnSpecs));
 }
 
 Aggregate Aggregate::med(std::vector<std::string> columnSpecs) {
-  auto ad = createDescForMatchPairs(AggType::median, std::move(columnSpecs));
-  auto impl = AggregateImpl::create(std::move(ad));
-  return Aggregate(std::move(impl));
+  return createAggForMatchPairs(ComboAggregateRequest::MEDIAN, std::move(columnSpecs));
 }
 
 Aggregate Aggregate::min(std::vector<std::string> columnSpecs) {
-  auto ad = createDescForMatchPairs(AggType::min, std::move(columnSpecs));
-  auto impl = AggregateImpl::create(std::move(ad));
-  return Aggregate(std::move(impl));
+  return createAggForMatchPairs(ComboAggregateRequest::MIN, std::move(columnSpecs));
 }
 
 Aggregate Aggregate::pct(double percentile, bool avgMedian, std::vector<std::string> columnSpecs) {
-  auto pd = PercentileDescriptor::create(percentile, avgMedian);
-  auto spMatchPairs = stringVecToShared(std::move(columnSpecs));
-  auto spAggType = std::make_shared<std::string>(AggType::percentile);
-  auto ad = AggregateDescriptor::create(std::move(spAggType), std::move(spMatchPairs), nullptr,
-      std::move(pd));
-  auto impl = AggregateImpl::create(std::move(ad));
+  ComboAggregateRequest::Aggregate pd;
+  pd.set_type(ComboAggregateRequest::PERCENTILE);
+  pd.set_percentile(percentile);
+  pd.set_avg_median(avgMedian);
+  for (auto &cs : columnSpecs) {
+    pd.mutable_match_pairs()->Add(std::move(cs));
+  }
+  auto impl = AggregateImpl::create(std::move(pd));
   return Aggregate(std::move(impl));
 }
 
 Aggregate Aggregate::std(std::vector<std::string> columnSpecs) {
-  auto ad = createDescForMatchPairs(AggType::std, std::move(columnSpecs));
-  auto impl = AggregateImpl::create(std::move(ad));
-  return Aggregate(std::move(impl));
+  return createAggForMatchPairs(ComboAggregateRequest::STD, std::move(columnSpecs));
 }
 
 Aggregate Aggregate::sum(std::vector<std::string> columnSpecs) {
-  auto ad = createDescForMatchPairs(AggType::sum, std::move(columnSpecs));
-  auto impl = AggregateImpl::create(std::move(ad));
-  return Aggregate(std::move(impl));
+  return createAggForMatchPairs(ComboAggregateRequest::SUM, std::move(columnSpecs));
 }
 
 Aggregate Aggregate::var(std::vector<std::string> columnSpecs) {
-  auto ad = createDescForMatchPairs(AggType::var, std::move(columnSpecs));
-  auto impl = AggregateImpl::create(std::move(ad));
-  return Aggregate(std::move(impl));
+  return createAggForMatchPairs(ComboAggregateRequest::VAR, std::move(columnSpecs));
 }
 
 Aggregate Aggregate::wavg(std::string weightColumn, std::vector<std::string> columnSpecs) {
-  auto spWeightColumn = std::make_shared<std::string>(std::move(weightColumn));
-  auto spMatchPairs = stringVecToShared(std::move(columnSpecs));
-  auto spAgg = std::make_shared<std::string>(AggType::weightedAvg);
-  auto ad = AggregateDescriptor::create(std::move(spAgg), std::move(spMatchPairs),
-      std::move(spWeightColumn), nullptr);
-  auto impl = AggregateImpl::create(std::move(ad));
+  ComboAggregateRequest::Aggregate pd;
+  pd.set_type(ComboAggregateRequest::WEIGHTED_AVG);
+  for (auto &cs : columnSpecs) {
+    pd.mutable_match_pairs()->Add(std::move(cs));
+  }
+  pd.set_column_name(std::move(weightColumn));
+  auto impl = AggregateImpl::create(std::move(pd));
   return Aggregate(std::move(impl));
 }
 
 AggregateCombo AggregateCombo::create(std::initializer_list<Aggregate> list) {
-  auto aggregates = std::make_shared<std::vector<std::shared_ptr<AggregateDescriptor>>>();
-  aggregates->reserve(list.size());
+  std::vector<ComboAggregateRequest::Aggregate> aggregates;
+  aggregates.reserve(list.size());
   for (const auto &item : list) {
-    aggregates->push_back(item.impl()->descriptor());
+    aggregates.push_back(item.impl()->descriptor());
   }
   auto impl = AggregateComboImpl::create(std::move(aggregates));
   return AggregateCombo(std::move(impl));
 }
 
 AggregateCombo AggregateCombo::create(std::vector<Aggregate> vec) {
-  auto aggregates = std::make_shared<std::vector<std::shared_ptr<AggregateDescriptor>>>();
-  aggregates->reserve(vec.size());
+  std::vector<ComboAggregateRequest::Aggregate> aggregates;
+  aggregates.reserve(vec.size());
   for (const auto &item : vec) {
-    aggregates->push_back(item.impl()->descriptor());
+    aggregates.push_back(std::move(item.impl()->descriptor()));
   }
   auto impl = AggregateComboImpl::create(std::move(aggregates));
   return AggregateCombo(std::move(impl));

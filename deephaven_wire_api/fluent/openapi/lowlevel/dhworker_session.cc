@@ -13,6 +13,7 @@
 using arrow::flight::protocol::Ticket;
 using io::deephaven::proto::backplane::grpc::EmptyTableRequest;
 using io::deephaven::proto::backplane::grpc::HeadOrTailRequest;
+using io::deephaven::proto::backplane::grpc::HeadOrTailByRequest;
 using io::deephaven::proto::backplane::grpc::ExportedTableCreationResponse;
 using io::deephaven::proto::backplane::grpc::JoinTablesRequest;
 using io::deephaven::proto::backplane::grpc::SelectOrUpdateRequest;
@@ -369,32 +370,27 @@ Ticket DHWorkerSession::comboAggregateDescriptorAsync(Ticket parentTicket,
   return result;
 }
 
-std::shared_ptr<TableHandle> DHWorkerSession::tailByAsync(std::shared_ptr<TableHandle> parentTableHandle,
-    int64_t n, std::shared_ptr<std::vector<std::shared_ptr<std::string>>> columnSpecs,
-    std::shared_ptr<ItdCallback> itdCallback) {
-  throw std::runtime_error("SAD006");
-//  auto resultHandle = createTableHandle();
-//  auto req = TailBy::create(std::move(parentTableHandle), resultHandle, n, std::move(columnSpecs));
-//  dhWorker_->invoke(std::move(req), std::move(itdCallback));
-//  return resultHandle;
+Ticket DHWorkerSession::headOrTailByAsync(Ticket parentTicket, bool head,
+    int64_t n, std::vector<std::string> columnSpecs, std::shared_ptr<EtcCallback> etcCallback) {
+  auto result = server_->newTicket();
+  HeadOrTailByRequest req;
+  *req.mutable_result_id() = result;
+  *req.mutable_source_id()->mutable_ticket() = std::move(parentTicket);
+  req.set_num_rows(n);
+  for (auto &cs : columnSpecs) {
+    req.mutable_group_by_column_specs()->Add(std::move(cs));
+  }
+  const auto &which = head ? &TableService::Stub::AsyncHeadBy : &TableService::Stub::AsyncTailBy;
+  server_->sendRpc(req, std::move(etcCallback), server_->tableStub(), which, true);
+  return result;
 }
 
-std::shared_ptr<TableHandle> DHWorkerSession::headByAsync(std::shared_ptr<TableHandle> parentTableHandle,
-    int64_t n, std::shared_ptr<std::vector<std::shared_ptr<std::string>>> columnSpecs,
-    std::shared_ptr<ItdCallback> itdCallback) {
-  throw std::runtime_error("SAD007");
-//  auto resultHandle = createTableHandle();
-//  auto req = HeadBy::create(std::move(parentTableHandle), resultHandle, n, std::move(columnSpecs));
-//  dhWorker_->invoke(std::move(req), std::move(itdCallback));
-//  return resultHandle;
-}
-
-Ticket DHWorkerSession::headOrTailAsync(const Ticket &parentTicket,
+Ticket DHWorkerSession::headOrTailAsync(Ticket parentTicket,
     bool head, int64_t n, std::shared_ptr<EtcCallback> etcCallback) {
   auto result = server_->newTicket();
   HeadOrTailRequest req;
   *req.mutable_result_id() = result;
-  *req.mutable_source_id()->mutable_ticket() = parentTicket;
+  *req.mutable_source_id()->mutable_ticket() = std::move(parentTicket);
   req.set_num_rows(n);
   const auto &which = head ? &TableService::Stub::AsyncHead : &TableService::Stub::AsyncTail;
   server_->sendRpc(req, std::move(etcCallback), server_->tableStub(), which, true);

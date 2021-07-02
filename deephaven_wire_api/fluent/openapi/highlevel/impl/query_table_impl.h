@@ -151,7 +151,6 @@ class QueryTableImpl {
   typedef deephaven::openAPI::highlevel::fluent::impl::NumColImpl NumColImpl;
   typedef deephaven::openAPI::highlevel::fluent::impl::StrColImpl StrColImpl;
   typedef deephaven::openAPI::highlevel::fluent::impl::BooleanExpressionImpl BooleanExpressionImpl;
-  typedef deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::batch::aggregates::AggregateDescriptor AggregateDescriptor;
   typedef deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::batch::batchTableRequest::SerializedTableOps SerializedTableOps;
   typedef deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::joinDescriptor::JoinType JoinType;
   typedef deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::ColumnDefinition ColumnDefinition;
@@ -193,7 +192,7 @@ public:
   std::shared_ptr<QueryTableImpl> preemptive(int32_t sampleIntervalMs);
 
   std::shared_ptr<QueryTableImpl> by(std::vector<std::string> columnSpecs);
-  std::shared_ptr<QueryTableImpl> by(std::shared_ptr<std::vector<std::shared_ptr<AggregateDescriptor>>> descriptors,
+  std::shared_ptr<QueryTableImpl> by(std::vector<ComboAggregateRequest::Aggregate> descriptors,
       std::vector<std::string> groupByColumns);
   std::shared_ptr<QueryTableImpl> minBy(std::vector<std::string> columnSpecs);
   std::shared_ptr<QueryTableImpl> maxBy(std::vector<std::string> columnSpecs);
@@ -242,8 +241,6 @@ public:
 
   void bindToVariableAsync(std::string variable, std::shared_ptr<SFCallback<Void>> callback);
 
-  std::shared_ptr<QueryTableImpl> fetchTable(std::string tableName);
-
   // For debugging
   void observe();
 
@@ -265,6 +262,8 @@ private:
       std::vector<std::string> groupByColumns);
 
   std::shared_ptr<QueryTableImpl> headOrTailHelper(bool head, int64_t n);
+  std::shared_ptr<QueryTableImpl> headOrTailByHelper(int64_t n, bool head,
+      std::vector<std::string> columnSpecs);
 
   std::shared_ptr<QueryScopeImpl> scope_;
   Ticket ticket_;
