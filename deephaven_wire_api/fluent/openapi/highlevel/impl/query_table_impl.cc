@@ -20,6 +20,7 @@
 #include "utility/utility.h"
 
 using io::deephaven::proto::backplane::grpc::ComboAggregateRequest;
+using io::deephaven::proto::backplane::grpc::SortDescriptor;
 using io::deephaven::proto::backplane::grpc::TableReference;
 using io::deephaven::proto::backplane::script::grpc::BindTableToVariableResponse;
 using deephaven::openAPI::core::Callback;
@@ -39,7 +40,6 @@ using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web
 using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::JoinDescriptor;
 using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::Range;
 using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::RangeSet;
-using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::SortDescriptor;
 using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::TableHandle;
 using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::TableSnapshot;
 using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::worker::Batch;
@@ -218,24 +218,21 @@ std::shared_ptr<QueryTableImpl> QueryTableImpl::where(std::string condition) {
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::sort(std::vector<SortPair> sortPairs) {
-  throw std::runtime_error("SAD202");
-//  auto sortDescriptors = std::make_shared<std::vector<std::shared_ptr<SortDescriptor>>>();
-//  sortDescriptors->reserve(sortPairs.size());
-//  auto ascDir = std::make_shared<std::string>("asc");
-//  auto descDir = std::make_shared<std::string>("desc");
-//  for (auto &sp : sortPairs) {
-//    const auto &which = sp.direction() == SortDirection::Ascending ? ascDir : descDir;
-//    auto spCol = std::make_shared<std::string>(sp.column());
-//    // Re the 0 (columnIndex), I don't think this argument is used.
-//    auto sd = SortDescriptor::create(0, which, std::move(spCol), sp.abs());
-//    sortDescriptors->push_back(std::move(sd));
-//  }
-//
-//  auto sharedSortPairs = std::make_shared<std::vector<SortPair>>(std::move(sortPairs));
-//  auto itdCallback = QueryTableImpl::createItdCallback(scope_->lowLevelSession()->executor());
-//  auto resultHandle = scope_->lowLevelSession()->sortAsync(tableHandle_, std::move(sortDescriptors),
-//      itdCallback);
-//  return QueryTableImpl::create(scope_, std::move(resultHandle), std::move(itdCallback));
+  auto cb = QueryTableImpl::createEtcCallback(scope_->lowLevelSession()->executor());
+  std::vector<SortDescriptor> sortDescriptors;
+  sortDescriptors.reserve(sortPairs.size());
+
+  for (auto &sp : sortPairs) {
+    auto which = sp.direction() == SortDirection::Ascending ?
+        SortDescriptor::ASCENDING : SortDescriptor::DESCENDING;
+    SortDescriptor sd;
+    sd.set_column_name(std::move(sp.column()));
+    sd.set_is_absolute(sp.abs());
+    sd.set_direction(which);
+    sortDescriptors.push_back(std::move(sd));
+  }
+  auto resultTicket = scope_->lowLevelSession()->sortAsync(ticket_, std::move(sortDescriptors), cb);
+  return QueryTableImpl::createOss(scope_, std::move(resultTicket), std::move(cb));
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::preemptive(int32_t sampleIntervalMs) {

@@ -47,6 +47,9 @@ void SortExample::run(const QueryScope &scope) {
   auto table6 = table3.sort({ticker.descending(), volume.ascending()});
   PrintUtils::printTableData(std::cout, table6);
 
+  std::cerr << "TODO(kosak): not doing the column data stuff\n";
+  return;
+
   std::vector<int32_t> intData0{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13, 14, 15, 16};
   std::vector<int32_t> intData1{0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7};
   std::vector<int32_t> intData2{0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3};

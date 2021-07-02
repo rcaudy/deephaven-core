@@ -15,6 +15,8 @@ using io::deephaven::proto::backplane::grpc::EmptyTableRequest;
 using io::deephaven::proto::backplane::grpc::HeadOrTailRequest;
 using io::deephaven::proto::backplane::grpc::ExportedTableCreationResponse;
 using io::deephaven::proto::backplane::grpc::SelectOrUpdateRequest;
+using io::deephaven::proto::backplane::grpc::SortDescriptor;
+using io::deephaven::proto::backplane::grpc::SortTableRequest;
 using io::deephaven::proto::backplane::grpc::TableService;
 using io::deephaven::proto::backplane::grpc::TimeTableRequest;
 using io::deephaven::proto::backplane::grpc::UnstructuredFilterTableRequest;
@@ -36,7 +38,6 @@ using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web
 using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::HeadOrTailDescriptor;
 using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::InitialTableDefinition;
 using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::JoinDescriptor;
-using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::SortDescriptor;
 using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::TableHandle;
 using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::TableSnapshot;
 using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::worker::Batch;
@@ -302,7 +303,6 @@ std::shared_ptr<TableHandle> DHWorkerSession::dropColumnsAsync(std::shared_ptr<T
 
 Ticket DHWorkerSession::whereAsync(Ticket parentTicket, std::string condition,
     std::shared_ptr<EtcCallback> etcCallback) {
-  streamf(std::cerr, "Zamboni time condition %o\n", condition);
   auto result = server_->newTicket();
   UnstructuredFilterTableRequest req;
   *req.mutable_result_id() = result;
@@ -313,25 +313,18 @@ Ticket DHWorkerSession::whereAsync(Ticket parentTicket, std::string condition,
   return result;
 }
 
-std::shared_ptr<TableHandle> DHWorkerSession::sortAsync(std::shared_ptr<TableHandle> parentTableHandle,
-    std::shared_ptr<std::vector<std::shared_ptr<SortDescriptor>>> sortDescriptors,
-    std::shared_ptr<ItdCallback> itdCallback) {
-  auto resultHandle = createTableHandle();
-  auto handleMapping = HandleMapping::create(std::move(parentTableHandle), resultHandle);
-  auto tableOps = SerializedTableOps::create(
-      nullptr,
-      nullptr,
-      std::move(handleMapping),
-      std::move(sortDescriptors),
-      nullptr,
-      nullptr,
-      nullptr,
-      nullptr,
-      false,
-      0
-  );
-  processBatchOperation(std::move(tableOps), resultHandle, std::move(itdCallback));
-  return resultHandle;
+Ticket DHWorkerSession::sortAsync(Ticket parentTicket, std::vector<SortDescriptor> sortDescriptors,
+    std::shared_ptr<EtcCallback> etcCallback) {
+  auto result = server_->newTicket();
+  SortTableRequest req;
+  *req.mutable_result_id() = result;
+  *req.mutable_source_id()->mutable_ticket() = std::move(parentTicket);
+  for (auto &sd : sortDescriptors) {
+    *req.mutable_sorts()->Add() = std::move(sd);
+  }
+  server_->sendRpc(req, std::move(etcCallback), server_->tableStub(),
+      &TableService::Stub::AsyncSort, true);
+  return result;
 }
 
 std::shared_ptr<TableHandle> DHWorkerSession::preemptiveAsync(std::shared_ptr<TableHandle> parentTableHandle,

@@ -28,6 +28,7 @@ class DHWorkerSession {
   typedef arrow::flight::protocol::Ticket Ticket;
   typedef io::deephaven::proto::backplane::grpc::ComboAggregateRequest ComboAggregateRequest;
   typedef io::deephaven::proto::backplane::grpc::ExportedTableCreationResponse ExportedTableCreationResponse;
+  typedef io::deephaven::proto::backplane::grpc::SortDescriptor SortDescriptor;
   typedef io::deephaven::proto::backplane::script::grpc::BindTableToVariableResponse BindTableToVariableResponse;
 
   typedef deephaven::openAPI::core::remoting::Server Server;
@@ -43,7 +44,6 @@ class DHWorkerSession {
   typedef deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::DeltaUpdates DeltaUpdates;
   typedef deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::InitialTableDefinition InitialTableDefinition;
   typedef deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::RangeSet RangeSet;
-  typedef deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::SortDescriptor SortDescriptor;
   typedef deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::TableHandle TableHandle;
   typedef deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::TableSnapshot TableSnapshot;
   typedef deephaven::openAPI::lowlevel::remoting::generated::java::util::BitSet BitSet;
@@ -106,9 +106,8 @@ public:
   Ticket whereAsync(Ticket parentTicket, std::string condition,
       std::shared_ptr<EtcCallback> etcCallback);
 
-  std::shared_ptr<TableHandle> sortAsync(std::shared_ptr<TableHandle> parentTableHandle,
-      std::shared_ptr<std::vector<std::shared_ptr<SortDescriptor>>> sortDescriptors,
-      std::shared_ptr<ItdCallback> itdCallback);
+  Ticket sortAsync(Ticket parentTicket, std::vector<SortDescriptor> sortDescriptors,
+      std::shared_ptr<EtcCallback> etcCallback);
 
   std::shared_ptr<TableHandle> preemptiveAsync(std::shared_ptr<TableHandle> parentTableHandle,
       int32_t sampleIntervalMs, std::shared_ptr<ItdCallback> itdCallback);
