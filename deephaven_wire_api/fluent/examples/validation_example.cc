@@ -40,8 +40,8 @@ std::vector<T> concat(const std::vector<T> &lhs, const std::vector<T> &rhs);
 
 void ValidationExample::run(const QueryScope &scope) {
   testWheres(scope);
-  // testSelects(scope);
-  (void)&testSelects;
+  testSelects(scope);
+  // (void)&testSelects;
 }
 
 namespace {
@@ -75,9 +75,11 @@ void testWheres(const QueryScope &scope) {
   std::chrono::seconds duration(10);
   auto durationNanos = std::chrono::duration_cast<std::chrono::nanoseconds>(duration).count();
 
+  std::cerr << "TODO(kosak): do we support preemptive\n";
+
   auto dynamicTable = scope.timeTable(nowNanos, durationNanos)
-      .update("X = 12", "S = `hello`")
-      .preemptive(100);
+      .update("X = 12", "S = `hello`");
+      // .preemptive(100);
   // "badWheresWhenDynamic" are bad for dynamic tables
   testWheresHelper("dynamic table", dynamicTable, concat(badWheres, badWheresWhenDynamic),
       goodWheres);

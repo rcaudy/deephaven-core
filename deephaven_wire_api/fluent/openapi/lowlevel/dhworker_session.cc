@@ -16,6 +16,7 @@ using io::deephaven::proto::backplane::grpc::HeadOrTailRequest;
 using io::deephaven::proto::backplane::grpc::ExportedTableCreationResponse;
 using io::deephaven::proto::backplane::grpc::SelectOrUpdateRequest;
 using io::deephaven::proto::backplane::grpc::TableService;
+using io::deephaven::proto::backplane::grpc::TimeTableRequest;
 using io::deephaven::proto::backplane::grpc::UnstructuredFilterTableRequest;
 using io::deephaven::proto::backplane::script::grpc::BindTableToVariableRequest;
 using io::deephaven::proto::backplane::script::grpc::FetchTableRequest;
@@ -168,8 +169,7 @@ Ticket DHWorkerSession::emptyTableAsync(int64_t size, std::vector<std::string> c
   return result;
 }
 
-Ticket DHWorkerSession::fetchTableAsync(std::string tableName,
-    std::shared_ptr<EtcCallback> callback) {
+Ticket DHWorkerSession::fetchTableAsync(std::string tableName, std::shared_ptr<EtcCallback> callback) {
   auto result = server_->newTicket();
   FetchTableRequest req;
   *req.mutable_console_id() = consoleId_;
@@ -200,13 +200,16 @@ std::shared_ptr<TableHandle> DHWorkerSession::tempTableAsync(
 //  return resultHandle;
 }
 
-std::shared_ptr<TableHandle> DHWorkerSession::timeTableAsync(int64_t startTimeNanos, int64_t periodNanos,
-    std::shared_ptr<ItdCallback> itdCallback) {
-  throw std::runtime_error("SAD");
-//  auto resultHandle = createTableHandle();
-//  auto req = TimeTable::create(resultHandle, startTimeNanos, periodNanos);
-//  dhWorker_->invoke(std::move(req), std::move(itdCallback));
-//  return resultHandle;
+Ticket DHWorkerSession::timeTableAsync(int64_t startTimeNanos, int64_t periodNanos,
+    std::shared_ptr<EtcCallback> callback) {
+  auto result = server_->newTicket();
+  TimeTableRequest req;
+  *req.mutable_result_id() = result;
+  req.set_start_time_nanos(startTimeNanos);
+  req.set_period_nanos(periodNanos);
+  server_->sendRpc(req, std::move(callback), server_->tableStub(),
+      &TableService::Stub::AsyncTimeTable, true);
+  return result;
 }
 
 std::shared_ptr<TableHandle> DHWorkerSession::snapshotAsync(std::shared_ptr<TableHandle> leftTableHandle,

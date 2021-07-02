@@ -80,8 +80,8 @@ public:
   std::shared_ptr<TableHandle> tempTableAsync(std::shared_ptr<std::vector<std::shared_ptr<ColumnHolder>>> columnHolders,
       std::shared_ptr<ItdCallback> itdCallback);
 
-  std::shared_ptr<TableHandle> timeTableAsync(int64_t startTimeNanos, int64_t periodNanos,
-      std::shared_ptr<ItdCallback> itdCallback);
+  Ticket timeTableAsync(int64_t startTimeNanos, int64_t periodNanos,
+      std::shared_ptr<EtcCallback> etcCallback);
 
   std::shared_ptr<TableHandle> snapshotAsync(std::shared_ptr<TableHandle> leftTableHandle,
       std::shared_ptr<TableHandle> rightTableHandle,

@@ -70,10 +70,9 @@ std::shared_ptr<QueryTableImpl> QueryScopeImpl::tempTable(
 
 std::shared_ptr<QueryTableImpl> QueryScopeImpl::timeTable(int64_t startTimeNanos,
     int64_t periodNanos) {
-  throw std::runtime_error("SAD");
-//  auto itdCallback = QueryTableImpl::createItdCallback(lowlevelSession_->executor());
-//  auto resultHandle = lowlevelSession_->timeTableAsync(startTimeNanos, periodNanos, itdCallback);
-//  return QueryTableImpl::create(self_.lock(), std::move(resultHandle), std::move(itdCallback));
+  auto cb = QueryTableImpl::createEtcCallback(executor_);
+  auto resultTicket = lowlevelSession_->timeTableAsync(startTimeNanos, periodNanos, cb);
+  return QueryTableImpl::createOss(self_.lock(), std::move(resultTicket), std::move(cb));
 }
 
 std::shared_ptr<QueryTableImpl> QueryScopeImpl::catalogTable() {
