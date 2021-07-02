@@ -351,19 +351,25 @@ std::shared_ptr<TableHandle> DHWorkerSession::preemptiveAsync(std::shared_ptr<Ta
   return resultHandle;
 }
 
-std::shared_ptr<TableHandle> DHWorkerSession::comboAggregateDescriptorAsync(
-    std::shared_ptr<TableHandle> parentTableHandle, std::shared_ptr<std::string> aggregatesStrategy,
-    std::shared_ptr<std::vector<std::shared_ptr<AggregateDescriptor>>> aggregates,
-    std::shared_ptr<std::vector<std::shared_ptr<std::string>>> groupByColumns, bool forceCombo,
-    std::shared_ptr<ItdCallback> itdCallback) {
-  throw std::runtime_error("SAD");
-//  auto cad = ComboAggregateDescriptor::create(std::move(aggregatesStrategy),
-//      std::move(aggregates), std::move(groupByColumns), forceCombo);
-//
-//  auto resultHandle = createTableHandle();
-//  auto req = ComboAggregate::create(std::move(parentTableHandle), resultHandle, std::move(cad));
-//  dhWorker_->invoke(std::move(req), std::move(itdCallback));
-//  return resultHandle;
+Ticket DHWorkerSession::comboAggregateDescriptorAsync(Ticket parentTicket,
+    std::vector<ComboAggregateRequest::Aggregate> aggregates,
+    std::vector<std::string> groupByColumns, bool forceCombo,
+    std::shared_ptr<EtcCallback> etcCallback) {
+
+  auto result = server_->newTicket();
+  ComboAggregateRequest req;
+  *req.mutable_result_id() = result;
+  *req.mutable_source_id()->mutable_ticket() = std::move(parentTicket);
+  for (auto &agg : aggregates) {
+    *req.mutable_aggregates()->Add() = std::move(agg);
+  }
+  for (auto &gbc : groupByColumns) {
+    *req.mutable_group_by_columns()->Add() = std::move(gbc);
+  }
+  req.set_force_combo(forceCombo);
+  server_->sendRpc(req, std::move(etcCallback), server_->tableStub(),
+      &TableService::Stub::AsyncComboAggregate, true);
+  return result;
 }
 
 std::shared_ptr<TableHandle> DHWorkerSession::tailByAsync(std::shared_ptr<TableHandle> parentTableHandle,

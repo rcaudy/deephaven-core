@@ -26,8 +26,10 @@ class SnapshotAndDeltaUpdateHandler;
 class DHWorkerSession {
   struct Private {};
   typedef arrow::flight::protocol::Ticket Ticket;
+  typedef io::deephaven::proto::backplane::grpc::ComboAggregateRequest ComboAggregateRequest;
   typedef io::deephaven::proto::backplane::grpc::ExportedTableCreationResponse ExportedTableCreationResponse;
   typedef io::deephaven::proto::backplane::script::grpc::BindTableToVariableResponse BindTableToVariableResponse;
+
   typedef deephaven::openAPI::core::remoting::Server Server;
   typedef deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::batch::aggregates::AggregateDescriptor AggregateDescriptor;
   typedef deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::batch::batchTableRequest::SerializedTableOps SerializedTableOps;
@@ -111,11 +113,10 @@ public:
   std::shared_ptr<TableHandle> preemptiveAsync(std::shared_ptr<TableHandle> parentTableHandle,
       int32_t sampleIntervalMs, std::shared_ptr<ItdCallback> itdCallback);
 
-  std::shared_ptr<TableHandle> comboAggregateDescriptorAsync(
-      std::shared_ptr<TableHandle> parentTableHandle, std::shared_ptr<std::string> aggregatesStrategy,
-      std::shared_ptr<std::vector<std::shared_ptr<AggregateDescriptor>>> aggregates,
-      std::shared_ptr<std::vector<std::shared_ptr<std::string>>> groupByColumns, bool forceCombo,
-      std::shared_ptr<ItdCallback> itdCallback);
+  Ticket comboAggregateDescriptorAsync(Ticket parentTicket,
+      std::vector<ComboAggregateRequest::Aggregate> aggregates,
+      std::vector<std::string> groupByColumns, bool forceCombo,
+      std::shared_ptr<EtcCallback> etcCallback);
 
   std::shared_ptr<TableHandle> tailByAsync(std::shared_ptr<TableHandle> parentTableHandle,
       int64_t n, std::shared_ptr<std::vector<std::shared_ptr<std::string>>> columnSpecs,

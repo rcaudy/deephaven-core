@@ -19,6 +19,7 @@
 #include "highlevel/openapi.h"
 #include "utility/utility.h"
 
+using io::deephaven::proto::backplane::grpc::ComboAggregateRequest;
 using io::deephaven::proto::backplane::grpc::TableReference;
 using io::deephaven::proto::backplane::script::grpc::BindTableToVariableResponse;
 using deephaven::openAPI::core::Callback;
@@ -246,27 +247,22 @@ std::shared_ptr<QueryTableImpl> QueryTableImpl::preemptive(int32_t sampleInterva
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::defaultAggregateByDescriptor(
-    std::shared_ptr<AggregateDescriptor> descriptor, std::vector<std::string> columnSpecs) {
-  throw std::runtime_error("SAD");
-//  auto descriptors = std::make_shared<std::vector<std::shared_ptr<AggregateDescriptor>>>();
-//  descriptors->reserve(1);
-//  descriptors->push_back(std::move(descriptor));
-//
-//  auto sharedColumns = stringVecToShared(std::move(columnSpecs));
-//  auto itdCallback = QueryTableImpl::createItdCallback(scope_->lowLevelSession()->executor());
-//  auto spDefault = std::make_shared<std::string>(ApplyAggregatesOperation::Strategy::Default);
-//  auto resultHandle = scope_->lowLevelSession()->comboAggregateDescriptorAsync(tableHandle_,
-//      std::move(spDefault), std::move(descriptors), std::move(sharedColumns),
-//      false, itdCallback);
-//  return QueryTableImpl::create(scope_, std::move(resultHandle), std::move(itdCallback));
+    ComboAggregateRequest::Aggregate descriptor, std::vector<std::string> columnSpecs) {
+  std::vector<ComboAggregateRequest::Aggregate> descriptors;
+  descriptors.reserve(1);
+  descriptors.push_back(std::move(descriptor));
+
+  auto cb = QueryTableImpl::createEtcCallback(scope_->lowLevelSession()->executor());
+  auto resultTicket = scope_->lowLevelSession()->comboAggregateDescriptorAsync(ticket_,
+      std::move(descriptors), std::move(columnSpecs), false, cb);
+  return QueryTableImpl::createOss(scope_, std::move(resultTicket), std::move(cb));
 }
 
-std::shared_ptr<QueryTableImpl> QueryTableImpl::defaultAggregateByType(std::string aggregateType,
-    std::vector<std::string> columnSpecs) {
-  throw std::runtime_error("SAD");
-//  auto spAggType = std::make_shared<std::string>(std::move(aggregateType));
-//  auto descriptor = AggregateDescriptor::create(std::move(spAggType), nullptr, nullptr, nullptr);
-//  return defaultAggregateByDescriptor(std::move(descriptor), std::move(columnSpecs));
+std::shared_ptr<QueryTableImpl> QueryTableImpl::defaultAggregateByType(
+    ComboAggregateRequest::AggType aggregateType, std::vector<std::string> columnSpecs) {
+  ComboAggregateRequest::Aggregate descriptor;
+  descriptor.set_type(aggregateType);
+  return defaultAggregateByDescriptor(std::move(descriptor), std::move(columnSpecs));
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::by(std::vector<std::string> columnSpecs) {

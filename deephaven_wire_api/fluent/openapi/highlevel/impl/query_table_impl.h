@@ -160,6 +160,7 @@ class QueryTableImpl {
   typedef deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::TableSnapshot TableSnapshot;
   typedef deephaven::openAPI::utility::Executor Executor;
   typedef deephaven::openAPI::utility::Void Void;
+  typedef io::deephaven::proto::backplane::grpc::ComboAggregateRequest ComboAggregateRequest;
 
   template<typename... Args>
   using Callback = deephaven::openAPI::core::Callback<Args...>;
@@ -259,9 +260,8 @@ public:
 
 private:
   std::shared_ptr<QueryTableImpl> defaultAggregateByDescriptor(
-      std::shared_ptr<AggregateDescriptor> descriptor,
-      std::vector<std::string> groupByColumns);
-  std::shared_ptr<QueryTableImpl> defaultAggregateByType(std::string aggregateType,
+      ComboAggregateRequest::Aggregate descriptor, std::vector<std::string> groupByColumns);
+  std::shared_ptr<QueryTableImpl> defaultAggregateByType(ComboAggregateRequest::AggType aggregateType,
       std::vector<std::string> groupByColumns);
 
   std::shared_ptr<QueryTableImpl> headOrTailHelper(bool head, int64_t n);

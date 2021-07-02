@@ -39,13 +39,13 @@ void SelectExample::run(const QueryScope &scope) {
   test2(table);
   test2a_err(table);
 
-//  test3(table);
-//  test4(table);
-//  test5(table);
+  test3(table);
+  test4(table);
+  test5(table);
   (void)&test0;
-  (void)&test3;
-  (void)&test4;
-  (void)&test5;
+//  (void)&test3;
+//  (void)&test4;
+//  (void)&test5;
 }
 
 namespace {
@@ -118,7 +118,7 @@ void test2a_err(const QueryTable &table) {
 void test3(const QueryTable &table) {
   auto t1 = table.where("ImportDate == `2017-11-01` && Ticker == `AAPL`").lastBy("Ticker")
       .select("Ticker", "Close", "Volume");
-  PrintUtils::printTableData(std::cout,t1);
+  PrintUtils::printTableData(std::cout, t1);
 
   // Symbolically
   auto importDate = table.getStrCol("ImportDate");
@@ -127,14 +127,14 @@ void test3(const QueryTable &table) {
   auto volume = table.getNumCol("Volume");
   auto t2 = table.where(importDate == "2017-11-01" && ticker == "AAPL").lastBy(ticker)
       .select(ticker, close, volume);
-  PrintUtils::printTableData(std::cout,t2);
+  PrintUtils::printTableData(std::cout, t2);
 }
 
 // Formula in the where clause
 void test4(const QueryTable &table) {
   auto t1 = table.where("ImportDate == `2017-11-01` && Ticker == `AAPL` && Volume % 10 == Volume % 100")
       .select("Ticker", "Volume");
-  PrintUtils::printTableData(std::cout,t1);
+  PrintUtils::printTableData(std::cout, t1);
 
   // Symbolically
   auto importDate = table.getStrCol("ImportDate");
@@ -142,18 +142,18 @@ void test4(const QueryTable &table) {
   auto volume = table.getNumCol("Volume");
   auto t2 = table.where(importDate == "2017-11-01" && ticker == "AAPL" && volume % 10 == volume % 100)
       .select(ticker, volume);
-  PrintUtils::printTableData(std::cout,t2);
+  PrintUtils::printTableData(std::cout, t2);
 }
 
 // New columns
 void test5(const QueryTable &table) {
   auto t1 = table.where("ImportDate == `2017-11-01` && Ticker == `AAPL`").select("Volume");
-  PrintUtils::printTableData(std::cout,t1);
+  PrintUtils::printTableData(std::cout, t1);
 
   // A formula expression
   auto t2 = table.where("ImportDate == `2017-11-01` && Ticker == `AAPL`")
       .select("MV1 = Volume * Close", "MV12 = Volume + 12");
-  PrintUtils::printTableData(std::cout,t2);
+  PrintUtils::printTableData(std::cout, t2);
 
   // Symbolically
   auto importDate = table.getStrCol("ImportDate");
@@ -162,17 +162,17 @@ void test5(const QueryTable &table) {
   auto volume = table.getNumCol("Volume");
   auto t3 = table.where(importDate == "2017-11-01" && ticker == "AAPL")
       .select(volume);
-  PrintUtils::printTableData(std::cout,t3);
+  PrintUtils::printTableData(std::cout, t3);
 
   // A formula in the where clause
   auto t4 = table.where(importDate == "2017-11-01" && ticker == "AAPL" && close == volume + 12)
       .select(volume);
-  PrintUtils::printTableData(std::cout,t4);
+  PrintUtils::printTableData(std::cout, t4);
 
   // Epression.As("New Column Name")
   auto t5 = table.where(importDate == "2017-11-01" && ticker == "AAPL")
       .select((volume * close).as("MV1"), (volume + 12).as("MV_plus_12"));
-  PrintUtils::printTableData(std::cout,t5);
+  PrintUtils::printTableData(std::cout, t5);
 }
 }  // namespace
 
