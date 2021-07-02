@@ -14,6 +14,7 @@ using arrow::flight::protocol::Ticket;
 using io::deephaven::proto::backplane::grpc::EmptyTableRequest;
 using io::deephaven::proto::backplane::grpc::HeadOrTailRequest;
 using io::deephaven::proto::backplane::grpc::ExportedTableCreationResponse;
+using io::deephaven::proto::backplane::grpc::JoinTablesRequest;
 using io::deephaven::proto::backplane::grpc::SelectOrUpdateRequest;
 using io::deephaven::proto::backplane::grpc::SortDescriptor;
 using io::deephaven::proto::backplane::grpc::SortTableRequest;
@@ -421,18 +422,24 @@ std::shared_ptr<TableHandle> DHWorkerSession::mergeAsync(
 //  return resultHandle;
 }
 
-std::shared_ptr<TableHandle> DHWorkerSession::internalJoinAsync(JoinType joinType,
-    std::shared_ptr<TableHandle> leftTableHandle, std::shared_ptr<TableHandle> rightTableHandle,
-    std::shared_ptr<std::vector<std::shared_ptr<std::string>>> columnsToMatch,
-    std::shared_ptr<std::vector<std::shared_ptr<std::string>>> columnsToAdd,
-    std::shared_ptr<ItdCallback> itdCallback) {
-  throw std::runtime_error("SAD010");
-//  auto resultHandle = createTableHandle();
-//  auto jd = JoinDescriptor::create(joinType, std::move(leftTableHandle), std::move(rightTableHandle),
-//      std::move(columnsToMatch), std::move(columnsToAdd));
-//  auto req = Join::create(std::move(jd), resultHandle);
-//  dhWorker_->invoke(std::move(req), std::move(itdCallback));
-//  return resultHandle;
+Ticket DHWorkerSession::internalJoinAsync(JoinType joinType,
+    Ticket leftTableTicket, Ticket rightTableTicket,
+    std::vector<std::string> columnsToMatch, std::vector<std::string> columnsToAdd,
+    std::shared_ptr<EtcCallback> etcCallback) {
+  auto result = server_->newTicket();
+  JoinTablesRequest req;
+  *req.mutable_result_id() = result;
+  *req.mutable_left_id()->mutable_ticket() = std::move(leftTableTicket);
+  *req.mutable_right_id()->mutable_ticket() = std::move(rightTableTicket);
+  for (auto &ctm : columnsToMatch) {
+    req.mutable_columns_to_match()->Add(std::move(ctm));
+  }
+  for (auto &cta : columnsToAdd) {
+    req.mutable_columns_to_add()->Add(std::move(cta));
+  }
+  server_->sendRpc(req, std::move(etcCallback), server_->tableStub(),
+      &TableService::Stub::AsyncJoinTables, true);
+  return result;
 }
 
 void DHWorkerSession::getTableDataAsync(std::shared_ptr<TableHandle> parentTableHandle,

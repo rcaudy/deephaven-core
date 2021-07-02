@@ -407,13 +407,11 @@ std::shared_ptr<QueryTableImpl> QueryTableImpl::merge(std::string keyColumn,
 std::shared_ptr<QueryTableImpl> QueryTableImpl::internalJoin(JoinType joinType,
     const QueryTableImpl &rightSide, std::vector<std::string> columnsToMatch,
     std::vector<std::string> columnsToAdd) {
-  throw std::runtime_error("SAD210");
-//  auto spCtm = stringVecToShared(std::move(columnsToMatch));
-//  auto spCta = stringVecToShared(std::move(columnsToAdd));
-//  auto itdCallback = QueryTableImpl::createItdCallback(scope_->lowLevelSession()->executor());
-//  auto resultHandle = scope_->lowLevelSession()->internalJoinAsync(joinType, tableHandle_,
-//      rightSide.tableHandle(), std::move(spCtm), std::move(spCta), itdCallback);
-//  return QueryTableImpl::create(scope_, std::move(resultHandle), std::move(itdCallback));
+  std::cerr << "TODO(kosak): why am I calling this method `InternalJoin`\n";
+  auto cb = QueryTableImpl::createEtcCallback(scope_->lowLevelSession()->executor());
+  auto resultTicket = scope_->lowLevelSession()->internalJoinAsync(joinType, ticket_,
+      rightSide.ticket(), std::move(columnsToMatch), std::move(columnsToAdd), cb);
+  return QueryTableImpl::createOss(scope_, std::move(resultTicket), std::move(cb));
 }
 
 void QueryTableImpl::getTableDataAsync(int64_t first, int64_t last,

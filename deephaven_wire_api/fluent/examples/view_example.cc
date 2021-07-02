@@ -22,8 +22,7 @@ namespace deephaven {
 namespace openAPI {
 namespace examples {
 void ViewExample::run(const QueryScope &scope) {
-  auto table = scope.historicalTable(DemoConstants::historicalNamespace,
-      DemoConstants::historicalTable);
+  auto table = scope.fetchTable("demo");
   // literal strings
   auto t1 = table.lastBy("Ticker").view("Ticker", "Close", "Volume");
   PrintUtils::printTableData(std::cout, t1);

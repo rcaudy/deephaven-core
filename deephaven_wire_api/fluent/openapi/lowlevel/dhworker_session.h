@@ -136,11 +136,9 @@ public:
       std::shared_ptr<std::vector<std::shared_ptr<TableHandle>>> sourceHandles,
       std::shared_ptr<std::string> keyColumn, std::shared_ptr<ItdCallback> itdCallback);
 
-  std::shared_ptr<TableHandle> internalJoinAsync(JoinType joinType,
-      std::shared_ptr<TableHandle> leftTableHandle, std::shared_ptr<TableHandle> rightTableHandle,
-      std::shared_ptr<std::vector<std::shared_ptr<std::string>>> columnsToMatch,
-      std::shared_ptr<std::vector<std::shared_ptr<std::string>>> columnsToAdd,
-      std::shared_ptr<ItdCallback> itdCallback);
+  Ticket internalJoinAsync(JoinType joinType, Ticket leftTableTicket, Ticket rightTableTicket,
+      std::vector<std::string> columnsToMatch, std::vector<std::string> columnsToAdd,
+      std::shared_ptr<EtcCallback> etcCallback);
 
   void getTableDataAsync(std::shared_ptr<TableHandle> parentTableHandle,
       std::shared_ptr<RangeSet> rows, std::shared_ptr<BitSet> columns,
