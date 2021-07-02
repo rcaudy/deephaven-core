@@ -99,8 +99,8 @@ public:
   Ticket updateViewAsync(Ticket parentTicket, std::vector<std::string> columnSpecs,
       std::shared_ptr<EtcCallback> etcCallback);
 
-  std::shared_ptr<TableHandle> dropColumnsAsync(std::shared_ptr<TableHandle> parentTableHandle,
-      std::shared_ptr<std::vector<std::shared_ptr<std::string>>> columnSpecs, std::shared_ptr<ItdCallback> itdCallback);
+  Ticket dropColumnsAsync(Ticket parentTicket, std::vector<std::string> columnSpecs,
+      std::shared_ptr<EtcCallback> etcCallback);
 
   Ticket whereAsync(Ticket parentTicket, std::string condition,
       std::shared_ptr<EtcCallback> etcCallback);

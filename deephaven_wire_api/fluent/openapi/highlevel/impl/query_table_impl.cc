@@ -196,12 +196,9 @@ std::shared_ptr<QueryTableImpl> QueryTableImpl::view(std::vector<std::string> co
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::dropColumns(std::vector<std::string> columnSpecs) {
-  throw std::runtime_error("SAD200");
-//  auto sharedSpecs = stringVecToShared(std::move(columnSpecs));
-//  auto itdCallback = QueryTableImpl::createItdCallback(scope_->lowLevelSession()->executor());
-//  auto resultHandle = scope_->lowLevelSession()->dropColumnsAsync(tableHandle_, std::move(sharedSpecs),
-//      itdCallback);
-//  return QueryTableImpl::create(scope_, std::move(resultHandle), std::move(itdCallback));
+  auto cb = QueryTableImpl::createEtcCallback(scope_->lowLevelSession()->executor());
+  auto resultTicket = scope_->lowLevelSession()->dropColumnsAsync(ticket_, std::move(columnSpecs), cb);
+  return QueryTableImpl::createOss(scope_, std::move(resultTicket), std::move(cb));
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::updateView(std::vector<std::string> columnSpecs) {

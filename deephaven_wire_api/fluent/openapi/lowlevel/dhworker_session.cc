@@ -11,6 +11,7 @@
 #include "proto/table.grpc.pb.h"
 
 using arrow::flight::protocol::Ticket;
+using io::deephaven::proto::backplane::grpc::DropColumnsRequest;
 using io::deephaven::proto::backplane::grpc::EmptyTableRequest;
 using io::deephaven::proto::backplane::grpc::HeadOrTailRequest;
 using io::deephaven::proto::backplane::grpc::HeadOrTailByRequest;
@@ -146,6 +147,9 @@ private:
 };
 }  // namespace internal
 
+namespace {
+void moveVectorData(std::vector<std::string> src, google::protobuf::RepeatedPtrField<std::string> *dest);
+}  // namespace
 std::shared_ptr<DHWorkerSession> DHWorkerSession::createOss(Ticket consoleId,
     std::shared_ptr<Server> server, std::shared_ptr<Executor> executor) {
   return std::make_shared<DHWorkerSession>(Private(), std::move(consoleId), std::move(server),
@@ -285,24 +289,16 @@ Ticket DHWorkerSession::updateViewAsync(Ticket parentTicket,
   return result;
 }
 
-std::shared_ptr<TableHandle> DHWorkerSession::dropColumnsAsync(std::shared_ptr<TableHandle> parentTableHandle,
-    std::shared_ptr<std::vector<std::shared_ptr<std::string>>> columnSpecs, std::shared_ptr<ItdCallback> itdCallback) {
-  auto resultHandle = createTableHandle();
-  auto handleMapping = HandleMapping::create(std::move(parentTableHandle), resultHandle);
-  auto tableOps = SerializedTableOps::create(
-      std::move(columnSpecs),
-      nullptr,
-      std::move(handleMapping),
-      nullptr,
-      nullptr,
-      nullptr,
-      nullptr,
-      nullptr,
-      false,
-      0
-  );
-  processBatchOperation(std::move(tableOps), resultHandle, std::move(itdCallback));
-  return resultHandle;
+Ticket DHWorkerSession::dropColumnsAsync(Ticket parentTicket, std::vector<std::string> columnSpecs,
+    std::shared_ptr<EtcCallback> etcCallback) {
+  auto result = server_->newTicket();
+  DropColumnsRequest req;
+  *req.mutable_result_id() = result;
+  *req.mutable_source_id()->mutable_ticket() = std::move(parentTicket);
+  moveVectorData(std::move(columnSpecs), req.mutable_column_names());
+  server_->sendRpc(req, std::move(etcCallback), server_->tableStub(),
+      &TableService::Stub::AsyncDropColumns, true);
+  return result;
 }
 
 Ticket DHWorkerSession::whereAsync(Ticket parentTicket, std::string condition,
@@ -398,14 +394,6 @@ Ticket DHWorkerSession::headOrTailAsync(Ticket parentTicket,
   server_->sendRpc(req, std::move(etcCallback), server_->tableStub(), which, true);
   return result;
 }
-
-namespace {
-void moveVectorData(std::vector<std::string> src, google::protobuf::RepeatedPtrField<std::string> *dest) {
-  for (auto &s : src) {
-    dest->Add(std::move(s));
-  }
-}
-}  // namespace
 
 Ticket DHWorkerSession::ungroupAsync(Ticket parentTicket, bool nullFill,
     std::vector<std::string> groupByColumns, std::shared_ptr<EtcCallback> etcCallback) {
@@ -785,6 +773,12 @@ void BatchOperationCallback::unregisterSelf() {
   haveResult_ = true;
   auto self = weakSelf_.lock();
   dhWorker_->removeListener(self);
+}
+
+void moveVectorData(std::vector<std::string> src, google::protobuf::RepeatedPtrField<std::string> *dest) {
+  for (auto &s : src) {
+    dest->Add(std::move(s));
+  }
 }
 }  // namespace
 }  // namespace remoting
