@@ -16,6 +16,7 @@ using io::deephaven::proto::backplane::grpc::HeadOrTailRequest;
 using io::deephaven::proto::backplane::grpc::HeadOrTailByRequest;
 using io::deephaven::proto::backplane::grpc::ExportedTableCreationResponse;
 using io::deephaven::proto::backplane::grpc::JoinTablesRequest;
+using io::deephaven::proto::backplane::grpc::MergeTablesRequest;
 using io::deephaven::proto::backplane::grpc::SelectOrUpdateRequest;
 using io::deephaven::proto::backplane::grpc::SortDescriptor;
 using io::deephaven::proto::backplane::grpc::SortTableRequest;
@@ -419,14 +420,18 @@ Ticket DHWorkerSession::ungroupAsync(Ticket parentTicket, bool nullFill,
   return result;
 }
 
-std::shared_ptr<TableHandle> DHWorkerSession::mergeAsync(
-    std::shared_ptr<std::vector<std::shared_ptr<TableHandle>>> sourceHandles,
-    std::shared_ptr<std::string> keyColumn, std::shared_ptr<ItdCallback> itdCallback) {
-  throw std::runtime_error("SAD009");
-//  auto resultHandle = createTableHandle();
-//  auto req = MergeTables::create(std::move(sourceHandles), resultHandle, std::move(keyColumn));
-//  dhWorker_->invoke(std::move(req), std::move(itdCallback));
-//  return resultHandle;
+Ticket DHWorkerSession::mergeAsync(std::vector<Ticket> sourceTickets, std::string keyColumn,
+    std::shared_ptr<EtcCallback> etcCallback) {
+  auto result = server_->newTicket();
+  MergeTablesRequest req;
+  *req.mutable_result_id() = result;
+  for (auto &t : sourceTickets) {
+    *req.mutable_source_ids()->Add()->mutable_ticket() = std::move(t);
+  }
+  req.set_key_column(std::move(keyColumn));
+  server_->sendRpc(req, std::move(etcCallback), server_->tableStub(),
+      &TableService::Stub::AsyncMergeTables, true);
+  return result;
 }
 
 Ticket DHWorkerSession::internalJoinAsync(JoinType joinType,

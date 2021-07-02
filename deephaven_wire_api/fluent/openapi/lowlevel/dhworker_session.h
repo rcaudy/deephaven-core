@@ -125,9 +125,8 @@ public:
   Ticket ungroupAsync(Ticket parentTicket, bool nullFill, std::vector<std::string> groupByColumns,
       std::shared_ptr<EtcCallback> etcCallback);
 
-  std::shared_ptr<TableHandle> mergeAsync(
-      std::shared_ptr<std::vector<std::shared_ptr<TableHandle>>> sourceHandles,
-      std::shared_ptr<std::string> keyColumn, std::shared_ptr<ItdCallback> itdCallback);
+  Ticket mergeAsync(std::vector<Ticket> sourceTickets, std::string keyColumn,
+      std::shared_ptr<EtcCallback> etcCallback);
 
   Ticket internalJoinAsync(JoinType joinType, Ticket leftTableTicket, Ticket rightTableTicket,
       std::vector<std::string> columnsToMatch, std::vector<std::string> columnsToAdd,

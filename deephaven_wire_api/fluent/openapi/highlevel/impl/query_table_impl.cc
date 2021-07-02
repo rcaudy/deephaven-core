@@ -385,13 +385,11 @@ std::shared_ptr<QueryTableImpl> QueryTableImpl::ungroup(bool nullFill,
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::merge(std::string keyColumn,
-    std::shared_ptr<std::vector<std::shared_ptr<TableHandle>>> sourceHandles) {
-  throw std::runtime_error("SAD209");
-//  auto spKeyColumn = std::make_shared<std::string>(std::move(keyColumn));
-//  auto itdCallback = QueryTableImpl::createItdCallback(scope_->lowLevelSession()->executor());
-//  auto resultHandle = scope_->lowLevelSession()->mergeAsync(std::move(sourceHandles),
-//      std::move(spKeyColumn), itdCallback);
-//  return QueryTableImpl::create(scope_, std::move(resultHandle), std::move(itdCallback));
+    std::vector<Ticket> sourceTickets) {
+  auto cb = QueryTableImpl::createEtcCallback(scope_->lowLevelSession()->executor());
+  auto resultTicket = scope_->lowLevelSession()->mergeAsync(std::move(sourceTickets),
+      std::move(keyColumn), cb);
+  return QueryTableImpl::createOss(scope_, std::move(resultTicket), std::move(cb));
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::internalJoin(JoinType joinType,

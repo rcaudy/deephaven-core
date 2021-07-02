@@ -215,8 +215,7 @@ public:
   std::shared_ptr<QueryTableImpl> tail(int64_t n);
   std::shared_ptr<QueryTableImpl> head(int64_t n);
   std::shared_ptr<QueryTableImpl> ungroup(bool nullFill, std::vector<std::string> groupByColumns);
-  std::shared_ptr<QueryTableImpl> merge(std::string keyColumn,
-      std::shared_ptr<std::vector<std::shared_ptr<TableHandle>>> sourceHandles);
+  std::shared_ptr<QueryTableImpl> merge(std::string keyColumn, std::vector<Ticket> sourceTickets);
 
   std::shared_ptr<QueryTableImpl> internalJoin(JoinType joinType, const QueryTableImpl &rightSide,
       std::vector<std::string> columnsToMatch, std::vector<std::string> columnsToAdd);

@@ -16,6 +16,7 @@
 using grpc::Channel;
 using grpc::ClientContext;
 using grpc::ClientReader;
+using arrow::flight::protocol::Ticket;
 using io::deephaven::proto::backplane::grpc::ComboAggregateRequest;
 using io::deephaven::proto::backplane::grpc::HandshakeRequest;
 using io::deephaven::proto::backplane::grpc::HandshakeResponse;
@@ -657,13 +658,12 @@ QueryTable QueryTable::ungroup(bool nullFill, std::vector<std::string> groupByCo
 }
 
 QueryTable QueryTable::merge(std::string keyColumn, std::vector<QueryTable> sources) const {
-  auto sourceHandles = std::make_shared<std::vector<std::shared_ptr<TableHandle>>>();
-  sourceHandles->reserve(sources.size() + 1);
-//  sourceHandles->push_back(impl_->tableHandle());
-//  for (const auto &source : sources) {
-//    sourceHandles->push_back(source.impl()->tableHandle());
-//  }
-
+  std::vector<Ticket> sourceHandles;
+  sourceHandles.reserve(sources.size() + 1);
+  sourceHandles.push_back(impl_->ticket());
+  for (const auto &s : sources) {
+    sourceHandles.push_back(s.impl()->ticket());
+  }
   auto qtImpl = impl_->merge(std::move(keyColumn), std::move(sourceHandles));
   return QueryTable(std::move(qtImpl));
 }
