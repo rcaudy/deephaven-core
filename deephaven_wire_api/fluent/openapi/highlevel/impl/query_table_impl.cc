@@ -159,7 +159,7 @@ QueryTableImpl::QueryTableImpl(Private, std::shared_ptr<QueryScopeImpl> scope,
 QueryTableImpl::~QueryTableImpl() = default;
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::freeze() {
-  throw std::runtime_error("SAD");
+  throw std::runtime_error("SAD212");
 //  auto emptyColumns = std::make_shared<std::vector<std::shared_ptr<std::string>>>();
 //  auto itdCallback = QueryTableImpl::createItdCallback(scope_->lowLevelSession()->executor());
 //  auto resultHandle = scope_->lowLevelSession()->snapshotAsync(nullptr, tableHandle_, true,
@@ -170,7 +170,7 @@ std::shared_ptr<QueryTableImpl> QueryTableImpl::freeze() {
 std::shared_ptr<QueryTableImpl> QueryTableImpl::snapshot(
     std::shared_ptr<QueryTableImpl> targetTable, bool doInitialSnapshot,
     std::vector<std::string> stampColumns) {
-  throw std::runtime_error("SAD");
+  throw std::runtime_error("SAD213");
 //  auto sharedSc = stringVecToShared(std::move(stampColumns));
 //  auto itdCallback = QueryTableImpl::createItdCallback(scope_->lowLevelSession()->executor());
 //  auto resultHandle = scope_->lowLevelSession()->snapshotAsync(tableHandle_, targetTable->tableHandle_,
@@ -197,7 +197,7 @@ std::shared_ptr<QueryTableImpl> QueryTableImpl::view(std::vector<std::string> co
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::dropColumns(std::vector<std::string> columnSpecs) {
-  throw std::runtime_error("SAD");
+  throw std::runtime_error("SAD200");
 //  auto sharedSpecs = stringVecToShared(std::move(columnSpecs));
 //  auto itdCallback = QueryTableImpl::createItdCallback(scope_->lowLevelSession()->executor());
 //  auto resultHandle = scope_->lowLevelSession()->dropColumnsAsync(tableHandle_, std::move(sharedSpecs),
@@ -218,7 +218,7 @@ std::shared_ptr<QueryTableImpl> QueryTableImpl::where(std::string condition) {
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::sort(std::vector<SortPair> sortPairs) {
-  throw std::runtime_error("SAD");
+  throw std::runtime_error("SAD202");
 //  auto sortDescriptors = std::make_shared<std::vector<std::shared_ptr<SortDescriptor>>>();
 //  sortDescriptors->reserve(sortPairs.size());
 //  auto ascDir = std::make_shared<std::string>("asc");
@@ -239,7 +239,7 @@ std::shared_ptr<QueryTableImpl> QueryTableImpl::sort(std::vector<SortPair> sortP
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::preemptive(int32_t sampleIntervalMs) {
-  throw std::runtime_error("SAD");
+  throw std::runtime_error("SAD203");
 //  auto itdCallback = QueryTableImpl::createItdCallback(scope_->lowLevelSession()->executor());
 //  auto resultHandle = scope_->lowLevelSession()->preemptiveAsync(tableHandle_, sampleIntervalMs,
 //      itdCallback);
@@ -266,14 +266,14 @@ std::shared_ptr<QueryTableImpl> QueryTableImpl::defaultAggregateByType(
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::by(std::vector<std::string> columnSpecs) {
-  throw std::runtime_error("SAD");
+  throw std::runtime_error("SAD204");
 //  return defaultAggregateByType(ApplyAggregatesOperation::AggType::Array, std::move(columnSpecs));
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::by(
     std::shared_ptr<std::vector<std::shared_ptr<AggregateDescriptor>>> descriptors,
     std::vector<std::string> groupByColumns) {
-  throw std::runtime_error("SAD");
+  throw std::runtime_error("SAD205");
 //  auto spCols = stringVecToShared(std::move(groupByColumns));
 //  auto aggStrategy = std::make_shared<std::string>(ApplyAggregatesOperation::Strategy::Default);
 //
@@ -355,7 +355,7 @@ std::shared_ptr<QueryTableImpl> QueryTableImpl::wAvgBy(std::string weightColumn,
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::tailBy(int64_t n,
     std::vector<std::string> columnSpecs) {
-  throw std::runtime_error("SAD");
+  throw std::runtime_error("SAD206");
 //  auto spColumnSpecs = stringVecToShared(std::move(columnSpecs));
 //  auto itdCallback = QueryTableImpl::createItdCallback(scope_->lowLevelSession()->executor());
 //  auto resultHandle = scope_->lowLevelSession()->tailByAsync(tableHandle_, n, std::move(spColumnSpecs),
@@ -365,7 +365,7 @@ std::shared_ptr<QueryTableImpl> QueryTableImpl::tailBy(int64_t n,
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::headBy(int64_t n,
     std::vector<std::string> columnSpecs) {
-  throw std::runtime_error("SAD");
+  throw std::runtime_error("SAD207");
 //  auto spColumnSpecs = stringVecToShared(std::move(columnSpecs));
 //  auto itdCallback = QueryTableImpl::createItdCallback(scope_->lowLevelSession()->executor());
 //  auto resultHandle = scope_->lowLevelSession()->headByAsync(tableHandle_, n, std::move(spColumnSpecs),
@@ -389,7 +389,7 @@ std::shared_ptr<QueryTableImpl> QueryTableImpl::headOrTailHelper(bool head, int6
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::ungroup(bool nullFill,
     std::vector<std::string> groupByColumns) {
-  throw std::runtime_error("SAD");
+  throw std::runtime_error("SAD208");
 //  auto spCols = stringVecToShared(std::move(groupByColumns));
 //  auto itdCallback = QueryTableImpl::createItdCallback(scope_->lowLevelSession()->executor());
 //  auto resultHandle = scope_->lowLevelSession()->ungroupAsync(tableHandle_, nullFill, std::move(spCols),
@@ -399,7 +399,7 @@ std::shared_ptr<QueryTableImpl> QueryTableImpl::ungroup(bool nullFill,
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::merge(std::string keyColumn,
     std::shared_ptr<std::vector<std::shared_ptr<TableHandle>>> sourceHandles) {
-  throw std::runtime_error("SAD");
+  throw std::runtime_error("SAD209");
 //  auto spKeyColumn = std::make_shared<std::string>(std::move(keyColumn));
 //  auto itdCallback = QueryTableImpl::createItdCallback(scope_->lowLevelSession()->executor());
 //  auto resultHandle = scope_->lowLevelSession()->mergeAsync(std::move(sourceHandles),
@@ -410,7 +410,7 @@ std::shared_ptr<QueryTableImpl> QueryTableImpl::merge(std::string keyColumn,
 std::shared_ptr<QueryTableImpl> QueryTableImpl::internalJoin(JoinType joinType,
     const QueryTableImpl &rightSide, std::vector<std::string> columnsToMatch,
     std::vector<std::string> columnsToAdd) {
-  throw std::runtime_error("SAD");
+  throw std::runtime_error("SAD210");
 //  auto spCtm = stringVecToShared(std::move(columnsToMatch));
 //  auto spCta = stringVecToShared(std::move(columnsToAdd));
 //  auto itdCallback = QueryTableImpl::createItdCallback(scope_->lowLevelSession()->executor());
@@ -422,7 +422,7 @@ std::shared_ptr<QueryTableImpl> QueryTableImpl::internalJoin(JoinType joinType,
 void QueryTableImpl::getTableDataAsync(int64_t first, int64_t last,
     std::vector<std::string> columns,
     std::shared_ptr<SFCallback<std::shared_ptr<TableSnapshot>>> callback) {
-  throw std::runtime_error("SAD");
+  throw std::runtime_error("SAD211");
 //  auto self = weakSelf_.lock();
 //
 //  auto rangeVec = std::make_shared<std::vector<std::shared_ptr<Range>>>();

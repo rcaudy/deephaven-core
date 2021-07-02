@@ -109,7 +109,7 @@ void DHServer::invoke(std::shared_ptr<REQUEST> request,
     std::shared_ptr<SFCallback<std::shared_ptr<typename REQUEST::correspondingResponseType_t>>> callback) {
 using deephaven::openAPI::lowlevel::remoting::util::createResponseHandler;
 auto responseHandler = createResponseHandler(std::move(callback), executor_);
-throw new std::runtime_error("SAD"); // TODO(kosak)
+throw new std::runtime_error("SAD001"); // TODO(kosak)
 // server_->invoke(std::move(request), std::move(responseHandler));
 }
 }  // namespace remoting

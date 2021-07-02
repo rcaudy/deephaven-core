@@ -42,7 +42,7 @@ std::shared_ptr<QueryTableImpl> QueryScopeImpl::fetchTable(std::string tableName
 
 std::shared_ptr<QueryTableImpl> QueryScopeImpl::historicalTable(std::string nameSpace,
     std::string tableName) {
-  throw std::runtime_error("SAD");
+  throw std::runtime_error("SAD102");
 //  auto itdCallback = QueryTableImpl::createItdCallback(lowlevelSession_->executor());
 //  auto spNamespace = std::make_shared<std::string>(std::move(nameSpace));
 //  auto spTableName = std::make_shared<std::string>(std::move(tableName));
@@ -62,7 +62,7 @@ std::shared_ptr<QueryTableImpl> QueryScopeImpl::tempTable(
         cdh.columnData()->internal().getLowLevelColumnData(), cdh.grouped());
     columnHolders->push_back(std::move(ch));
   }
-  throw std::runtime_error("SAD");
+  throw std::runtime_error("SAD100");
 //  auto itdCallback = QueryTableImpl::createItdCallback(lowlevelSession_->executor());
 //  auto resultHandle = lowlevelSession_->tempTableAsync(std::move(columnHolders), itdCallback);
 //  return QueryTableImpl::create(self_.lock(), std::move(resultHandle), std::move(itdCallback));
@@ -76,7 +76,7 @@ std::shared_ptr<QueryTableImpl> QueryScopeImpl::timeTable(int64_t startTimeNanos
 }
 
 std::shared_ptr<QueryTableImpl> QueryScopeImpl::catalogTable() {
-  throw std::runtime_error("SAD");
+  throw std::runtime_error("SAD101");
 //  auto itdCallback = QueryTableImpl::createItdCallback(lowlevelSession_->executor());
 //  auto resultHandle = lowlevelSession_->catalogTableAsync(itdCallback);
 //  return QueryTableImpl::create(self_.lock(), std::move(resultHandle), std::move(itdCallback));

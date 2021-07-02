@@ -183,7 +183,7 @@ Ticket DHWorkerSession::fetchTableAsync(std::string tableName, std::shared_ptr<E
 std::shared_ptr<TableHandle> DHWorkerSession::historicalTableAsync(
     std::shared_ptr<std::string> nameSpace, std::shared_ptr<std::string> tableName,
     std::shared_ptr<ItdCallback> itdCallback) {
-  throw std::runtime_error("SAD");
+  throw std::runtime_error("SAD003");
 //  auto resultHandle = createTableHandle();
 //  auto req = HistoricalTable::create(resultHandle, std::move(nameSpace), std::move(tableName));
 //  dhWorker_->invoke(std::move(req), std::move(itdCallback));
@@ -193,7 +193,7 @@ std::shared_ptr<TableHandle> DHWorkerSession::historicalTableAsync(
 std::shared_ptr<TableHandle> DHWorkerSession::tempTableAsync(
     std::shared_ptr<std::vector<std::shared_ptr<ColumnHolder>>> columnHolders,
     std::shared_ptr<ItdCallback> itdCallback) {
-  throw std::runtime_error("SAD");
+  throw std::runtime_error("SAD004");
 //  auto resultHandle = createTableHandle();
 //  auto req = NewTable::create(resultHandle, std::move(columnHolders));
 //  dhWorker_->invoke(std::move(req), std::move(itdCallback));
@@ -216,7 +216,7 @@ std::shared_ptr<TableHandle> DHWorkerSession::snapshotAsync(std::shared_ptr<Tabl
     std::shared_ptr<TableHandle> rightTableHandle, bool doInitialSnapshot,
     std::shared_ptr<std::vector<std::shared_ptr<std::string>>> stampColumns,
     std::shared_ptr<ItdCallback> itdCallback) {
-  throw std::runtime_error("SAD");
+  throw std::runtime_error("SAD005");
 //  auto resultHandle = createTableHandle();
 //  auto req = Snapshot::create(std::move(leftTableHandle), std::move(rightTableHandle),
 //      resultHandle, doInitialSnapshot, std::move(stampColumns));
@@ -378,7 +378,7 @@ Ticket DHWorkerSession::comboAggregateDescriptorAsync(Ticket parentTicket,
 std::shared_ptr<TableHandle> DHWorkerSession::tailByAsync(std::shared_ptr<TableHandle> parentTableHandle,
     int64_t n, std::shared_ptr<std::vector<std::shared_ptr<std::string>>> columnSpecs,
     std::shared_ptr<ItdCallback> itdCallback) {
-  throw std::runtime_error("SAD");
+  throw std::runtime_error("SAD006");
 //  auto resultHandle = createTableHandle();
 //  auto req = TailBy::create(std::move(parentTableHandle), resultHandle, n, std::move(columnSpecs));
 //  dhWorker_->invoke(std::move(req), std::move(itdCallback));
@@ -388,7 +388,7 @@ std::shared_ptr<TableHandle> DHWorkerSession::tailByAsync(std::shared_ptr<TableH
 std::shared_ptr<TableHandle> DHWorkerSession::headByAsync(std::shared_ptr<TableHandle> parentTableHandle,
     int64_t n, std::shared_ptr<std::vector<std::shared_ptr<std::string>>> columnSpecs,
     std::shared_ptr<ItdCallback> itdCallback) {
-  throw std::runtime_error("SAD");
+  throw std::runtime_error("SAD007");
 //  auto resultHandle = createTableHandle();
 //  auto req = HeadBy::create(std::move(parentTableHandle), resultHandle, n, std::move(columnSpecs));
 //  dhWorker_->invoke(std::move(req), std::move(itdCallback));
@@ -410,7 +410,7 @@ Ticket DHWorkerSession::headOrTailAsync(const Ticket &parentTicket,
 std::shared_ptr<TableHandle> DHWorkerSession::ungroupAsync(
     std::shared_ptr<TableHandle> parentTableHandle, bool nullFill,
     std::shared_ptr<std::vector<std::shared_ptr<std::string>>> groupByColumns, std::shared_ptr<ItdCallback> itdCallback) {
-  throw std::runtime_error("SAD");
+  throw std::runtime_error("SAD008");
 //  auto resultHandle = createTableHandle();
 //  auto req = Ungroup::create(std::move(parentTableHandle), resultHandle, nullFill,
 //      std::move(groupByColumns));
@@ -421,7 +421,7 @@ std::shared_ptr<TableHandle> DHWorkerSession::ungroupAsync(
 std::shared_ptr<TableHandle> DHWorkerSession::mergeAsync(
     std::shared_ptr<std::vector<std::shared_ptr<TableHandle>>> sourceHandles,
     std::shared_ptr<std::string> keyColumn, std::shared_ptr<ItdCallback> itdCallback) {
-  throw std::runtime_error("SAD");
+  throw std::runtime_error("SAD009");
 //  auto resultHandle = createTableHandle();
 //  auto req = MergeTables::create(std::move(sourceHandles), resultHandle, std::move(keyColumn));
 //  dhWorker_->invoke(std::move(req), std::move(itdCallback));
@@ -433,7 +433,7 @@ std::shared_ptr<TableHandle> DHWorkerSession::internalJoinAsync(JoinType joinTyp
     std::shared_ptr<std::vector<std::shared_ptr<std::string>>> columnsToMatch,
     std::shared_ptr<std::vector<std::shared_ptr<std::string>>> columnsToAdd,
     std::shared_ptr<ItdCallback> itdCallback) {
-  throw std::runtime_error("SAD");
+  throw std::runtime_error("SAD010");
 //  auto resultHandle = createTableHandle();
 //  auto jd = JoinDescriptor::create(joinType, std::move(leftTableHandle), std::move(rightTableHandle),
 //      std::move(columnsToMatch), std::move(columnsToAdd));
@@ -445,7 +445,7 @@ std::shared_ptr<TableHandle> DHWorkerSession::internalJoinAsync(JoinType joinTyp
 void DHWorkerSession::getTableDataAsync(std::shared_ptr<TableHandle> parentTableHandle,
     std::shared_ptr<RangeSet> rows, std::shared_ptr<BitSet> columns,
     std::shared_ptr<SFCallback<std::shared_ptr<TableSnapshot>>> callback) {
-  throw std::runtime_error("SAD");
+  throw std::runtime_error("SAD011");
 //  auto req = ConstructSnapshotQuery::create(std::move(parentTableHandle), std::move(rows),
 //      std::move(columns));
 //  dhWorker_->invoke(std::move(req), std::move(callback));
@@ -454,7 +454,7 @@ void DHWorkerSession::getTableDataAsync(std::shared_ptr<TableHandle> parentTable
 void DHWorkerSession::subscribeAllAsync(std::shared_ptr<TableHandle> tableHandle,
     std::shared_ptr<BitSet> colBitset, bool isViewport,
     std::shared_ptr<SFCallback<std::shared_ptr<Void>>> callback) {
-  throw std::runtime_error("SAD");
+  throw std::runtime_error("SAD012");
 //  streamf(std::cerr, "Sending server a subscribe nubbin of %o %o\n",
 //      tableHandle->custom().serverId(), tableHandle->custom().clientId());
 //  auto req = Subscribe::create(std::move(tableHandle), std::move(colBitset), isViewport);
@@ -463,7 +463,7 @@ void DHWorkerSession::subscribeAllAsync(std::shared_ptr<TableHandle> tableHandle
 
 void DHWorkerSession::unsubscribeAsync(std::shared_ptr<TableHandle> tableHandle,
     std::shared_ptr<SFCallback<std::shared_ptr<Void>>> callback) {
-  throw std::runtime_error("SAD");
+  throw std::runtime_error("SAD013");
 //  auto req = Unsubscribe::create(std::move(tableHandle));
 //  dhWorker_->invoke(std::move(req), std::move(callback));
 }
@@ -471,7 +471,7 @@ void DHWorkerSession::unsubscribeAsync(std::shared_ptr<TableHandle> tableHandle,
 void DHWorkerSession::getDatabaseCatalogAsync(bool systemNamespaces, bool userNamespaces,
     std::shared_ptr<std::string> namespaceRegex, std::shared_ptr<std::string> tableRegex,
     std::shared_ptr<SFCallback<std::shared_ptr<Catalog>>> callback) {
-  throw std::runtime_error("SAD");
+  throw std::runtime_error("SAD014");
 //  auto req = GetCatalog::create(systemNamespaces, userNamespaces, std::move(namespaceRegex),
 //      std::move(tableRegex));
 //  dhWorker_->invoke(std::move(req), std::move(callback));
@@ -479,7 +479,7 @@ void DHWorkerSession::getDatabaseCatalogAsync(bool systemNamespaces, bool userNa
 
 std::shared_ptr<TableHandle> DHWorkerSession::catalogTableAsync(
     std::shared_ptr<ItdCallback> itdCallback) {
-  throw std::runtime_error("SAD");
+  throw std::runtime_error("SAD015");
 //  auto resultHandle = createTableHandle();
 //  auto req = GetCatalogTable::create(resultHandle);
 //  dhWorker_->invoke(std::move(req), std::move(itdCallback));
@@ -553,7 +553,7 @@ void DHWorkerSession::processBatchOperation(std::shared_ptr<SerializedTableOps> 
 }
 
 std::shared_ptr<TableHandle> DHWorkerSession::createTableHandle() {
-  throw std::runtime_error("SAD");
+  throw std::runtime_error("SAD016");
 //  int32_t handleId = nextFreeTableHandleId_++;
 //  return TableHandle::create(connectionId_, handleId, -1);
 }
