@@ -16,19 +16,18 @@ namespace deephaven {
 namespace openAPI {
 namespace examples {
 void StringFilterExample::run(const QueryScope &scope) {
-  auto table = scope.historicalTable(DemoConstants::historicalNamespace,
-      DemoConstants::historicalTable);
+  auto table = scope.fetchTable("demo");
 
   auto importDate = table.getStrCol("ImportDate");
   auto ticker = table.getStrCol("Ticker");
 
   auto t2 = table.where(importDate == "2017-11-01");
-  std::cout << "Contains AT\n";
-  PrintUtils::printTableData(std::cout, t2.where(ticker.contains("AT")));
+  std::cout << "Contains A\n";
+  PrintUtils::printTableData(std::cout, t2.where(ticker.contains("A")));
   std::cout << "Starts With BL\n";
   PrintUtils::printTableData(std::cout, t2.where(ticker.startsWith("BL")));
-  std::cout << "Ends With J\n";
-  PrintUtils::printTableData(std::cout, t2.where(ticker.endsWith("J")));
+  std::cout << "Ends With X\n";
+  PrintUtils::printTableData(std::cout, t2.where(ticker.endsWith("X")));
   std::cout << "Matches ^I.*M$\n";
   PrintUtils::printTableData(std::cout, t2.where(ticker.matches("^I.*M$")));
 }
