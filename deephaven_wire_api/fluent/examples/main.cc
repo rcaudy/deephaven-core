@@ -140,7 +140,8 @@ Program::Program(std::string host, std::string username, std::string password,
       { "catalog", CatalogExample::run },
       { "cattable", CatalogTableExample::run },
       { "strfilter", StringFilterExample::run },
-      { "dtfilter", DateTimeFilterExample::run }
+      { "dtfilter", DateTimeFilterExample::run },
+      { "getdata", GetDataExample::run },
   };
 }
 

@@ -52,7 +52,7 @@ add_executable(examples
         string_filter_example.h
         date_time_filter_example.cc
         date_time_filter_example.h
-        add_drop_example.cc add_drop_example.h)
+        add_drop_example.cc add_drop_example.h get_data_example.cc get_data_example.h)
 target_include_directories(examples PUBLIC "..")
 target_include_directories(examples BEFORE PUBLIC ${Boost_INCLUDE_DIRS})
 include_directories("../openapi")
