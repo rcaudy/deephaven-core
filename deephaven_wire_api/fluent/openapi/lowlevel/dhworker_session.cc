@@ -29,6 +29,7 @@ using io::deephaven::proto::backplane::script::grpc::BindTableToVariableRequest;
 using io::deephaven::proto::backplane::script::grpc::FetchTableRequest;
 using io::deephaven::proto::backplane::script::grpc::ConsoleService;
 using deephaven::openAPI::core::Callback;
+using deephaven::openAPI::core::FailureCallback;
 using deephaven::openAPI::core::SFCallback;
 using deephaven::openAPI::core::remoting::ServerCQCallback;
 using deephaven::openAPI::core::remoting::ServerResponseHolder;
@@ -187,6 +188,86 @@ Ticket DHWorkerSession::fetchTableAsync(std::string tableName, std::shared_ptr<E
   server_->sendRpc(req, std::move(callback), server_->consoleStub(),
       &ConsoleService::Stub::AsyncFetchTable, true);
   return result;
+}
+
+namespace {
+struct SuperNub final : public ServerCQCallback {
+  SuperNub(std::shared_ptr<FailureCallback> failureCallback) : ServerCQCallback(std::move(failureCallback)) {}
+  ~SuperNub() final {
+    std::cerr << "I AM NOT READY TO BE DELETED\n";
+  }
+
+  void onSuccess() final {
+    std::cerr << "and so the pain begins\n";
+    readerParty_->Read(&fd_, this);
+    streamf(std::cerr, "Small miracles: %o\n", fd_.DebugString());
+    std::cerr << "I FULLY EXPECT TO BE CALLED AGAIN\n";
+  }
+
+  std::unique_ptr< ::grpc::ClientAsyncReader< ::arrow::flight::protocol::FlightData>> readerParty_;
+  ::arrow::flight::protocol::FlightData fd_;
+};
+}
+
+void DHWorkerSession::getDataAsync(const Ticket &ticket, std::shared_ptr<getDataCallback_t> handler) const {
+  auto sn = new SuperNub(nullptr);
+  server_->bless(sn);
+  if (false) {
+    io::deephaven::proto::backplane::grpc::SubscriptionRequest sr;
+    *sr.mutable_ticket() = ticket;
+    std::string pain;
+    pain.push_back(0);
+    pain.push_back(1);
+    *sr.mutable_columns() = std::move(pain);
+    // no idea what the viewport is and what data structure it has
+    std::string vp;
+    vp.push_back(0);
+    vp.push_back(0);
+    vp.push_back(0);
+    vp.push_back(0);
+    vp.push_back(0);
+    vp.push_back(0);
+    vp.push_back(0);
+    vp.push_back(0);
+
+    vp.push_back(1);
+    vp.push_back(0);
+    vp.push_back(0);
+    vp.push_back(0);
+    vp.push_back(0);
+    vp.push_back(0);
+    vp.push_back(0);
+    vp.push_back(0);
+    *sr.mutable_viewport() = std::move(vp);
+
+    auto pain5 = server_->barrageStub()->DoSubscribe(&sn->ctx_);
+    auto wResult = pain5->Write(sr);
+    streamf(std::cerr, "wResult is %o", wResult);
+
+    io::deephaven::proto::backplane::grpc::BarrageData bd;
+    auto rResult = pain5->Read(&bd);
+    streamf(std::cerr, "rResult is %o", rResult);
+
+    streamf(std::cerr, "yeargh %o\n", bd.DebugString());
+  }
+
+  if (false) {
+    auto stupido = server_->flightStub()->DoGet(&sn->ctx_, ticket);
+    std::cerr << "starting\n";
+    ::arrow::flight::protocol::FlightData fd;
+    while (stupido->Read(&fd)) {
+      streamf(std::cerr, "Small miracles: %o\n", fd.DebugString());
+    }
+  }
+  streamf(std::cerr, "SuperNub is %o\n", (void*)sn);
+  auto qqq = server_->flightStub()->PrepareAsyncDoGet(&sn->ctx_, ticket, &server_->cq());
+  sn->readerParty_ = std::move(qqq);
+  sn->readerParty_->StartCall(sn);
+//  auto qqq = server_->flightStub()->AsyncDoGet(&sn->ctx_, ticket, &server_->cq(), sn);
+//  qqq->StartCall()
+  std::cerr << "Sleepy time 1....\n";
+  std::this_thread::sleep_for(std::chrono::seconds(15));
+  std::cerr << "destructing qqq here... probably a bad idea??? who is the reader?\n";
 }
 
 std::shared_ptr<TableHandle> DHWorkerSession::historicalTableAsync(

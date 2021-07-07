@@ -204,6 +204,15 @@ private:
   // TODO(kosak): put the high-level version of DeltaUpdates here.
 };
 
+class XXXTableData {
+public:
+  XXXTableData();
+  ~XXXTableData();
+
+private:
+  // TODO(kosak): implement
+};
+
 class Aggregate {
 public:
   template<typename ...Args>
@@ -379,6 +388,7 @@ class QueryTable {
 public:
   typedef Callback<const QueryTable&, const XXXTableSnapshot&> snapshotCallback_t;
   typedef Callback<const QueryTable&, const XXXTableUpdate&> updateCallback_t;
+  typedef Callback<const QueryTable&, const XXXTableData&> getDataCallback_t;
 
   explicit QueryTable(std::shared_ptr<impl::QueryTableImpl> impl);
   QueryTable(const QueryTable &other);
@@ -572,7 +582,9 @@ public:
   void unsubscribe() const;
   void unsubscribeAsync(std::shared_ptr<SFCallback<Void>> callback) const;
 
-  void addTableUpdateHandler(const std::shared_ptr<updateCallback_t> &handler) const;
+  void getData(std::shared_ptr<getDataCallback_t> handler) const;
+
+  void addTableUpdateHandler(std::shared_ptr<updateCallback_t> handler) const;
   void removeTableUpdateHandler(const std::shared_ptr<updateCallback_t> &handler) const;
 
   std::vector<Column> getColumns() const;

@@ -13,6 +13,7 @@
 #include "examples/catalog_table_example.h"
 #include "examples/date_time_filter_example.h"
 #include "examples/drop_columns_example.h"
+#include "examples/get_data_example.h"
 #include "examples/head_and_tail_example.h"
 #include "examples/filter_example.h"
 #include "examples/join_example.h"
@@ -47,6 +48,7 @@ using deephaven::openAPI::examples::CatalogTableExample;
 using deephaven::openAPI::examples::DateTimeFilterExample;
 using deephaven::openAPI::examples::DropColumnsExample;
 using deephaven::openAPI::examples::FilterExample;
+using deephaven::openAPI::examples::GetDataExample;
 using deephaven::openAPI::examples::HeadAndTailExample;
 using deephaven::openAPI::examples::JoinExample;
 using deephaven::openAPI::examples::LastByExample;

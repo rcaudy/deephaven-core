@@ -230,7 +230,9 @@ public:
       std::shared_ptr<SFCallback<Void>> callback);
   void unsubscribeAsync(std::shared_ptr<SFCallback<Void>> callback);
 
-  void addTableUpdateHandler(const std::shared_ptr<QueryTable::updateCallback_t> &handler);
+  void getData(std::shared_ptr<QueryTable::getDataCallback_t> handler) const;
+
+  void addTableUpdateHandler(std::shared_ptr<QueryTable::updateCallback_t> handler);
   void removeTableUpdateHandler(const std::shared_ptr<QueryTable::updateCallback_t> &handler);
 
   std::vector<std::shared_ptr<ColumnImpl>> getColumnImpls();

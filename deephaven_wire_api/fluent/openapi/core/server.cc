@@ -24,10 +24,13 @@ namespace core {
 namespace remoting {
 std::shared_ptr<Server> Server::createFromTarget(const std::string &target) {
   auto channel = grpc::CreateChannel(target, grpc::InsecureChannelCredentials());
+  auto bs = BarrageService::NewStub(channel);
   auto cs = ConsoleService::NewStub(channel);
+  auto fs = FlightService::NewStub(channel);
   auto ss = SessionService::NewStub(channel);
   auto ts = TableService::NewStub(channel);
-  auto result = std::make_shared<Server>(Private(), std::move(cs), std::move(ss), std::move(ts));
+  auto result = std::make_shared<Server>(Private(), std::move(bs), std::move(cs), std::move(fs),
+      std::move(ss), std::move(ts));
   result->self_ = result;
 
   std::thread t(&processCompletionQueueForever, result);
@@ -36,10 +39,15 @@ std::shared_ptr<Server> Server::createFromTarget(const std::string &target) {
   return result;
 }
 
-Server::Server(Private, std::unique_ptr<ConsoleService::Stub> consoleStub,
+Server::Server(Private,
+    std::unique_ptr<BarrageService::Stub> barrageStub,
+    std::unique_ptr<ConsoleService::Stub> consoleStub,
+    std::unique_ptr<FlightService::Stub> flightStub,
     std::unique_ptr<SessionService::Stub> sessionStub,
     std::unique_ptr<TableService::Stub> tableStub) :
+    barrageStub_(std::move(barrageStub)),
     consoleStub_(std::move(consoleStub)),
+    flightStub_(std::move(flightStub)),
     sessionStub_(std::move(sessionStub)),
     tableStub_(std::move(tableStub)),
     nextFreeTicketId_(1) {}
@@ -81,27 +89,40 @@ bool Server::processNextCompletionQueueItem() {
   bool ok;
   auto gotEvent = completionQueue_.Next(&tag, &ok);
   streamf(std::cerr, "gotEvent is %o, tag is %o, ok is %o\n", gotEvent, tag, ok);
+  std::cerr << "GOT TO LINE " << __LINE__ << '\n';
   if (!gotEvent) {
+    std::cerr << "GOT TO LINE " << __LINE__ << '\n';
     return false;
   }
 
+  std::cerr << "GOT TO LINE " << __LINE__ << '\n';
+
   try {
+    std::cerr << "GOT TO LINE " << __LINE__ << '\n';
     // Destruct/deallocate on the way out.
-    std::unique_ptr<ServerCQCallback> cqcb(static_cast<ServerCQCallback *>(tag));
+    auto *cqcb = static_cast<ServerCQCallback *>(tag);
+    std::cerr << "NOT DESTRUCTING\n";
+
+    std::cerr << "OK can mean different things in different contexts. In a streaming read, it just means no more streameroo baby\n";
     if (!ok) {
+      std::cerr << "GOT TO LINE " << __LINE__ << '\n';
       cqcb->failureCallback_->onFailure(
           std::make_exception_ptr(std::runtime_error("Some GRPC network or connection error")));
       return true;
     }
 
+    std::cerr << "GOT TO LINE " << __LINE__ << '\n';
     const auto &stat = cqcb->status_;
     if (!stat.ok()) {
+      std::cerr << "GOT TO LINE " << __LINE__ << '\n';
       auto message = stringf("Error %o. Message: %o", stat.error_code(), stat.error_message());
       cqcb->failureCallback_->onFailure(std::make_exception_ptr(std::runtime_error(message)));
       return true;
     }
 
+    std::cerr << "GOT TO LINE " << __LINE__ << '\n';
     cqcb->onSuccess();
+    std::cerr << "GOT TO LINE " << __LINE__ << '\n';
   } catch (const std::exception &e) {
     std::cerr << "Caught exception on callback, aborting: " << e.what() << "\n";
     return false;

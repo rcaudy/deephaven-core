@@ -19,6 +19,7 @@
 #include "highlevel/openapi.h"
 #include "utility/utility.h"
 
+using arrow::flight::protocol::FlightData;
 using io::deephaven::proto::backplane::grpc::ComboAggregateRequest;
 using io::deephaven::proto::backplane::grpc::SortDescriptor;
 using io::deephaven::proto::backplane::grpc::TableReference;
@@ -482,7 +483,19 @@ void QueryTableImpl::unsubscribeAsync(std::shared_ptr<SFCallback<Void>> callback
 //  scope_->lowLevelSession()->unsubscribeAsync(tableHandle_, std::move(callback));
 }
 
-void QueryTableImpl::addTableUpdateHandler(const std::shared_ptr<QueryTable::updateCallback_t> &handler) {
+void QueryTableImpl::getData(std::shared_ptr<QueryTable::getDataCallback_t> handler) const {
+  struct ZamboniHandler final : public Callback<const Ticket &, const FlightData &> {
+    ~ZamboniHandler() final = default;
+
+    void invoke(const Ticket &, const FlightData &args) final {
+      std::cerr << "IT'S THE ZAMBONIHANDLER\n";
+    }
+  };
+  auto zamboniHandler = std::make_shared<ZamboniHandler>();
+  scope_->lowLevelSession()->getDataAsync(ticket_, std::move(zamboniHandler));
+}
+
+void QueryTableImpl::addTableUpdateHandler(std::shared_ptr<QueryTable::updateCallback_t> handler) {
   auto self = weakSelf_.lock();
   auto adaptor = internal::LowToHighUpdateAdaptor::create(std::move(self), std::move(handler));
   mutex_.lock();

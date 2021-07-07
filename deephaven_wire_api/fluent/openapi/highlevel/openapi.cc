@@ -489,8 +489,12 @@ void QueryTable::unsubscribeAsync(std::shared_ptr<SFCallback<Void>> callback) co
   impl_->unsubscribeAsync(std::move(callback));
 }
 
-void QueryTable::addTableUpdateHandler(const std::shared_ptr<updateCallback_t> &handler) const {
-  return impl_->addTableUpdateHandler(handler);
+void QueryTable::getData(std::shared_ptr<getDataCallback_t> handler) const {
+  impl_->getData(std::move(handler));
+}
+
+void QueryTable::addTableUpdateHandler(std::shared_ptr<updateCallback_t> handler) const {
+  return impl_->addTableUpdateHandler(std::move(handler));
 }
 
 void QueryTable::removeTableUpdateHandler(const std::shared_ptr<updateCallback_t> &handler) const {

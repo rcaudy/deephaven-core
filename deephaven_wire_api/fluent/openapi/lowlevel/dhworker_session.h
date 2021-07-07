@@ -25,6 +25,7 @@ class SnapshotAndDeltaUpdateHandler;
 
 class DHWorkerSession {
   struct Private {};
+  typedef arrow::flight::protocol::FlightData FlightData;
   typedef arrow::flight::protocol::Ticket Ticket;
   typedef io::deephaven::proto::backplane::grpc::ComboAggregateRequest ComboAggregateRequest;
   typedef io::deephaven::proto::backplane::grpc::ExportedTableCreationResponse ExportedTableCreationResponse;
@@ -60,6 +61,7 @@ class DHWorkerSession {
 public:
   typedef Callback<const std::shared_ptr<TableHandle> &, const std::shared_ptr<TableSnapshot> &> snapshotCallback_t;
   typedef Callback<const std::shared_ptr<TableHandle> &, const std::shared_ptr<DeltaUpdates> &> updateCallback_t;
+  typedef Callback<const Ticket &, const FlightData &> getDataCallback_t;
 
   static std::shared_ptr<DHWorkerSession> createOss(Ticket consoleId, std::shared_ptr<Server> server,
       std::shared_ptr<Executor> executor);
@@ -151,6 +153,8 @@ public:
       std::shared_ptr<SFCallback<BindTableToVariableResponse>> callback);
 
   Ticket fetchTableAsync(std::string tableName, std::shared_ptr<EtcCallback> callback);
+
+  void getDataAsync(const Ticket &ticket, std::shared_ptr<getDataCallback_t> handler) const;
 
   void addTableSnapshotHandler(const std::shared_ptr<TableHandle> &tableHandle,
       const std::shared_ptr<snapshotCallback_t> &handler);
