@@ -1,7 +1,0 @@
-<component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="examples" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="getdata localhost:10000 iris iris" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="examples" TARGET_NAME="examples" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="examples" RUN_TARGET_NAME="examples">
-    <method v="2">
-      <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-    </method>
-  </configuration>
-</component>
