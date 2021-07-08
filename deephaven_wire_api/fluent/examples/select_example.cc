@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2016-2020 Deephaven Data Labs and Patent Pending
  */
+#include <arrow/flight/client.h>
 #include "examples/select_example.h"
 
 #include "highlevel/data/column_data.h"
@@ -78,6 +79,20 @@ void test1(const QueryTable &table) {
       .select(ticker, volume);
   PrintUtils::printTableData(std::cout, t2);
   std::cerr << "test1 done\n";
+
+  std::unique_ptr<arrow::flight::FlightClient> fc;
+  arrow::flight::Location location;
+  auto z1 = arrow::flight::Location::Parse("grpc://localhost:10000", &location).ok();
+  auto z2 = arrow::flight::FlightClient::Connect(location, &fc).ok();
+  const auto &ticket = t2.hackGetTicket();
+  std::unique_ptr<arrow::flight::FlightStreamReader> fsr;
+  arrow::flight::Ticket tkt;
+  // super sad
+  tkt.ticket = ticket.ticket();
+  auto z3 = fc->DoGet(tkt, &fsr).ok();
+  (void)z1;
+  (void)z2;
+  (void)z3;
 }
 
 // Select a few columns

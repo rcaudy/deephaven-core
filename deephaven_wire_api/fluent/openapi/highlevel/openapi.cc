@@ -530,6 +530,10 @@ int64_t QueryTable::hackGetSizeFromTableDefinition() const {
   return impl_->hackGetSizeFromTableDefinition();
 }
 
+const Ticket &QueryTable::hackGetTicket() const {
+  return impl_->ticket();
+}
+
 QueryTable QueryTable::select(std::vector<std::string> columnSpecs) const {
   auto qtImpl = impl_->select(std::move(columnSpecs));
   return QueryTable(std::move(qtImpl));

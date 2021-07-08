@@ -7,6 +7,10 @@
 #include "highlevel/data/column_data.h"
 #include "highlevel/data/column_data_holder.h"
 #include "highlevel/columns.h"
+#include "proto/session.pb.h"
+#include "proto/session.grpc.pb.h"
+#include "proto/table.pb.h"
+#include "proto/table.grpc.pb.h"
 
 namespace deephaven {
 namespace openAPI {
@@ -594,6 +598,7 @@ public:
   DateTimeCol getDateTimeCol(boost::string_view columnName) const;
 
   int64_t hackGetSizeFromTableDefinition() const;
+  const arrow::flight::protocol::Ticket &hackGetTicket() const;
 
   // for debugging
   void observe();

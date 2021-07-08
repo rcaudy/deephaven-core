@@ -75,7 +75,7 @@ using deephaven::openAPI::utility::streamf;
 namespace {
 class Program {
 public:
-  Program(std::string host, std::string username, std::string password, std::string operateAs);
+  explicit Program(std::string host);
   Program(const Program &) = delete;
   Program &operator=(const Program &) = delete;
   ~Program();
@@ -84,9 +84,6 @@ public:
 
 private:
   std::string host_;
-  std::string username_;
-  std::string password_;
-  std::string operateAs_;
 
   typedef void(*fp_t)(const QueryScope &);
   std::map<boost::string_view, fp_t> examples_;
@@ -94,19 +91,16 @@ private:
 }  // namespace
 
 int main(int argc, char **argv) {
-  if (argc != 5 && argc != 6) {
-    std::cerr << "Program arguments: exampleName server username password [operateAs]";
+  if (argc != 3) {
+    std::cerr << "Program arguments: exampleName server";
     exit(1);
   }
   auto argIdx = 1;
   auto exampleName = argv[argIdx++];
   auto host = argv[argIdx++];
-  auto username = argv[argIdx++];
-  auto password = argv[argIdx++];
-  auto operateAs = argIdx < argc ? argv[argIdx++] : username;
 
   try {
-    Program p(host, username, password, operateAs);
+    Program p(host);
     p.run(exampleName);
     std::cerr << "Program exited normally\n";
     return 0;
@@ -117,9 +111,7 @@ int main(int argc, char **argv) {
 }
 
 namespace {
-Program::Program(std::string host, std::string username, std::string password,
-    std::string operateAs) : host_(std::move(host)), username_(std::move(username)),
-    password_(std::move(password)), operateAs_(std::move(operateAs)) {
+Program::Program(std::string host) : host_(std::move(host)) {
   examples_ = std::map<boost::string_view, fp_t> {
       { "adddrop", AddDropExample::run },
       { "validate", ValidationExample::run },
@@ -164,7 +156,7 @@ void Program::run(boost::string_view exampleName) {
   }
   std::cerr << "Connecting to server\n";
   auto client = OpenApi::connectOss(host_);
-  client.login(username_, password_, operateAs_);
+  client.login("", "", "");
 
   std::cerr << "Starting worker...\n";
   auto workerOptions = WorkerOptions::create("Default");

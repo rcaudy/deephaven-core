@@ -7,6 +7,7 @@ add_compile_options(-Wall -Werror)
 find_package(Boost 1.71 REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(Threads REQUIRED)
+find_package(Arrow REQUIRED)
 
 add_executable(examples
         add_drop_example.cc
@@ -67,4 +68,5 @@ add_subdirectory("../openapi" "libopenapi")
 add_subdirectory("../../cpp" "libdh_grpc_proto")
 target_link_libraries(examples openapi)
 target_link_libraries(examples dh_grpc_proto)
+target_link_libraries(examples arrow_flight)
 target_link_libraries(examples OpenSSL::SSL Threads::Threads)
