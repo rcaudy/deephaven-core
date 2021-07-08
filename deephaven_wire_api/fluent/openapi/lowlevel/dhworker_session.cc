@@ -191,6 +191,24 @@ Ticket DHWorkerSession::fetchTableAsync(std::string tableName, std::shared_ptr<E
 }
 
 namespace {
+struct SuperNub2 final : public ServerCQCallback {
+  SuperNub2(std::shared_ptr<FailureCallback> failureCallback,
+     std::unique_ptr< ::grpc::ClientAsyncReader< ::arrow::flight::protocol::FlightData>> readerParty)
+     : ServerCQCallback(std::move(failureCallback)), readerParty_(std::move(readerParty)) {}
+  ~SuperNub2() final {
+    std::cerr << "I AM NOT READY TO BE DELETED EITHER\n";
+  }
+
+  void onSuccess() final {
+    streamf(std::cerr, "Small miracles: %o\n", fd_.DebugString());
+    std::cerr << "LET US READ AGAIN\n";
+    readerParty_->Read(&fd_, this);
+  }
+
+  std::unique_ptr< ::grpc::ClientAsyncReader< ::arrow::flight::protocol::FlightData>> readerParty_;
+  ::arrow::flight::protocol::FlightData fd_;
+};
+
 struct SuperNub final : public ServerCQCallback {
   SuperNub(std::shared_ptr<FailureCallback> failureCallback) : ServerCQCallback(std::move(failureCallback)) {}
   ~SuperNub() final {
@@ -198,16 +216,15 @@ struct SuperNub final : public ServerCQCallback {
   }
 
   void onSuccess() final {
-    std::cerr << "and so the pain begins\n";
-    readerParty_->Read(&fd_, this);
-    streamf(std::cerr, "Small miracles: %o\n", fd_.DebugString());
-    std::cerr << "I FULLY EXPECT TO BE CALLED AGAIN\n";
+    std::cerr << "Getting here simply means that the call worked. Now we want another bunch of callbacks to handle the reading\n";
+    std::cerr << "and so the pain begins. Also this is wrong..... need ctx_ and status_ to live on. so sad\n";
+    auto nub2 = new SuperNub2(std::move(failureCallback_), std::move(readerParty_));
+    nub2->readerParty_->Read(&nub2->fd_, nub2);
   }
 
   std::unique_ptr< ::grpc::ClientAsyncReader< ::arrow::flight::protocol::FlightData>> readerParty_;
-  ::arrow::flight::protocol::FlightData fd_;
 };
-}
+}  // namespace
 
 void DHWorkerSession::getDataAsync(const Ticket &ticket, std::shared_ptr<getDataCallback_t> handler) const {
   auto sn = new SuperNub(nullptr);
@@ -265,9 +282,6 @@ void DHWorkerSession::getDataAsync(const Ticket &ticket, std::shared_ptr<getData
   sn->readerParty_->StartCall(sn);
 //  auto qqq = server_->flightStub()->AsyncDoGet(&sn->ctx_, ticket, &server_->cq(), sn);
 //  qqq->StartCall()
-  std::cerr << "Sleepy time 1....\n";
-  std::this_thread::sleep_for(std::chrono::seconds(15));
-  std::cerr << "destructing qqq here... probably a bad idea??? who is the reader?\n";
 }
 
 std::shared_ptr<TableHandle> DHWorkerSession::historicalTableAsync(
