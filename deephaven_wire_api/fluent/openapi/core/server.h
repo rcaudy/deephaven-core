@@ -139,7 +139,7 @@ private:
   std::string metadataHeader_;
   std::string sessionToken_;
 
-  std::atomic<int64_t> nextFreeTicketId_;
+  std::atomic<int32_t> nextFreeTicketId_;
 
   // We occasionally need a shared pointer to ourself.
   std::weak_ptr<Server> self_;

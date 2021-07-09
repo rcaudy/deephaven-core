@@ -35,7 +35,9 @@ void test5(const QueryTable &table);
 }  // namespace
 
 void SelectExample::run(const QueryScope &scope) {
-  auto table = scope.fetchTable("demo");
+  // auto table = scope.fetchTable("demo");
+  auto table = scope.emptyTable(10, {"ImportDate", "Ticker", "Volume"}, {"string", "int", "int"});
+
   // test0(scope);
   test1(table);
   test2(table);
@@ -84,17 +86,18 @@ struct MyAuthHandler : public arrow::flight::ClientAuthHandler {
 
 // Simple Where
 void test1(const QueryTable &table) {
-  // Symbolically
-  auto importDate = table.getStrCol("ImportDate");
-  auto ticker = table.getStrCol("Ticker");
-  auto volume = table.getNumCol("Volume");
-  // if we allowed C++17 we could do something like
-  // auto [importDate, ticker, volume] = table.getCol<StrCol, StrCol, NumCol>("ImportDate", "Ticker", "Volume");
-
-  auto t2 = table.where(importDate == "2017-11-01" && ticker == "IBM")
-      .select(ticker, volume);
-  PrintUtils::printTableData(std::cout, t2);
-  std::cerr << "test1 done\n";
+  table.observe();
+//  // Symbolically
+//  auto importDate = table.getStrCol("ImportDate");
+//  auto ticker = table.getStrCol("Ticker");
+//  auto volume = table.getNumCol("Volume");
+//  // if we allowed C++17 we could do something like
+//  // auto [importDate, ticker, volume] = table.getCol<StrCol, StrCol, NumCol>("ImportDate", "Ticker", "Volume");
+//
+//  auto t2 = table.where(importDate == "2017-11-01" && ticker == "IBM")
+//      .select(ticker, volume);
+//  PrintUtils::printTableData(std::cout, t2);
+//  std::cerr << "test1 done\n";
 
   std::unique_ptr<arrow::flight::FlightClient> fc;
   arrow::flight::Location location;
@@ -105,7 +108,7 @@ void test1(const QueryTable &table) {
   options.headers.push_back(std::move(crazy));
   auto myAuthHandler = std::unique_ptr<MyAuthHandler>(new MyAuthHandler());
   auto z3 = fc->Authenticate(options, std::move(myAuthHandler)).ok();
-  const auto &ticket = t2.hackGetTicket();
+  const auto &ticket = table.hackGetTicket();
   std::unique_ptr<arrow::flight::FlightStreamReader> fsr;
   arrow::flight::Ticket tkt;
   // super sad

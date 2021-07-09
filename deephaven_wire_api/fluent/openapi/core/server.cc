@@ -57,11 +57,12 @@ Server::~Server() = default;
 Ticket Server::newTicket() {
   auto ticketId = nextFreeTicketId_++;
   constexpr auto ticketSize = sizeof(ticketId);
-  static_assert(ticketSize == 8, "Unexpected ticket size");
-  char buffer[ticketSize];
-  memcpy(buffer, &ticketId, ticketSize);
+  static_assert(ticketSize == 4, "Unexpected ticket size");
+  char buffer[ticketSize + 1];
+  buffer[0] = 'e';
+  memcpy(buffer + 1, &ticketId, ticketSize);
   Ticket result;
-  *result.mutable_ticket() = std::string(buffer, ticketSize);
+  *result.mutable_ticket() = std::string(buffer, sizeof(buffer));
   return result;
 }
 

@@ -759,7 +759,7 @@ void QueryTable::bindToVariableAsync(std::string variable,
   return impl_->bindToVariableAsync(std::move(variable), std::move(callback));
 }
 
-void QueryTable::observe() {
+void QueryTable::observe() const {
   impl_->observe();
 }
 

@@ -601,7 +601,7 @@ public:
   const arrow::flight::protocol::Ticket &hackGetTicket() const;
 
   // for debugging
-  void observe();
+  void observe() const;
 
   std::pair<std::string, std::string> getHackStuff() const;
 
