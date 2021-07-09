@@ -118,6 +118,12 @@ public:
     cqb->ctx_.AddMetadata(metadataHeader_, sessionToken_);
   }
 
+  // TODO(kosak)
+  void bless(std::string *header, std::string *token) {
+    *header = metadataHeader_;
+    *token = sessionToken_;
+  }
+
 private:
   static void processCompletionQueueForever(const std::shared_ptr<Server> &self);
   bool processNextCompletionQueueItem();

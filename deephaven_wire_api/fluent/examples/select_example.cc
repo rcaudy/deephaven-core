@@ -2,6 +2,7 @@
  * Copyright (c) 2016-2020 Deephaven Data Labs and Patent Pending
  */
 #include <arrow/flight/client.h>
+#include <arrow/flight/client_auth.h>
 #include "examples/select_example.h"
 
 #include "highlevel/data/column_data.h"
@@ -66,6 +67,21 @@ void test0(const QueryScope &scope) {
   PrintUtils::printTableData(std::cout,t4);
 }
 
+namespace {
+struct MyAuthHandler : public arrow::flight::ClientAuthHandler {
+  arrow::Status Authenticate(arrow::flight::ClientAuthSender *outgoing,
+      arrow::flight::ClientAuthReader *incoming) override {
+    std::cerr << "I choose to do nothing\n";
+    return arrow::Status::OK();
+  }
+
+  arrow::Status GetToken(std::string *token) override {
+    std::cerr << "I also choose to do nothing\n";
+    return arrow::Status::OK();
+  }
+};
+}
+
 // Simple Where
 void test1(const QueryTable &table) {
   // Symbolically
@@ -84,15 +100,21 @@ void test1(const QueryTable &table) {
   arrow::flight::Location location;
   auto z1 = arrow::flight::Location::Parse("grpc://localhost:10000", &location).ok();
   auto z2 = arrow::flight::FlightClient::Connect(location, &fc).ok();
+  arrow::flight::FlightCallOptions options;
+  auto crazy = table.getHackStuff();
+  options.headers.push_back(std::move(crazy));
+  auto myAuthHandler = std::unique_ptr<MyAuthHandler>(new MyAuthHandler());
+  auto z3 = fc->Authenticate(options, std::move(myAuthHandler)).ok();
   const auto &ticket = t2.hackGetTicket();
   std::unique_ptr<arrow::flight::FlightStreamReader> fsr;
   arrow::flight::Ticket tkt;
   // super sad
   tkt.ticket = ticket.ticket();
-  auto z3 = fc->DoGet(tkt, &fsr).ok();
+  auto z4 = fc->DoGet(options, tkt, &fsr).ok();
   (void)z1;
   (void)z2;
   (void)z3;
+  (void)z4;
 }
 
 // Select a few columns

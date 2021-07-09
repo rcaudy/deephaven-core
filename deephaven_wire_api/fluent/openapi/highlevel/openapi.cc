@@ -763,6 +763,12 @@ void QueryTable::observe() {
   impl_->observe();
 }
 
+std::pair<std::string, std::string> QueryTable::getHackStuff() const {
+  std::pair<std::string, std::string> result;
+  impl_->scope()->lowLevelSession()->server()->bless(&result.first, &result.second);
+  return result;
+}
+
 WorkerOptions WorkerOptions::create(std::string profile) {
   auto woImpl = WorkerOptionsImpl::create(std::move(profile));
   return WorkerOptions(std::move(woImpl));

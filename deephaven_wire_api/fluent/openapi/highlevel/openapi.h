@@ -603,6 +603,8 @@ public:
   // for debugging
   void observe();
 
+  std::pair<std::string, std::string> getHackStuff() const;
+
   const std::shared_ptr<impl::QueryTableImpl> &impl() const { return impl_; }
 
 private:
