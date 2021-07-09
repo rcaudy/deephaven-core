@@ -36,7 +36,7 @@ void test5(const QueryTable &table);
 
 void SelectExample::run(const QueryScope &scope) {
   // auto table = scope.fetchTable("demo");
-  auto table = scope.emptyTable(10, {"ImportDate", "Ticker", "Volume"}, {"string", "int", "int"});
+  auto table = scope.emptyTable(0, {"x"}, {"int"});
 
   // test0(scope);
   test1(table);
@@ -86,14 +86,13 @@ struct MyAuthHandler : public arrow::flight::ClientAuthHandler {
 
 // Simple Where
 void test1(const QueryTable &table) {
-  table.observe();
-//  // Symbolically
+  // Symbolically
 //  auto importDate = table.getStrCol("ImportDate");
 //  auto ticker = table.getStrCol("Ticker");
 //  auto volume = table.getNumCol("Volume");
-//  // if we allowed C++17 we could do something like
-//  // auto [importDate, ticker, volume] = table.getCol<StrCol, StrCol, NumCol>("ImportDate", "Ticker", "Volume");
-//
+  // if we allowed C++17 we could do something like
+  // auto [importDate, ticker, volume] = table.getCol<StrCol, StrCol, NumCol>("ImportDate", "Ticker", "Volume");
+
 //  auto t2 = table.where(importDate == "2017-11-01" && ticker == "IBM")
 //      .select(ticker, volume);
 //  PrintUtils::printTableData(std::cout, t2);
@@ -101,13 +100,14 @@ void test1(const QueryTable &table) {
 
   std::unique_ptr<arrow::flight::FlightClient> fc;
   arrow::flight::Location location;
-  auto z1 = arrow::flight::Location::Parse("grpc://localhost:10000", &location).ok();
+  // auto z1 = arrow::flight::Location::Parse("grpc://localhost:10000", &location).ok();
+  auto z1 = arrow::flight::Location::ForGrpcTcp("localhost", 10000, &location).ok();
   auto z2 = arrow::flight::FlightClient::Connect(location, &fc).ok();
   arrow::flight::FlightCallOptions options;
   auto crazy = table.getHackStuff();
   options.headers.push_back(std::move(crazy));
-  auto myAuthHandler = std::unique_ptr<MyAuthHandler>(new MyAuthHandler());
-  auto z3 = fc->Authenticate(options, std::move(myAuthHandler)).ok();
+//  auto myAuthHandler = std::unique_ptr<MyAuthHandler>(new MyAuthHandler());
+//  auto z3 = fc->Authenticate(options, std::move(myAuthHandler)).ok();
   const auto &ticket = table.hackGetTicket();
   std::unique_ptr<arrow::flight::FlightStreamReader> fsr;
   arrow::flight::Ticket tkt;
@@ -116,7 +116,6 @@ void test1(const QueryTable &table) {
   auto z4 = fc->DoGet(options, tkt, &fsr).ok();
   (void)z1;
   (void)z2;
-  (void)z3;
   (void)z4;
 }
 
