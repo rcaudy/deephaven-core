@@ -36,20 +36,23 @@ void test5(const QueryTable &table);
 
 void SelectExample::run(const QueryScope &scope) {
   // auto table = scope.fetchTable("demo");
-  auto table = scope.emptyTable(0, {"x"}, {"int"});
+  auto table = scope.emptyTable(0, {}, {});
 
   // test0(scope);
   test1(table);
-  test2(table);
-  test2a_err(table);
 
-  test3(table);
-  test4(table);
-  test5(table);
+//  test2(table);
+//  test2a_err(table);
+//
+//  test3(table);
+//  test4(table);
+//  test5(table);
   (void)&test0;
-//  (void)&test3;
-//  (void)&test4;
-//  (void)&test5;
+  (void)&test2;
+  (void)&test2a_err;
+  (void)&test3;
+  (void)&test4;
+  (void)&test5;
 }
 
 namespace {
