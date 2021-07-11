@@ -82,6 +82,27 @@ set(SRC_FILES
     highlevel/openapi.cc
     highlevel/openapi.h
 
+    proto/barrage.grpc.pb.cc
+    proto/barrage.grpc.pb.h
+    proto/barrage.pb.cc
+    proto/barrage.pb.h
+    proto/console.grpc.pb.cc
+    proto/console.grpc.pb.h
+    proto/console.pb.cc
+    proto/console.pb.h
+        proto/flight.grpc.pb.cc
+        proto/flight.grpc.pb.h
+        proto/flight.pb.cc
+        proto/flight.pb.h
+        proto/session.grpc.pb.cc
+        proto/session.grpc.pb.h
+        proto/session.pb.cc
+        proto/session.pb.h
+        proto/table.grpc.pb.cc
+        proto/table.grpc.pb.h
+        proto/table.pb.cc
+        proto/table.pb.h
+
     utility/escape_utils.cc
     utility/escape_utils.h
     utility/executor.cc

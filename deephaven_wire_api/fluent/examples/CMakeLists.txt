@@ -5,12 +5,11 @@ set(CMAKE_CXX_STANDARD 11)
 add_compile_options(-Wall -Werror)
 
 find_package(Boost 1.71 REQUIRED)
-find_package(OpenSSL REQUIRED)
-find_package(Threads REQUIRED)
 FIND_PACKAGE(Arrow REQUIRED PATHS /home/kosak/arrowlocal/usr/local/lib/cmake/arrow)
 FIND_PACKAGE(ArrowFlight REQUIRED PATHS /home/kosak/arrowlocal/usr/local/lib/cmake/arrow)
 FIND_PACKAGE(gRPC REQUIRED)
 FIND_PACKAGE(Protobuf REQUIRED)
+find_package(Threads REQUIRED)
 
 add_executable(examples
         add_drop_example.cc
@@ -64,13 +63,12 @@ add_executable(examples
 target_include_directories(examples PUBLIC "..")
 target_include_directories(examples BEFORE PUBLIC ${Boost_INCLUDE_DIRS})
 include_directories("../openapi")
-include_directories("../../cpp")
-include_directories("../../cpp/build/gen")
 
 add_subdirectory("../openapi" "libopenapi")
-add_subdirectory("../../cpp" "libdh_grpc_proto")
-target_link_libraries(examples openapi)
-target_link_libraries(examples dh_grpc_proto)
 target_link_libraries(examples arrow_flight_static)
 target_link_libraries(examples arrow_static)
-target_link_libraries(examples OpenSSL::SSL Threads::Threads)
+target_link_libraries(examples protobuf)
+target_link_libraries(examples gRPC::grpc++)
+# target_link_libraries(examples OpenSSL::SSL)
+target_link_libraries(examples Threads::Threads)
+target_link_libraries(examples openapi)
