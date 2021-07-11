@@ -36,7 +36,7 @@ void test5(const QueryTable &table);
 
 void SelectExample::run(const QueryScope &scope) {
   // auto table = scope.fetchTable("demo");
-  auto table = scope.emptyTable(0, {}, {});
+  auto table = scope.emptyTable(10, {"x"}, {"int"});
 
   // test0(scope);
   test1(table);
@@ -88,7 +88,8 @@ struct MyAuthHandler : public arrow::flight::ClientAuthHandler {
 }
 
 // Simple Where
-void test1(const QueryTable &table) {
+void test1(const QueryTable &tableQ) {
+  auto t2 = tableQ.update("QQQ = i");
   // Symbolically
 //  auto importDate = table.getStrCol("ImportDate");
 //  auto ticker = table.getStrCol("Ticker");
@@ -107,14 +108,16 @@ void test1(const QueryTable &table) {
   auto z1 = arrow::flight::Location::ForGrpcTcp("localhost", 10000, &location).ok();
   auto z2 = arrow::flight::FlightClient::Connect(location, &fc).ok();
   arrow::flight::FlightCallOptions options;
-  auto crazy = table.getHackStuff();
+  auto crazy = t2.getHackStuff();
+  streamf(std::cerr, "crazy is %o %o\n", crazy.first, crazy.second);
   options.headers.push_back(std::move(crazy));
 //  auto myAuthHandler = std::unique_ptr<MyAuthHandler>(new MyAuthHandler());
 //  auto z3 = fc->Authenticate(options, std::move(myAuthHandler)).ok();
-  const auto &ticket = table.hackGetTicket();
+  const auto &ticket = t2.hackGetTicket();
   std::unique_ptr<arrow::flight::FlightStreamReader> fsr;
   arrow::flight::Ticket tkt;
   // super sad
+  std::cerr << "ticket is " << ticket.ticket() << "\n";
   tkt.ticket = ticket.ticket();
   auto z4 = fc->DoGet(options, tkt, &fsr).ok();
   (void)z1;

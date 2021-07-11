@@ -1,0 +1,16 @@
+cmake_minimum_required(VERSION 3.16)
+project(sandbox1)
+
+set(CMAKE_CXX_STANDARD 17)
+FIND_PACKAGE(Arrow REQUIRED PATHS /home/kosak/arrowlocal/usr/local/lib/cmake/arrow)
+FIND_PACKAGE(ArrowFlight REQUIRED PATHS /home/kosak/arrowlocal/usr/local/lib/cmake/arrow)
+FIND_PACKAGE(gRPC REQUIRED)
+FIND_PACKAGE(Protobuf REQUIRED)
+find_package(Threads REQUIRED)
+
+add_executable(sandbox1 main.cpp)
+target_link_libraries(sandbox1 arrow_flight_static)
+target_link_libraries(sandbox1 arrow_static)
+target_link_libraries(sandbox1 protobuf)
+target_link_libraries(sandbox1 gRPC::grpc++)
+target_link_libraries(Threads::Threads)
