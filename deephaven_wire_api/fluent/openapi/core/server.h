@@ -69,8 +69,7 @@ public:
 };
 
 class Server {
-  typedef arrow::flight::protocol::Ticket Ticket;
-  typedef arrow::flight::protocol::FlightService FlightService;
+  typedef arrow::flight::protocol::Wicket Ticket;
   typedef io::deephaven::proto::backplane::grpc::BarrageService BarrageService;
   typedef io::deephaven::proto::backplane::grpc::SessionService SessionService;
   typedef io::deephaven::proto::backplane::grpc::TableService TableService;
@@ -92,14 +91,12 @@ public:
   Server(Private,
       std::unique_ptr<BarrageService::Stub> barrageStub,
       std::unique_ptr<ConsoleService::Stub> consoleStub,
-      std::unique_ptr<FlightService::Stub> flightStub,
       std::unique_ptr<SessionService::Stub> sessionStub,
       std::unique_ptr<TableService::Stub> tableStub);
   ~Server();
 
   BarrageService::Stub *barrageStub() { return barrageStub_.get(); }
   ConsoleService::Stub *consoleStub() { return consoleStub_.get(); }
-  FlightService::Stub *flightStub() { return flightStub_.get(); }
   SessionService::Stub *sessionStub() { return sessionStub_.get(); }
   TableService::Stub *tableStub() { return tableStub_.get(); }
 
@@ -130,7 +127,6 @@ private:
 
   std::unique_ptr<BarrageService::Stub> barrageStub_;
   std::unique_ptr<ConsoleService::Stub> consoleStub_;
-  std::unique_ptr<FlightService::Stub> flightStub_;
   std::unique_ptr<SessionService::Stub> sessionStub_;
   std::unique_ptr<TableService::Stub> tableStub_;
   grpc::CompletionQueue completionQueue_;

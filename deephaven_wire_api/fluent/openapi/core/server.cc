@@ -12,7 +12,8 @@
 #include "proto/table.grpc.pb.h"
 
 using namespace std;
-using arrow::flight::protocol::Ticket;
+using arrow::flight::protocol::Wicket;
+typedef Wicket Ticket;
 using deephaven::openAPI::utility::bit_cast;
 using deephaven::openAPI::utility::streamf;
 using deephaven::openAPI::utility::stringf;
@@ -26,10 +27,9 @@ std::shared_ptr<Server> Server::createFromTarget(const std::string &target) {
   auto channel = grpc::CreateChannel(target, grpc::InsecureChannelCredentials());
   auto bs = BarrageService::NewStub(channel);
   auto cs = ConsoleService::NewStub(channel);
-  auto fs = FlightService::NewStub(channel);
   auto ss = SessionService::NewStub(channel);
   auto ts = TableService::NewStub(channel);
-  auto result = std::make_shared<Server>(Private(), std::move(bs), std::move(cs), std::move(fs),
+  auto result = std::make_shared<Server>(Private(), std::move(bs), std::move(cs),
       std::move(ss), std::move(ts));
   result->self_ = result;
 
@@ -42,12 +42,10 @@ std::shared_ptr<Server> Server::createFromTarget(const std::string &target) {
 Server::Server(Private,
     std::unique_ptr<BarrageService::Stub> barrageStub,
     std::unique_ptr<ConsoleService::Stub> consoleStub,
-    std::unique_ptr<FlightService::Stub> flightStub,
     std::unique_ptr<SessionService::Stub> sessionStub,
     std::unique_ptr<TableService::Stub> tableStub) :
     barrageStub_(std::move(barrageStub)),
     consoleStub_(std::move(consoleStub)),
-    flightStub_(std::move(flightStub)),
     sessionStub_(std::move(sessionStub)),
     tableStub_(std::move(tableStub)),
     nextFreeTicketId_(1) {}

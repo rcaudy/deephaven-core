@@ -116,23 +116,23 @@ void SessionService::Stub::experimental_async::CloseSession(::grpc::ClientContex
   return result;
 }
 
-::grpc::Status SessionService::Stub::Release(::grpc::ClientContext* context, const ::arrow::flight::protocol::Ticket& request, ::io::deephaven::proto::backplane::grpc::ReleaseResponse* response) {
-  return ::grpc::internal::BlockingUnaryCall< ::arrow::flight::protocol::Ticket, ::io::deephaven::proto::backplane::grpc::ReleaseResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_Release_, context, request, response);
+::grpc::Status SessionService::Stub::Release(::grpc::ClientContext* context, const ::arrow::flight::protocol::Wicket& request, ::io::deephaven::proto::backplane::grpc::ReleaseResponse* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::arrow::flight::protocol::Wicket, ::io::deephaven::proto::backplane::grpc::ReleaseResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_Release_, context, request, response);
 }
 
-void SessionService::Stub::experimental_async::Release(::grpc::ClientContext* context, const ::arrow::flight::protocol::Ticket* request, ::io::deephaven::proto::backplane::grpc::ReleaseResponse* response, std::function<void(::grpc::Status)> f) {
-  ::grpc::internal::CallbackUnaryCall< ::arrow::flight::protocol::Ticket, ::io::deephaven::proto::backplane::grpc::ReleaseResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_Release_, context, request, response, std::move(f));
+void SessionService::Stub::experimental_async::Release(::grpc::ClientContext* context, const ::arrow::flight::protocol::Wicket* request, ::io::deephaven::proto::backplane::grpc::ReleaseResponse* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::arrow::flight::protocol::Wicket, ::io::deephaven::proto::backplane::grpc::ReleaseResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_Release_, context, request, response, std::move(f));
 }
 
-void SessionService::Stub::experimental_async::Release(::grpc::ClientContext* context, const ::arrow::flight::protocol::Ticket* request, ::io::deephaven::proto::backplane::grpc::ReleaseResponse* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
+void SessionService::Stub::experimental_async::Release(::grpc::ClientContext* context, const ::arrow::flight::protocol::Wicket* request, ::io::deephaven::proto::backplane::grpc::ReleaseResponse* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
   ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_Release_, context, request, response, reactor);
 }
 
-::grpc::ClientAsyncResponseReader< ::io::deephaven::proto::backplane::grpc::ReleaseResponse>* SessionService::Stub::PrepareAsyncReleaseRaw(::grpc::ClientContext* context, const ::arrow::flight::protocol::Ticket& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::io::deephaven::proto::backplane::grpc::ReleaseResponse, ::arrow::flight::protocol::Ticket, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_Release_, context, request);
+::grpc::ClientAsyncResponseReader< ::io::deephaven::proto::backplane::grpc::ReleaseResponse>* SessionService::Stub::PrepareAsyncReleaseRaw(::grpc::ClientContext* context, const ::arrow::flight::protocol::Wicket& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::io::deephaven::proto::backplane::grpc::ReleaseResponse, ::arrow::flight::protocol::Wicket, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_Release_, context, request);
 }
 
-::grpc::ClientAsyncResponseReader< ::io::deephaven::proto::backplane::grpc::ReleaseResponse>* SessionService::Stub::AsyncReleaseRaw(::grpc::ClientContext* context, const ::arrow::flight::protocol::Ticket& request, ::grpc::CompletionQueue* cq) {
+::grpc::ClientAsyncResponseReader< ::io::deephaven::proto::backplane::grpc::ReleaseResponse>* SessionService::Stub::AsyncReleaseRaw(::grpc::ClientContext* context, const ::arrow::flight::protocol::Wicket& request, ::grpc::CompletionQueue* cq) {
   auto* result =
     this->PrepareAsyncReleaseRaw(context, request, cq);
   result->StartCall();
@@ -189,10 +189,10 @@ SessionService::Service::Service() {
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       SessionService_method_names[3],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< SessionService::Service, ::arrow::flight::protocol::Ticket, ::io::deephaven::proto::backplane::grpc::ReleaseResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+      new ::grpc::internal::RpcMethodHandler< SessionService::Service, ::arrow::flight::protocol::Wicket, ::io::deephaven::proto::backplane::grpc::ReleaseResponse, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](SessionService::Service* service,
              ::grpc::ServerContext* ctx,
-             const ::arrow::flight::protocol::Ticket* req,
+             const ::arrow::flight::protocol::Wicket* req,
              ::io::deephaven::proto::backplane::grpc::ReleaseResponse* resp) {
                return service->Release(ctx, req, resp);
              }, this)));
@@ -232,7 +232,7 @@ SessionService::Service::~Service() {
   return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
 }
 
-::grpc::Status SessionService::Service::Release(::grpc::ServerContext* context, const ::arrow::flight::protocol::Ticket* request, ::io::deephaven::proto::backplane::grpc::ReleaseResponse* response) {
+::grpc::Status SessionService::Service::Release(::grpc::ServerContext* context, const ::arrow::flight::protocol::Wicket* request, ::io::deephaven::proto::backplane::grpc::ReleaseResponse* response) {
   (void) context;
   (void) request;
   (void) response;

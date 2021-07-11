@@ -598,7 +598,7 @@ public:
   DateTimeCol getDateTimeCol(boost::string_view columnName) const;
 
   int64_t hackGetSizeFromTableDefinition() const;
-  const arrow::flight::protocol::Ticket &hackGetTicket() const;
+  const arrow::flight::protocol::Wicket &hackGetTicket() const;
 
   // for debugging
   void observe() const;

@@ -88,11 +88,11 @@ class SessionService final {
     //
     // Attempts to release an export by its ticket. Returns true if an existing export was found. It is the client's
     // responsibility to release all resources they no longer want the server to hold on to.
-    virtual ::grpc::Status Release(::grpc::ClientContext* context, const ::arrow::flight::protocol::Ticket& request, ::io::deephaven::proto::backplane::grpc::ReleaseResponse* response) = 0;
-    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::io::deephaven::proto::backplane::grpc::ReleaseResponse>> AsyncRelease(::grpc::ClientContext* context, const ::arrow::flight::protocol::Ticket& request, ::grpc::CompletionQueue* cq) {
+    virtual ::grpc::Status Release(::grpc::ClientContext* context, const ::arrow::flight::protocol::Wicket& request, ::io::deephaven::proto::backplane::grpc::ReleaseResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::io::deephaven::proto::backplane::grpc::ReleaseResponse>> AsyncRelease(::grpc::ClientContext* context, const ::arrow::flight::protocol::Wicket& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::io::deephaven::proto::backplane::grpc::ReleaseResponse>>(AsyncReleaseRaw(context, request, cq));
     }
-    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::io::deephaven::proto::backplane::grpc::ReleaseResponse>> PrepareAsyncRelease(::grpc::ClientContext* context, const ::arrow::flight::protocol::Ticket& request, ::grpc::CompletionQueue* cq) {
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::io::deephaven::proto::backplane::grpc::ReleaseResponse>> PrepareAsyncRelease(::grpc::ClientContext* context, const ::arrow::flight::protocol::Wicket& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::io::deephaven::proto::backplane::grpc::ReleaseResponse>>(PrepareAsyncReleaseRaw(context, request, cq));
     }
     //
@@ -143,11 +143,11 @@ class SessionService final {
       //
       // Attempts to release an export by its ticket. Returns true if an existing export was found. It is the client's
       // responsibility to release all resources they no longer want the server to hold on to.
-      virtual void Release(::grpc::ClientContext* context, const ::arrow::flight::protocol::Ticket* request, ::io::deephaven::proto::backplane::grpc::ReleaseResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void Release(::grpc::ClientContext* context, const ::arrow::flight::protocol::Wicket* request, ::io::deephaven::proto::backplane::grpc::ReleaseResponse* response, std::function<void(::grpc::Status)>) = 0;
       #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
-      virtual void Release(::grpc::ClientContext* context, const ::arrow::flight::protocol::Ticket* request, ::io::deephaven::proto::backplane::grpc::ReleaseResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void Release(::grpc::ClientContext* context, const ::arrow::flight::protocol::Wicket* request, ::io::deephaven::proto::backplane::grpc::ReleaseResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
       #else
-      virtual void Release(::grpc::ClientContext* context, const ::arrow::flight::protocol::Ticket* request, ::io::deephaven::proto::backplane::grpc::ReleaseResponse* response, ::grpc::experimental::ClientUnaryReactor* reactor) = 0;
+      virtual void Release(::grpc::ClientContext* context, const ::arrow::flight::protocol::Wicket* request, ::io::deephaven::proto::backplane::grpc::ReleaseResponse* response, ::grpc::experimental::ClientUnaryReactor* reactor) = 0;
       #endif
       //
       // Establish a stream to manage all session exports, including those lost due to partially complete rpc calls.
@@ -175,8 +175,8 @@ class SessionService final {
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::io::deephaven::proto::backplane::grpc::HandshakeResponse>* PrepareAsyncRefreshSessionTokenRaw(::grpc::ClientContext* context, const ::io::deephaven::proto::backplane::grpc::HandshakeRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::io::deephaven::proto::backplane::grpc::ReleaseResponse>* AsyncCloseSessionRaw(::grpc::ClientContext* context, const ::io::deephaven::proto::backplane::grpc::HandshakeRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::io::deephaven::proto::backplane::grpc::ReleaseResponse>* PrepareAsyncCloseSessionRaw(::grpc::ClientContext* context, const ::io::deephaven::proto::backplane::grpc::HandshakeRequest& request, ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientAsyncResponseReaderInterface< ::io::deephaven::proto::backplane::grpc::ReleaseResponse>* AsyncReleaseRaw(::grpc::ClientContext* context, const ::arrow::flight::protocol::Ticket& request, ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientAsyncResponseReaderInterface< ::io::deephaven::proto::backplane::grpc::ReleaseResponse>* PrepareAsyncReleaseRaw(::grpc::ClientContext* context, const ::arrow::flight::protocol::Ticket& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::io::deephaven::proto::backplane::grpc::ReleaseResponse>* AsyncReleaseRaw(::grpc::ClientContext* context, const ::arrow::flight::protocol::Wicket& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::io::deephaven::proto::backplane::grpc::ReleaseResponse>* PrepareAsyncReleaseRaw(::grpc::ClientContext* context, const ::arrow::flight::protocol::Wicket& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientReaderInterface< ::io::deephaven::proto::backplane::grpc::ExportNotification>* ExportNotificationsRaw(::grpc::ClientContext* context, const ::io::deephaven::proto::backplane::grpc::ExportNotificationRequest& request) = 0;
     virtual ::grpc::ClientAsyncReaderInterface< ::io::deephaven::proto::backplane::grpc::ExportNotification>* AsyncExportNotificationsRaw(::grpc::ClientContext* context, const ::io::deephaven::proto::backplane::grpc::ExportNotificationRequest& request, ::grpc::CompletionQueue* cq, void* tag) = 0;
     virtual ::grpc::ClientAsyncReaderInterface< ::io::deephaven::proto::backplane::grpc::ExportNotification>* PrepareAsyncExportNotificationsRaw(::grpc::ClientContext* context, const ::io::deephaven::proto::backplane::grpc::ExportNotificationRequest& request, ::grpc::CompletionQueue* cq) = 0;
@@ -205,11 +205,11 @@ class SessionService final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::io::deephaven::proto::backplane::grpc::ReleaseResponse>> PrepareAsyncCloseSession(::grpc::ClientContext* context, const ::io::deephaven::proto::backplane::grpc::HandshakeRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::io::deephaven::proto::backplane::grpc::ReleaseResponse>>(PrepareAsyncCloseSessionRaw(context, request, cq));
     }
-    ::grpc::Status Release(::grpc::ClientContext* context, const ::arrow::flight::protocol::Ticket& request, ::io::deephaven::proto::backplane::grpc::ReleaseResponse* response) override;
-    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::io::deephaven::proto::backplane::grpc::ReleaseResponse>> AsyncRelease(::grpc::ClientContext* context, const ::arrow::flight::protocol::Ticket& request, ::grpc::CompletionQueue* cq) {
+    ::grpc::Status Release(::grpc::ClientContext* context, const ::arrow::flight::protocol::Wicket& request, ::io::deephaven::proto::backplane::grpc::ReleaseResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::io::deephaven::proto::backplane::grpc::ReleaseResponse>> AsyncRelease(::grpc::ClientContext* context, const ::arrow::flight::protocol::Wicket& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::io::deephaven::proto::backplane::grpc::ReleaseResponse>>(AsyncReleaseRaw(context, request, cq));
     }
-    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::io::deephaven::proto::backplane::grpc::ReleaseResponse>> PrepareAsyncRelease(::grpc::ClientContext* context, const ::arrow::flight::protocol::Ticket& request, ::grpc::CompletionQueue* cq) {
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::io::deephaven::proto::backplane::grpc::ReleaseResponse>> PrepareAsyncRelease(::grpc::ClientContext* context, const ::arrow::flight::protocol::Wicket& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::io::deephaven::proto::backplane::grpc::ReleaseResponse>>(PrepareAsyncReleaseRaw(context, request, cq));
     }
     std::unique_ptr< ::grpc::ClientReader< ::io::deephaven::proto::backplane::grpc::ExportNotification>> ExportNotifications(::grpc::ClientContext* context, const ::io::deephaven::proto::backplane::grpc::ExportNotificationRequest& request) {
@@ -242,11 +242,11 @@ class SessionService final {
       #else
       void CloseSession(::grpc::ClientContext* context, const ::io::deephaven::proto::backplane::grpc::HandshakeRequest* request, ::io::deephaven::proto::backplane::grpc::ReleaseResponse* response, ::grpc::experimental::ClientUnaryReactor* reactor) override;
       #endif
-      void Release(::grpc::ClientContext* context, const ::arrow::flight::protocol::Ticket* request, ::io::deephaven::proto::backplane::grpc::ReleaseResponse* response, std::function<void(::grpc::Status)>) override;
+      void Release(::grpc::ClientContext* context, const ::arrow::flight::protocol::Wicket* request, ::io::deephaven::proto::backplane::grpc::ReleaseResponse* response, std::function<void(::grpc::Status)>) override;
       #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
-      void Release(::grpc::ClientContext* context, const ::arrow::flight::protocol::Ticket* request, ::io::deephaven::proto::backplane::grpc::ReleaseResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void Release(::grpc::ClientContext* context, const ::arrow::flight::protocol::Wicket* request, ::io::deephaven::proto::backplane::grpc::ReleaseResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
       #else
-      void Release(::grpc::ClientContext* context, const ::arrow::flight::protocol::Ticket* request, ::io::deephaven::proto::backplane::grpc::ReleaseResponse* response, ::grpc::experimental::ClientUnaryReactor* reactor) override;
+      void Release(::grpc::ClientContext* context, const ::arrow::flight::protocol::Wicket* request, ::io::deephaven::proto::backplane::grpc::ReleaseResponse* response, ::grpc::experimental::ClientUnaryReactor* reactor) override;
       #endif
       #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
       void ExportNotifications(::grpc::ClientContext* context, const ::io::deephaven::proto::backplane::grpc::ExportNotificationRequest* request, ::grpc::ClientReadReactor< ::io::deephaven::proto::backplane::grpc::ExportNotification>* reactor) override;
@@ -270,8 +270,8 @@ class SessionService final {
     ::grpc::ClientAsyncResponseReader< ::io::deephaven::proto::backplane::grpc::HandshakeResponse>* PrepareAsyncRefreshSessionTokenRaw(::grpc::ClientContext* context, const ::io::deephaven::proto::backplane::grpc::HandshakeRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::io::deephaven::proto::backplane::grpc::ReleaseResponse>* AsyncCloseSessionRaw(::grpc::ClientContext* context, const ::io::deephaven::proto::backplane::grpc::HandshakeRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::io::deephaven::proto::backplane::grpc::ReleaseResponse>* PrepareAsyncCloseSessionRaw(::grpc::ClientContext* context, const ::io::deephaven::proto::backplane::grpc::HandshakeRequest& request, ::grpc::CompletionQueue* cq) override;
-    ::grpc::ClientAsyncResponseReader< ::io::deephaven::proto::backplane::grpc::ReleaseResponse>* AsyncReleaseRaw(::grpc::ClientContext* context, const ::arrow::flight::protocol::Ticket& request, ::grpc::CompletionQueue* cq) override;
-    ::grpc::ClientAsyncResponseReader< ::io::deephaven::proto::backplane::grpc::ReleaseResponse>* PrepareAsyncReleaseRaw(::grpc::ClientContext* context, const ::arrow::flight::protocol::Ticket& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::io::deephaven::proto::backplane::grpc::ReleaseResponse>* AsyncReleaseRaw(::grpc::ClientContext* context, const ::arrow::flight::protocol::Wicket& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::io::deephaven::proto::backplane::grpc::ReleaseResponse>* PrepareAsyncReleaseRaw(::grpc::ClientContext* context, const ::arrow::flight::protocol::Wicket& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientReader< ::io::deephaven::proto::backplane::grpc::ExportNotification>* ExportNotificationsRaw(::grpc::ClientContext* context, const ::io::deephaven::proto::backplane::grpc::ExportNotificationRequest& request) override;
     ::grpc::ClientAsyncReader< ::io::deephaven::proto::backplane::grpc::ExportNotification>* AsyncExportNotificationsRaw(::grpc::ClientContext* context, const ::io::deephaven::proto::backplane::grpc::ExportNotificationRequest& request, ::grpc::CompletionQueue* cq, void* tag) override;
     ::grpc::ClientAsyncReader< ::io::deephaven::proto::backplane::grpc::ExportNotification>* PrepareAsyncExportNotificationsRaw(::grpc::ClientContext* context, const ::io::deephaven::proto::backplane::grpc::ExportNotificationRequest& request, ::grpc::CompletionQueue* cq) override;
@@ -302,7 +302,7 @@ class SessionService final {
     //
     // Attempts to release an export by its ticket. Returns true if an existing export was found. It is the client's
     // responsibility to release all resources they no longer want the server to hold on to.
-    virtual ::grpc::Status Release(::grpc::ServerContext* context, const ::arrow::flight::protocol::Ticket* request, ::io::deephaven::proto::backplane::grpc::ReleaseResponse* response);
+    virtual ::grpc::Status Release(::grpc::ServerContext* context, const ::arrow::flight::protocol::Wicket* request, ::io::deephaven::proto::backplane::grpc::ReleaseResponse* response);
     //
     // Establish a stream to manage all session exports, including those lost due to partially complete rpc calls.
     //
@@ -383,11 +383,11 @@ class SessionService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status Release(::grpc::ServerContext* /*context*/, const ::arrow::flight::protocol::Ticket* /*request*/, ::io::deephaven::proto::backplane::grpc::ReleaseResponse* /*response*/) override {
+    ::grpc::Status Release(::grpc::ServerContext* /*context*/, const ::arrow::flight::protocol::Wicket* /*request*/, ::io::deephaven::proto::backplane::grpc::ReleaseResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    void RequestRelease(::grpc::ServerContext* context, ::arrow::flight::protocol::Ticket* request, ::grpc::ServerAsyncResponseWriter< ::io::deephaven::proto::backplane::grpc::ReleaseResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+    void RequestRelease(::grpc::ServerContext* context, ::arrow::flight::protocol::Wicket* request, ::grpc::ServerAsyncResponseWriter< ::io::deephaven::proto::backplane::grpc::ReleaseResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
       ::grpc::Service::RequestAsyncUnary(3, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
@@ -565,38 +565,38 @@ class SessionService final {
       ::grpc::Service::experimental().
     #endif
         MarkMethodCallback(3,
-          new ::grpc::internal::CallbackUnaryHandler< ::arrow::flight::protocol::Ticket, ::io::deephaven::proto::backplane::grpc::ReleaseResponse>(
+          new ::grpc::internal::CallbackUnaryHandler< ::arrow::flight::protocol::Wicket, ::io::deephaven::proto::backplane::grpc::ReleaseResponse>(
             [this](
     #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
                    ::grpc::CallbackServerContext*
     #else
                    ::grpc::experimental::CallbackServerContext*
     #endif
-                     context, const ::arrow::flight::protocol::Ticket* request, ::io::deephaven::proto::backplane::grpc::ReleaseResponse* response) { return this->Release(context, request, response); }));}
+                     context, const ::arrow::flight::protocol::Wicket* request, ::io::deephaven::proto::backplane::grpc::ReleaseResponse* response) { return this->Release(context, request, response); }));}
     void SetMessageAllocatorFor_Release(
-        ::grpc::experimental::MessageAllocator< ::arrow::flight::protocol::Ticket, ::io::deephaven::proto::backplane::grpc::ReleaseResponse>* allocator) {
+        ::grpc::experimental::MessageAllocator< ::arrow::flight::protocol::Wicket, ::io::deephaven::proto::backplane::grpc::ReleaseResponse>* allocator) {
     #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
       ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(3);
     #else
       ::grpc::internal::MethodHandler* const handler = ::grpc::Service::experimental().GetHandler(3);
     #endif
-      static_cast<::grpc::internal::CallbackUnaryHandler< ::arrow::flight::protocol::Ticket, ::io::deephaven::proto::backplane::grpc::ReleaseResponse>*>(handler)
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::arrow::flight::protocol::Wicket, ::io::deephaven::proto::backplane::grpc::ReleaseResponse>*>(handler)
               ->SetMessageAllocator(allocator);
     }
     ~ExperimentalWithCallbackMethod_Release() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status Release(::grpc::ServerContext* /*context*/, const ::arrow::flight::protocol::Ticket* /*request*/, ::io::deephaven::proto::backplane::grpc::ReleaseResponse* /*response*/) override {
+    ::grpc::Status Release(::grpc::ServerContext* /*context*/, const ::arrow::flight::protocol::Wicket* /*request*/, ::io::deephaven::proto::backplane::grpc::ReleaseResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
     virtual ::grpc::ServerUnaryReactor* Release(
-      ::grpc::CallbackServerContext* /*context*/, const ::arrow::flight::protocol::Ticket* /*request*/, ::io::deephaven::proto::backplane::grpc::ReleaseResponse* /*response*/)
+      ::grpc::CallbackServerContext* /*context*/, const ::arrow::flight::protocol::Wicket* /*request*/, ::io::deephaven::proto::backplane::grpc::ReleaseResponse* /*response*/)
     #else
     virtual ::grpc::experimental::ServerUnaryReactor* Release(
-      ::grpc::experimental::CallbackServerContext* /*context*/, const ::arrow::flight::protocol::Ticket* /*request*/, ::io::deephaven::proto::backplane::grpc::ReleaseResponse* /*response*/)
+      ::grpc::experimental::CallbackServerContext* /*context*/, const ::arrow::flight::protocol::Wicket* /*request*/, ::io::deephaven::proto::backplane::grpc::ReleaseResponse* /*response*/)
     #endif
       { return nullptr; }
   };
@@ -706,7 +706,7 @@ class SessionService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status Release(::grpc::ServerContext* /*context*/, const ::arrow::flight::protocol::Ticket* /*request*/, ::io::deephaven::proto::backplane::grpc::ReleaseResponse* /*response*/) override {
+    ::grpc::Status Release(::grpc::ServerContext* /*context*/, const ::arrow::flight::protocol::Wicket* /*request*/, ::io::deephaven::proto::backplane::grpc::ReleaseResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -800,7 +800,7 @@ class SessionService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status Release(::grpc::ServerContext* /*context*/, const ::arrow::flight::protocol::Ticket* /*request*/, ::io::deephaven::proto::backplane::grpc::ReleaseResponse* /*response*/) override {
+    ::grpc::Status Release(::grpc::ServerContext* /*context*/, const ::arrow::flight::protocol::Wicket* /*request*/, ::io::deephaven::proto::backplane::grpc::ReleaseResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -967,7 +967,7 @@ class SessionService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status Release(::grpc::ServerContext* /*context*/, const ::arrow::flight::protocol::Ticket* /*request*/, ::io::deephaven::proto::backplane::grpc::ReleaseResponse* /*response*/) override {
+    ::grpc::Status Release(::grpc::ServerContext* /*context*/, const ::arrow::flight::protocol::Wicket* /*request*/, ::io::deephaven::proto::backplane::grpc::ReleaseResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -1107,10 +1107,10 @@ class SessionService final {
     WithStreamedUnaryMethod_Release() {
       ::grpc::Service::MarkMethodStreamed(3,
         new ::grpc::internal::StreamedUnaryHandler<
-          ::arrow::flight::protocol::Ticket, ::io::deephaven::proto::backplane::grpc::ReleaseResponse>(
+          ::arrow::flight::protocol::Wicket, ::io::deephaven::proto::backplane::grpc::ReleaseResponse>(
             [this](::grpc::ServerContext* context,
                    ::grpc::ServerUnaryStreamer<
-                     ::arrow::flight::protocol::Ticket, ::io::deephaven::proto::backplane::grpc::ReleaseResponse>* streamer) {
+                     ::arrow::flight::protocol::Wicket, ::io::deephaven::proto::backplane::grpc::ReleaseResponse>* streamer) {
                        return this->StreamedRelease(context,
                          streamer);
                   }));
@@ -1119,12 +1119,12 @@ class SessionService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable regular version of this method
-    ::grpc::Status Release(::grpc::ServerContext* /*context*/, const ::arrow::flight::protocol::Ticket* /*request*/, ::io::deephaven::proto::backplane::grpc::ReleaseResponse* /*response*/) override {
+    ::grpc::Status Release(::grpc::ServerContext* /*context*/, const ::arrow::flight::protocol::Wicket* /*request*/, ::io::deephaven::proto::backplane::grpc::ReleaseResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     // replace default version of method with streamed unary
-    virtual ::grpc::Status StreamedRelease(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::arrow::flight::protocol::Ticket,::io::deephaven::proto::backplane::grpc::ReleaseResponse>* server_unary_streamer) = 0;
+    virtual ::grpc::Status StreamedRelease(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::arrow::flight::protocol::Wicket,::io::deephaven::proto::backplane::grpc::ReleaseResponse>* server_unary_streamer) = 0;
   };
   typedef WithStreamedUnaryMethod_NewSession<WithStreamedUnaryMethod_RefreshSessionToken<WithStreamedUnaryMethod_CloseSession<WithStreamedUnaryMethod_Release<Service > > > > StreamedUnaryService;
   template <class BaseClass>

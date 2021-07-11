@@ -93,7 +93,7 @@ private:
 };
 
 class LazyStateOss final : public deephaven::openAPI::core::SFCallback<io::deephaven::proto::backplane::grpc::ExportedTableCreationResponse> {
-  typedef arrow::flight::protocol::Ticket Ticket;
+  typedef arrow::flight::protocol::Wicket Ticket;
   typedef io::deephaven::proto::backplane::grpc::ExportedTableCreationResponse ExportedTableCreationResponse;
   typedef deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::ColumnDefinition ColumnDefinition;
   typedef deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::InitialTableDefinition InitialTableDefinition;
@@ -144,7 +144,7 @@ class LowToHighUpdateAdaptor;
 
 class QueryTableImpl {
   struct Private {};
-  typedef arrow::flight::protocol::Ticket Ticket;
+  typedef arrow::flight::protocol::Wicket Ticket;
   typedef deephaven::openAPI::highlevel::fluent::SortPair SortPair;
   typedef deephaven::openAPI::highlevel::fluent::impl::ColumnImpl ColumnImpl;
   typedef deephaven::openAPI::highlevel::fluent::impl::DateTimeColImpl DateTimeColImpl;

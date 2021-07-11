@@ -16,7 +16,7 @@
 using grpc::Channel;
 using grpc::ClientContext;
 using grpc::ClientReader;
-using arrow::flight::protocol::Ticket;
+typedef arrow::flight::protocol::Wicket Ticket;
 using io::deephaven::proto::backplane::grpc::ComboAggregateRequest;
 using io::deephaven::proto::backplane::grpc::HandshakeRequest;
 using io::deephaven::proto::backplane::grpc::HandshakeResponse;

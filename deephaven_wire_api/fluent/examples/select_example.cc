@@ -135,6 +135,11 @@ void test1(const QueryTable &tableQ) {
   stupido(std::move(crazy2));
 
   auto z4 = fc->DoGet(options, tkt, &fsr).ok();
+  streamf(std::cout, "z4 is %o\n", z4);
+
+  auto feelingLucky = fsr->GetSchema().ValueOrDie()->ToString();
+  streamf(std::cout, "feeling lucky is %o\n", feelingLucky);
+
   (void)z1;
   (void)z2;
   (void)z4;
@@ -194,6 +199,7 @@ int stupido(std::pair<std::string, std::string> pain) {
   bool valid = dc != nullptr;
   (void)valid;
   auto jerk = dc->ToString();
+  streamf(std::cout, "Welcome to jerky town: %o\n", jerk);
 
   return 0;
 }

@@ -19,7 +19,6 @@
 #include "highlevel/openapi.h"
 #include "utility/utility.h"
 
-using arrow::flight::protocol::FlightData;
 using io::deephaven::proto::backplane::grpc::ComboAggregateRequest;
 using io::deephaven::proto::backplane::grpc::SortDescriptor;
 using io::deephaven::proto::backplane::grpc::TableReference;
@@ -484,10 +483,10 @@ void QueryTableImpl::unsubscribeAsync(std::shared_ptr<SFCallback<Void>> callback
 }
 
 void QueryTableImpl::getData(std::shared_ptr<QueryTable::getDataCallback_t> handler) const {
-  struct ZamboniHandler final : public Callback<const Ticket &, const FlightData &> {
+  struct ZamboniHandler final : public Callback<const Ticket &, const char *> {
     ~ZamboniHandler() final = default;
 
-    void invoke(const Ticket &, const FlightData &args) final {
+    void invoke(const Ticket &, const char *args) final {
       std::cerr << "IT'S THE ZAMBONIHANDLER\n";
     }
   };
