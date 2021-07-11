@@ -64,7 +64,7 @@ message SubscriptionRequest {
   /*
    * The ticket identifying this data set.
    */
-  arrow.flight.protocol.Ticket ticket = 1;
+  arrow.flight.protocol.Wicket ticket = 1;
 
   /*
    * A bitset of columns to subscribe to. An empty bitset unsubscribes from everything.
@@ -89,7 +89,7 @@ message SubscriptionRequest {
   /*
    * Export this subscription so that it can be referenced for out of band updates.
    */
-  arrow.flight.protocol.Ticket export_id = 21;
+  arrow.flight.protocol.Wicket export_id = 21;
 
   /*
    * Subscription request processing may incur some for of coalescing. Additionally, out of band updates may

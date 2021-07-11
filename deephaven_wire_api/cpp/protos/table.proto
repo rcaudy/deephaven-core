@@ -147,7 +147,7 @@ service TableService {
 message TableReference {
   oneof ref {
     // an exported ticket
-    arrow.flight.protocol.Ticket ticket = 1;
+    arrow.flight.protocol.Wicket ticket = 1;
     // an offset into a BatchRequest -- used to reference a result that will not be exported
     sint32 batch_offset = 2;
   }
@@ -179,7 +179,7 @@ message ExportedTableUpdatesRequest {
 }
 
 message ExportedTableUpdateMessage {
-  arrow.flight.protocol.Ticket export_id = 1;
+  arrow.flight.protocol.Wicket export_id = 1;
   sint64 size = 2 [jstype=JS_STRING];
   string update_failure_message = 3;
 }
@@ -189,70 +189,70 @@ message ExportedTableUpdateBatchMessage {
 }
 
 message EmptyTableRequest {
-  arrow.flight.protocol.Ticket result_id = 1;
+  arrow.flight.protocol.Wicket result_id = 1;
   sint64 size = 2 [jstype=JS_STRING];
   repeated string column_names = 3;
   repeated string column_types = 4;
 }
 
 message TimeTableRequest {
-  arrow.flight.protocol.Ticket result_id = 1;
+  arrow.flight.protocol.Wicket result_id = 1;
   sint64 start_time_nanos = 2 [jstype=JS_STRING];
   sint64 period_nanos = 3 [jstype=JS_STRING];
 }
 
 message SelectOrUpdateRequest {
-  arrow.flight.protocol.Ticket result_id = 1;
+  arrow.flight.protocol.Wicket result_id = 1;
   TableReference source_id = 2;
   repeated string column_specs = 3;
 }
 
 message SelectDistinctRequest {
-  arrow.flight.protocol.Ticket result_id = 1;
+  arrow.flight.protocol.Wicket result_id = 1;
   TableReference source_id = 2;
   repeated string column_names = 3;
 }
 
 message DropColumnsRequest {
-  arrow.flight.protocol.Ticket result_id = 1;
+  arrow.flight.protocol.Wicket result_id = 1;
   TableReference source_id = 2;
   repeated string column_names = 3;
 }
 
 message UnstructuredFilterTableRequest {
-  arrow.flight.protocol.Ticket result_id = 1;
+  arrow.flight.protocol.Wicket result_id = 1;
   TableReference source_id = 2;
   repeated string filters = 3;
 }
 
 message HeadOrTailRequest {
-  arrow.flight.protocol.Ticket result_id = 1;
+  arrow.flight.protocol.Wicket result_id = 1;
   TableReference source_id = 2;
   sint64 num_rows = 3 [jstype=JS_STRING];
 }
 
 message HeadOrTailByRequest {
-  arrow.flight.protocol.Ticket result_id = 1;
+  arrow.flight.protocol.Wicket result_id = 1;
   TableReference source_id = 2;
   sint64 num_rows = 3 [jstype=JS_STRING];
   repeated string group_by_column_specs = 4;
 }
 
 message UngroupRequest {
-  arrow.flight.protocol.Ticket result_id = 1;
+  arrow.flight.protocol.Wicket result_id = 1;
   TableReference source_id = 2;
   bool null_fill = 3;
   repeated string columns_to_ungroup = 4;
 }
 
 message MergeTablesRequest {
-  arrow.flight.protocol.Ticket result_id = 1;
+  arrow.flight.protocol.Wicket result_id = 1;
   repeated TableReference source_ids = 2;
   string key_column = 3; // if specified, the result will be sorted by this column
 }
 
 message SnapshotTableRequest {
-  arrow.flight.protocol.Ticket result_id = 1;
+  arrow.flight.protocol.Wicket result_id = 1;
 
   // The table on which to invoke the snapshot function. If unset, an empty(1) table will be used.
   TableReference left_id = 2;
@@ -265,7 +265,7 @@ message SnapshotTableRequest {
 }
 
 message JoinTablesRequest {
-  arrow.flight.protocol.Ticket result_id = 1;
+  arrow.flight.protocol.Wicket result_id = 1;
   TableReference left_id = 2;
   TableReference right_id = 3;
   repeated string columns_to_match = 4;
@@ -283,7 +283,7 @@ message JoinTablesRequest {
 }
 
 message ComboAggregateRequest {
-  arrow.flight.protocol.Ticket result_id = 1;
+  arrow.flight.protocol.Wicket result_id = 1;
   TableReference source_id = 2;
   repeated Aggregate aggregates = 3;
   repeated string group_by_columns = 4;
@@ -329,13 +329,13 @@ message SortDescriptor {
 }
 
 message SortTableRequest {
-  arrow.flight.protocol.Ticket result_id = 1;
+  arrow.flight.protocol.Wicket result_id = 1;
   TableReference source_id = 2;
   repeated SortDescriptor sorts = 3;
 }
 
 message FilterTableRequest {
-  arrow.flight.protocol.Ticket result_id = 1;
+  arrow.flight.protocol.Wicket result_id = 1;
   TableReference source_id = 2;
 
   repeated FilterDescription filters = 3;
@@ -396,7 +396,7 @@ message FilterDescription {
 }
 
 message FlattenRequest {
-  arrow.flight.protocol.Ticket result_id = 1;
+  arrow.flight.protocol.Wicket result_id = 1;
   TableReference source_id = 2;
 }
 

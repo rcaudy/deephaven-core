@@ -12,7 +12,7 @@ set(CMAKE_BUILD_TYPE Debug)
 project(deephaven_cpp VERSION "${DH_BASE_VERSION}")
 
 find_package(Threads REQUIRED)
-find_package(Arrow REQUIRED)
+find_package(Arrow REQUIRED PATHS /home/kosak/arrowlocal/usr/local/lib/cmake/arrow)
 find_package(zstd REQUIRED)
 find_package(CURL REQUIRED)
 
