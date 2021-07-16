@@ -6,6 +6,7 @@
 #include <string>
 #include <cstring>
 #include <cstdint>
+#include <arrow/flight/client.h>
 #include <boost/asio/buffer.hpp>
 #include <boost/asio/connect.hpp>
 #include <boost/asio/ip/tcp.hpp>
@@ -129,6 +130,7 @@ private:
   std::unique_ptr<ConsoleService::Stub> consoleStub_;
   std::unique_ptr<SessionService::Stub> sessionStub_;
   std::unique_ptr<TableService::Stub> tableStub_;
+  std::unique_ptr<arrow::flight::FlightClient> flightClient_;
   grpc::CompletionQueue completionQueue_;
 
   bool haveAuth_ = false;

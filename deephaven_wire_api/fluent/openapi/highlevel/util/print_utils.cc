@@ -27,10 +27,10 @@ std::atomic<size_t> nextTableId(0);
 
 void PrintUtils::printTableData(std::ostream &s, const QueryTable &queryTable) {
   std::string var = stringf("result%o", nextTableId++);
-  streamf(s, "********* Not printing data. Instead binding to variable %o\n", var);
-  queryTable.bindToVariable(var);
-//  auto columns = queryTable.getColumns();
-//  printTableData(s, queryTable, columns);
+//  streamf(s, "********* Not printing data. Instead binding to variable %o\n", var);
+//  queryTable.bindToVariable(var);
+  auto columns = queryTable.getColumns();
+  printTableData(s, queryTable, columns);
 }
 
 void PrintUtils::printTableData(std::ostream &s, const QueryTable &table,

@@ -5,6 +5,8 @@ set(CMAKE_CXX_STANDARD 11)
 add_compile_options(-Wall -Werror)
 
 find_package(Boost 1.67 REQUIRED)
+FIND_PACKAGE(Arrow REQUIRED PATHS /home/kosak/arrowlocal/usr/local/lib/cmake/arrow)
+FIND_PACKAGE(ArrowFlight REQUIRED PATHS /home/kosak/arrowlocal/usr/local/lib/cmake/arrow)
 
 set(SRC_FILES
     core/deserializer.cc
@@ -112,6 +114,8 @@ set(SRC_FILES
     )
 
 add_library(openapi ${SRC_FILES})
+target_link_libraries(openapi arrow_flight_static)
+target_link_libraries(openapi arrow_static)
 target_include_directories(openapi BEFORE PUBLIC ${Boost_INCLUDE_DIRS})
 include_directories(".")
 cmake_minimum_required(VERSION 3.16)

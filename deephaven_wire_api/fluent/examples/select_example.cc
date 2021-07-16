@@ -44,8 +44,8 @@ void test5(const QueryTable &table);
 }  // namespace
 
 void SelectExample::run(const QueryScope &scope) {
-  // auto table = scope.fetchTable("demo");
-  auto table = scope.emptyTable(10, {"x"}, {"int"});
+  auto table = scope.fetchTable("demo");
+  // auto table = scope.emptyTable(10, {"x"}, {"int"});
 
   // test0(scope);
   test1(table);
@@ -99,19 +99,19 @@ struct MyAuthHandler : public arrow::flight::ClientAuthHandler {
 int stupido(std::pair<std::string, std::string> pain);
 
 // Simple Where
-void test1(const QueryTable &tableQ) {
-  auto t2 = tableQ.update("QQQ = i");
+void test1(const QueryTable &table) {
+  auto updated = table.update("QQQ = i");
   // Symbolically
-//  auto importDate = table.getStrCol("ImportDate");
-//  auto ticker = table.getStrCol("Ticker");
-//  auto volume = table.getNumCol("Volume");
+  auto importDate = updated.getStrCol("ImportDate");
+  auto ticker = updated.getStrCol("Ticker");
+  auto volume = updated.getNumCol("Volume");
   // if we allowed C++17 we could do something like
   // auto [importDate, ticker, volume] = table.getCol<StrCol, StrCol, NumCol>("ImportDate", "Ticker", "Volume");
 
-//  auto t2 = table.where(importDate == "2017-11-01" && ticker == "IBM")
-//      .select(ticker, volume);
-//  PrintUtils::printTableData(std::cout, t2);
-//  std::cerr << "test1 done\n";
+  auto t2 = updated.where(importDate == "2017-11-01" && ticker == "IBM")
+      .select(ticker, volume);
+  PrintUtils::printTableData(std::cout, t2);
+  std::cerr << "test1 done\n";
 
   std::unique_ptr<arrow::flight::FlightClient> fc;
   arrow::flight::Location location;
