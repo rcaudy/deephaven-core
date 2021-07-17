@@ -12,6 +12,7 @@
 #include <arrow/type.h>
 #include <arrow/table.h>
 #include <boost/variant.hpp>
+#include <z3_fixedpoint.h>
 #include "core/callbacks.h"
 #include "lowlevel/generated/dhworker_requests.h"
 #include "lowlevel/generated/shared_objects.h"
@@ -698,39 +699,11 @@ auto LazyStateOss::getColumnDefinitions() -> const columnDefinitions_t & {
 }
 
 namespace {
-struct invokeDoGet_t {
-  void zamboniTime() {
-    arrow::flight::FlightCallOptions options;
-    options.headers.push_back(server_->makeBlessing());
-    std::unique_ptr<arrow::flight::FlightStreamReader> fsr;
-    auto doGetRes = server_->flightClient()->DoGet(options, ticket_, &fsr);
-    if (!doGetRes.ok()) {
-      auto message = stringf("Doget failed with status %o", doGetRes.ToString());
-      auto ep = std::make_exception_ptr(std::runtime_error(message));
-      outer_->onError(std::move(ep));
-      return;
-    }
-
-    auto schemaHolder = fsr->GetSchema();
-    if (!schemaHolder.ok()) {
-      auto message = stringf("GetSchema failed with status %o", schemaHolder.status().ToString());
-      auto ep = std::make_exception_ptr(std::runtime_error(message));
-      outer_->onError(std::move(ep));
-      return;
-    }
-
-    auto &schema = schemaHolder.ValueOrDie();
-
-    std::cerr << "If you make it this far, I want to give you a hug\n";
-  }
-
-  std::shared_ptr<SFCallback<const columnDefinitions_t &>> outer_;
-};
-
 struct getColumnDefCallback_t final :
     public SFCallback<const Ticket &>,
-    public SFCallback<const LazyStateOss::columnDefinitions_t &> {
-  ~getColumnDefCallback_t() final = default;
+    public SFCallback<const LazyStateOss::columnDefinitions_t &>,
+    public Callback<> {
+~getColumnDefCallback_t() final = default;
 
   void onFailure(std::exception_ptr ep) final {
     outer_->onFailure(std::move(ep));
@@ -747,6 +720,31 @@ struct getColumnDefCallback_t final :
 
   void onSuccess(const LazyStateOss::columnDefinitions_t &colDefs) final {
     outer_->onSuccess(colDefs);
+  }
+
+  void invoke() final {
+    arrow::flight::FlightCallOptions options;
+    options.headers.push_back(server_->makeBlessing());
+    std::unique_ptr<arrow::flight::FlightStreamReader> fsr;
+    auto doGetRes = server_->flightClient()->DoGet(options, ticket_, &fsr);
+    if (!doGetRes.ok()) {
+      auto message = stringf("Doget failed with status %o", doGetRes.ToString());
+      auto ep = std::make_exception_ptr(std::runtime_error(message));
+      colDefPromise_->setError(std::move(ep));
+      return;
+    }
+
+    auto schemaHolder = fsr->GetSchema();
+    if (!schemaHolder.ok()) {
+      auto message = stringf("GetSchema failed with status %o", schemaHolder.status().ToString());
+      auto ep = std::make_exception_ptr(std::runtime_error(message));
+      colDefPromise_->setError(std::move(ep));
+      return;
+    }
+
+    auto &schema = schemaHolder.ValueOrDie();
+    std::cerr << "If you make it this far, I want to give you a hug\n";
+    // colDefPromise_->setValue(zamboniTime);
   }
 
   std::shared_ptr<LazyStateOss> owner_;
