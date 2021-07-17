@@ -36,63 +36,13 @@ namespace impl {
 class QueryScopeImpl;
 
 namespace internal {
-class LazyState final : public deephaven::openAPI::core::SFCallback<
-    std::shared_ptr<deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::InitialTableDefinition>> {
-  typedef deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::ColumnDefinition ColumnDefinition;
-  typedef deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::InitialTableDefinition InitialTableDefinition;
-  typedef deephaven::openAPI::utility::Executor Executor;
-
-  template<typename T>
-  using SFCallback = deephaven::openAPI::core::SFCallback<T>;
-
-public:
-  typedef SFCallback<std::shared_ptr<InitialTableDefinition>> waiter_t;
-
-  explicit LazyState(std::shared_ptr<Executor> executor);
-  ~LazyState() final;
-
-  const std::shared_ptr<InitialTableDefinition> &initialTableDefinition() {
-    // Ready is either "have ITD" or "have exception".
-    waitUntilReady();
-    return initialTableDefinition_;
-  }
-
-  const std::map<std::string, std::shared_ptr<ColumnDefinition>> &columnDefinitions() {
-    // Ready is either "have ITD" or "have exception".
-    waitUntilReady();
-    return columnDefinitions_;
-  }
-
-  bool ready();
-  void waitUntilReady();
-
-  void onSuccess(std::shared_ptr<InitialTableDefinition> item) final;
-  void onFailure(std::exception_ptr ep) final;
-
-  void invoke(std::shared_ptr<waiter_t> callback);
-
-  template<typename Callable>
-  void invokeCallable(Callable &&callable) {
-    invoke(waiter_t::createFromCallable(std::forward<Callable>(callable)));
-  }
-
-private:
-  bool readyLocked(std::unique_lock<std::mutex> */*lock*/);
-
-  std::mutex mutex_;
-  std::condition_variable condVar_;
-  // Error condition ('onException' has been called).
-  std::exception_ptr error_;
-  // Success condition ('onSuccess' has been called).
-  std::shared_ptr<InitialTableDefinition> initialTableDefinition_;
-  // This map is also populated when 'onSuccess' is called.
-  std::map<std::string, std::shared_ptr<ColumnDefinition>> columnDefinitions_;
-
-  std::vector<std::shared_ptr<waiter_t>> waiters_;
-  std::shared_ptr<Executor> executor_;
+template<typename T>
+class ZamboniQueue : public deephaven::openAPI::core::SFCallback<T> {
 };
 
 class LazyStateOss final : public deephaven::openAPI::core::SFCallback<io::deephaven::proto::backplane::grpc::ExportedTableCreationResponse> {
+  struct Private {};
+
   typedef arrow::flight::protocol::Wicket Ticket;
   typedef io::deephaven::proto::backplane::grpc::ExportedTableCreationResponse ExportedTableCreationResponse;
   typedef deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::ColumnDefinition ColumnDefinition;
@@ -103,10 +53,13 @@ class LazyStateOss final : public deephaven::openAPI::core::SFCallback<io::deeph
   template<typename T>
   using SFCallback = deephaven::openAPI::core::SFCallback<T>;
 
+  enum class ColumnDefinitionState {Initial, Waiting, Ready};
+
 public:
   typedef SFCallback<const Ticket &> waiter_t;
+  static std::shared_ptr<LazyStateOss> create(std::shared_ptr<Executor> executor);
 
-  explicit LazyStateOss(std::shared_ptr<Executor> executor);
+  LazyStateOss(Private, std::shared_ptr<Executor> executor);
   ~LazyStateOss() final;
 
   bool ready();
@@ -122,6 +75,8 @@ public:
     invoke(waiter_t::createFromCallable(std::forward<Callable>(callable)));
   }
 
+  const std::map<std::string, std::string> &getColumnDefinitions();
+
 private:
   bool readyLocked(std::unique_lock<std::mutex> */*lock*/);
 
@@ -134,6 +89,10 @@ private:
   // Success condition ('onSuccess' has been called).
   bool success_ = false;
   Ticket ticket_;
+
+  // Some hacky type for column definitions
+  ColumnDefinitionState columnDefinitionsState_ = ColumnDefinitionState::Initial;
+  std::map<std::string, std::string> columnDefinitions_;
 
   std::vector<std::shared_ptr<waiter_t>> waiters_;
 };
@@ -166,15 +125,10 @@ class QueryTableImpl {
   template<typename T>
   using SFCallback = deephaven::openAPI::core::SFCallback<T>;
 public:
-  static std::shared_ptr<internal::LazyState> createItdCallback(std::shared_ptr<Executor> executor);
   static std::shared_ptr<internal::LazyStateOss> createEtcCallback(std::shared_ptr<Executor> executor);
 
-  static std::shared_ptr<QueryTableImpl> create(std::shared_ptr<QueryScopeImpl> scope,
-      std::shared_ptr<TableHandle> tableHandle, std::shared_ptr<internal::LazyState> itdCallback);
   static std::shared_ptr<QueryTableImpl> createOss(std::shared_ptr<QueryScopeImpl> scope,
       Ticket ticket, std::shared_ptr<internal::LazyStateOss> etcCallback);
-  QueryTableImpl(Private, std::shared_ptr<QueryScopeImpl> scope,
-      std::shared_ptr<TableHandle> tableHandle, std::shared_ptr<internal::LazyState> lazyState);
   QueryTableImpl(Private, std::shared_ptr<QueryScopeImpl> scope,
       Ticket ticket, std::shared_ptr<internal::LazyStateOss> lazyStateOss);
   ~QueryTableImpl();
@@ -222,9 +176,7 @@ public:
 
   void getTableDataAsync(int64_t first, int64_t last, std::vector<std::string> columns,
       std::shared_ptr<SFCallback<std::shared_ptr<TableSnapshot>>> callback);
-  const std::shared_ptr<std::vector<std::shared_ptr<ColumnDefinition>>> &getColumnDefinitions() const {
-    return initialTableDefinition()->definition()->columns();
-  }
+  const std::shared_ptr<std::vector<std::shared_ptr<ColumnDefinition>>> &getColumnDefinitions() const;
 
   void subscribeAllAsync(std::vector<std::string> columns,
       std::shared_ptr<SFCallback<Void>> callback);
@@ -236,27 +188,21 @@ public:
   void removeTableUpdateHandler(const std::shared_ptr<QueryTable::updateCallback_t> &handler);
 
   std::vector<std::shared_ptr<ColumnImpl>> getColumnImpls();
-  std::shared_ptr<StrColImpl> getStrColImpl(boost::string_view columnName);
-  std::shared_ptr<NumColImpl> getNumColImpl(boost::string_view columnName);
-  std::shared_ptr<DateTimeColImpl> getDateTimeColImpl(boost::string_view columnName);
+  std::shared_ptr<StrColImpl> getStrColImpl(std::string columnName);
+  std::shared_ptr<NumColImpl> getNumColImpl(std::string columnName);
+  std::shared_ptr<DateTimeColImpl> getDateTimeColImpl(std::string columnName);
 
   void bindToVariableAsync(std::string variable, std::shared_ptr<SFCallback<Void>> callback);
 
   // For debugging
   void observe();
 
-  int64_t hackGetSizeFromTableDefinition() const {
-    return initialTableDefinition()->size();
-  }
-
-  const std::shared_ptr<InitialTableDefinition> &initialTableDefinition() const {
-    return lazyState_->initialTableDefinition();
-  }
-
   const std::shared_ptr<QueryScopeImpl> &scope() const { return scope_; }
   const Ticket &ticket() const { return ticket_; }
 
 private:
+  void assertColumnValid(const std::string &columnName);
+
   std::shared_ptr<QueryTableImpl> defaultAggregateByDescriptor(
       ComboAggregateRequest::Aggregate descriptor, std::vector<std::string> groupByColumns);
   std::shared_ptr<QueryTableImpl> defaultAggregateByType(ComboAggregateRequest::AggType aggregateType,
@@ -268,7 +214,6 @@ private:
 
   std::shared_ptr<QueryScopeImpl> scope_;
   Ticket ticket_;
-  std::shared_ptr<internal::LazyState> lazyState_;
   std::shared_ptr<internal::LazyStateOss> lazyStateOss_;
   std::mutex mutex_;
   std::vector<std::shared_ptr<internal::LowToHighUpdateAdaptor>> adaptors_;

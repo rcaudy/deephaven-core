@@ -121,20 +121,8 @@ private:
 };
 }  // namespace internal
 
-std::shared_ptr<internal::LazyState> QueryTableImpl::createItdCallback(std::shared_ptr<Executor> executor) {
-  return std::make_shared<internal::LazyState>(std::move(executor));
-}
-
 std::shared_ptr<internal::LazyStateOss> QueryTableImpl::createEtcCallback(std::shared_ptr<Executor> executor) {
-  return std::make_shared<internal::LazyStateOss>(std::move(executor));
-}
-
-std::shared_ptr<QueryTableImpl> QueryTableImpl::create(std::shared_ptr<QueryScopeImpl> scope,
-    std::shared_ptr<TableHandle> tableHandle, std::shared_ptr<internal::LazyState> itdCallback) {
-  auto result = std::make_shared<QueryTableImpl>(Private(), std::move(scope), std::move(tableHandle),
-      std::move(itdCallback));
-  result->weakSelf_ = result;
-  return result;
+  return internal::LazyStateOss::create(std::move(executor));
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::createOss(std::shared_ptr<QueryScopeImpl> scope,
@@ -143,11 +131,6 @@ std::shared_ptr<QueryTableImpl> QueryTableImpl::createOss(std::shared_ptr<QueryS
       std::move(etcCallback));
   result->weakSelf_ = result;
   return result;
-}
-
-QueryTableImpl::QueryTableImpl(Private, std::shared_ptr<QueryScopeImpl> scope,
-    std::shared_ptr<TableHandle> tableHandle, std::shared_ptr<internal::LazyState> lazyState) :
-    scope_(std::move(scope)), lazyState_(std::move(lazyState)) {
 }
 
 QueryTableImpl::QueryTableImpl(Private, std::shared_ptr<QueryScopeImpl> scope,
@@ -475,7 +458,7 @@ void QueryTableImpl::subscribeAllAsync(std::vector<std::string> columns,
 //        false, std::move(callback));
   };
 
-  lazyState_->invokeCallable(std::move(outer));
+  // lazyState_->invokeCallable(std::move(outer));
 }
 
 void QueryTableImpl::unsubscribeAsync(std::shared_ptr<SFCallback<Void>> callback) {
@@ -522,7 +505,7 @@ void QueryTableImpl::removeTableUpdateHandler(
 }
 
 std::vector<std::shared_ptr<ColumnImpl>> QueryTableImpl::getColumnImpls() {
-  const auto &colDefs = lazyState_->columnDefinitions();
+  const auto &colDefs = lazyStateOss_->getColumnDefinitions();
   std::vector<std::shared_ptr<ColumnImpl>> result;
   result.reserve(colDefs.size());
   for (const auto &cd : colDefs) {
@@ -531,37 +514,28 @@ std::vector<std::shared_ptr<ColumnImpl>> QueryTableImpl::getColumnImpls() {
   return result;
 }
 
-std::shared_ptr<NumColImpl> QueryTableImpl::getNumColImpl(boost::string_view columnName) {
-//  const auto &colDefs = lazyState_->columnDefinitions();
-//  // TODO(kosak): save yourself this copy
-  std::string temp = columnName.to_string();
-//  auto ip = colDefs.find(temp);
-//  if (ip == colDefs.end()) {
-//    throw std::runtime_error(stringf(R"(Column name "%o" is not in the table)", columnName));
-//  }
-  return NumColImpl::create(std::move(temp));
+std::shared_ptr<NumColImpl> QueryTableImpl::getNumColImpl(std::string columnName) {
+  assertColumnValid(columnName);
+  actually_look_up_the_num_col_and_return_it();
+  return NumColImpl::create(std::move(columnName));
 }
 
-std::shared_ptr<StrColImpl> QueryTableImpl::getStrColImpl(boost::string_view columnName) {
-//  const auto &colDefs = lazyState_->columnDefinitions();
-//  // TODO(kosak): save yourself this copy
-  std::string temp = columnName.to_string();
-//  auto ip = colDefs.find(temp);
-//  if (ip == colDefs.end()) {
-//    throw std::runtime_error(stringf(R"(Column name "%o" is not in the table)", columnName));
-//  }
-  return StrColImpl::create(std::move(temp));
+std::shared_ptr<StrColImpl> QueryTableImpl::getStrColImpl(std::string columnName) {
+  assertColumnValid(columnName);
+  return StrColImpl::create(std::move(columnName));
 }
 
-std::shared_ptr<DateTimeColImpl> QueryTableImpl::getDateTimeColImpl(boost::string_view columnName) {
-//  const auto &colDefs = lazyState_->columnDefinitions();
-//  // TODO(kosak): save yourself this copy
-  std::string temp = columnName.to_string();
-//  auto ip = colDefs.find(temp);
-//  if (ip == colDefs.end()) {
-//    throw std::runtime_error(stringf(R"(Column name "%o" is not in the table)", columnName));
-//  }
-  return DateTimeColImpl::create(std::move(temp));
+std::shared_ptr<DateTimeColImpl> QueryTableImpl::getDateTimeColImpl(std::string columnName) {
+  assertColumnValid(columnName);
+  return DateTimeColImpl::create(std::move(columnName));
+}
+
+void QueryTableImpl::assertColumnValid(const std::string &columnName) {
+  const auto &colDefs = lazyStateOss_->getColumnDefinitions();
+  auto ip = colDefs.find(columnName);
+  if (ip == colDefs.end()) {
+    throw std::runtime_error(stringf(R"(Column name "%o" is not in the table)", columnName));
+  }
 }
 
 void QueryTableImpl::bindToVariableAsync(std::string variable,
@@ -649,70 +623,9 @@ void LazyState::onSuccess(std::shared_ptr<InitialTableDefinition> initialTableDe
   executor_->invokeCallable(std::move(cb));
 }
 
-void LazyState::onFailure(std::exception_ptr error) {
-  std::unique_lock<std::mutex> lock(mutex_);
-  if (readyLocked(&lock)) {
-    return;
-  }
-  error_ = error;
-
-  auto spLocalWaiters = std::make_shared<std::vector<std::shared_ptr<waiter_t>>>();
-  spLocalWaiters->swap(waiters_);
-  lock.unlock();
-  condVar_.notify_all();
-
-  if (spLocalWaiters->empty()) {
-    return;
-  }
-
-  auto cb = [spLocalWaiters, error](Void) {
-    for (const auto &waiter : *spLocalWaiters) {
-      waiter->onFailure(error);
-    }
-  };
-  executor_->invokeCallable(std::move(cb));
-}
-
-void LazyState::invoke(std::shared_ptr<waiter_t> callback) {
-  std::unique_lock<std::mutex> lock(mutex_);
-  if (!readyLocked(&lock)) {
-    waiters_.push_back(std::move(callback));
-    return;
-  }
-  // Already ready, so grab state
-  auto itd = initialTableDefinition_;
-  auto ep = error_;
-  lock.unlock();
-
-  // And then invoke callback (but not under lock)
-  if (ep != nullptr) {
-    callback->onFailure(std::move(ep));
-  }
-  callback->onSuccess(std::move(itd));
-}
-
-bool LazyState::readyLocked(std::unique_lock<std::mutex> */*lock*/) {
-  return error_ != nullptr || initialTableDefinition_ != nullptr;
-}
-
-LazyStateOss::LazyStateOss(std::shared_ptr<Executor> executor) : executor_(std::move(executor)) {}
+LazyStateOss::LazyStateOss(Private, std::shared_ptr<Executor> executor) :
+    executor_(std::move(executor)) {}
 LazyStateOss::~LazyStateOss() = default;
-
-//void LazyStateOss::onSuccess(ExportedTableCreationResponse item) {
-//  std::cerr << "ZAMBONI TIME SUCCESS!!!\n";
-//  streamf(std::cerr, "Zamboni time succ=%o err=%o\n", item.success(), item.error_info());
-//  streamf(std::cerr, "Zamboni ref case=%o\n", item.result_id().ref_case());
-//  if (item.result_id().ref_case() == TableReference::RefCase::kTicket) {
-//    const char *q = item.result_id().ticket().ticket().data();
-//    (void)q;
-//    std::cerr << "ZAMBONI TICKET\n";
-//  }
-//  std::cerr << "ZAMBONI TIME SUCCESS2222!!!\n";
-//}
-
-//void LazyStateOss::onFailure(std::exception_ptr ep) {
-//  std::cerr << "ZAMBONI FAILURE\n";
-//}
 
 void LazyStateOss::onSuccess(ExportedTableCreationResponse item) {
   if (!item.result_id().has_ticket()) {
@@ -807,6 +720,43 @@ bool LazyStateOss::readyLocked(std::unique_lock<std::mutex> */*lock*/) {
   return error_ != nullptr || success_;
 }
 
+const std::map<std::string, std::string> &LazyStateOss::getColumnDefinitions() {
+  // First we need to wait until the table has been successfully created.
+  waitUntilReady();
+
+  bool sendRequest = false;
+  std::unique_lock<std::mutex> guard(mutex_);
+  if (columnDefinitionsState_ == ColumnDefinitionState::Ready) {
+    return columnDefinitions_;
+  }
+  if (columnDefinitionsState_ == ColumnDefinitionState::Initial) {
+    columnDefinitionsState_ = ColumnDefinitionState::Waiting;
+    sendRequest = true;
+  }
+
+  if (!sendRequest) {
+    while (columnDefinitionsState_ != ColumnDefinitionState::Ready) {
+      // This doesn't deal with the error state
+      condVar_.wait(guard);
+    }
+    return columnDefinitions_;
+  }
+
+  guard.unlock();
+
+  arrow::flight::FlightClient fc;
+  fc.DoGet(options, ticket, &fsr);
+
+  fsr->readStringSTupid(&hate);
+
+  setZamboniTime();
+  ahte();
+  guard.lock();
+  columnDefinitionsState_ = ColumnDefinitionState::Ready;
+  elstupidocopy();
+  return columnDefinitions_;
+}
+
 std::shared_ptr<LowToHighSnapshotAdaptor> LowToHighSnapshotAdaptor::create(
     std::shared_ptr<QueryTableImpl> queryTableImpl,
     std::shared_ptr<QueryTable::snapshotCallback_t> handler) {
@@ -857,7 +807,7 @@ std::shared_ptr<BitSet> getColumnsBitSet(const std::vector<std::string> &desired
   if (desiredColumns.empty()) {
     // empty vector means "all".
     items.reserve(tableColumns.size());
-    for (size_t i = 0; i < tableColumns.size(); ++i) {
+    for (int32_t i = 0; i < tableColumns.size(); ++i) {
       items.push_back(i);
     }
   } else {
@@ -867,7 +817,7 @@ std::shared_ptr<BitSet> getColumnsBitSet(const std::vector<std::string> &desired
       lookup.emplace_back(s);
     }
     std::sort(lookup.begin(), lookup.end());
-    for (size_t i = 0; i < tableColumns.size(); ++i) {
+    for (int32_t i = 0; i < tableColumns.size(); ++i) {
       if (std::binary_search(lookup.begin(), lookup.end(), *tableColumns[i]->name())) {
         items.push_back(i);
       }
