@@ -17,7 +17,7 @@ set(SRC_FILES
     core/serializer.h
     core/server.cc
     core/server.h
-    core/callbacks.h
+        utility/callbacks.h
 
     lowlevel/custom/custom_shared_objects.cc
     lowlevel/custom/custom_shared_objects.h

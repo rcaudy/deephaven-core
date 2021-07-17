@@ -6,7 +6,7 @@
 
 #include "core/deserializer.h"
 #include "core/protocol_base_classes.h"
-#include "core/callbacks.h"
+#include "openapi/utility/callbacks.h"
 #include "utility/executor.h"
 
 namespace deephaven {

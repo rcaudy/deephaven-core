@@ -5,7 +5,7 @@
 #include <functional>
 #include <memory>
 #include <mutex>
-#include "core/callbacks.h"
+#include "callbacks.h"
 #include "utility/utility.h"
 
 namespace deephaven {

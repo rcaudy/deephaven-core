@@ -9,7 +9,7 @@
 #include <string>
 #include <boost/optional.hpp>
 #include <boost/utility/string_view.hpp>
-#include "core/callbacks.h"
+#include "utility/callbacks.h"
 #include "core/server.h"
 #include "lowlevel/generated/shared_objects.h"
 #include "highlevel/openapi.h"

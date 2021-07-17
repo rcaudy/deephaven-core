@@ -3,7 +3,7 @@
  */
 #include "examples/get_data_example.h"
 
-#include "core/callbacks.h"
+#include "openapi/utility/callbacks.h"
 #include "highlevel/data/column_data.h"
 #include "highlevel/data/column_data_holder.h"
 #include "highlevel/util/demo_constants.h"

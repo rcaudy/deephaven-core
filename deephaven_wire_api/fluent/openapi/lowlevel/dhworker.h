@@ -2,7 +2,7 @@
 
 #include <future>
 #include <memory>
-#include "core/callbacks.h"
+#include "openapi/utility/callbacks.h"
 #include "core/server.h"
 #include "lowlevel/generated/shared_objects.h"
 #include "lowlevel/util/server_callbacks.h"

@@ -5,7 +5,7 @@
 #include <memory>
 #include <boost/utility/string_view.hpp>
 #include "core/server.h"
-#include "core/callbacks.h"
+#include "openapi/utility/callbacks.h"
 #include "lowlevel/generated/shared_objects.h"
 #include "lowlevel/util/server_callbacks.h"
 #include "proto/console.pb.h"

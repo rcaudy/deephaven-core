@@ -19,7 +19,7 @@
 #include "core/protocol_base_classes.h"
 #include "core/deserializer.h"
 #include "core/serializer.h"
-#include "core/callbacks.h"
+#include "openapi/utility/callbacks.h"
 #include "core/protocol_base_classes.h"
 #include "utility/executor.h"
 #include "proto/barrage.pb.h"

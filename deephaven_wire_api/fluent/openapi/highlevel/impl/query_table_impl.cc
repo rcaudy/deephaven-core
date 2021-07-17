@@ -13,7 +13,7 @@
 #include <arrow/table.h>
 #include <boost/variant.hpp>
 #include <z3_fixedpoint.h>
-#include "core/callbacks.h"
+#include "utility/callbacks.h"
 #include "lowlevel/generated/dhworker_requests.h"
 #include "lowlevel/generated/shared_objects.h"
 #include "lowlevel/dhworker_session.h"

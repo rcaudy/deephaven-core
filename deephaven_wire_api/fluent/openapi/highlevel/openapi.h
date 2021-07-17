@@ -3,7 +3,7 @@
 #include <future>
 #include <memory>
 #include <boost/utility/string_view.hpp>
-#include "core/callbacks.h"
+#include "openapi/utility/callbacks.h"
 #include "highlevel/data/column_data.h"
 #include "highlevel/data/column_data_holder.h"
 #include "highlevel/columns.h"

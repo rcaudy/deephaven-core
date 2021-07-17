@@ -4,7 +4,7 @@
 #include <future>
 #include <memory>
 #include "core/server.h"
-#include "core/callbacks.h"
+#include "openapi/utility/callbacks.h"
 #include "lowlevel/generated/shared_objects.h"
 #include "lowlevel/dhworker.h"
 #include "utility/executor.h"
