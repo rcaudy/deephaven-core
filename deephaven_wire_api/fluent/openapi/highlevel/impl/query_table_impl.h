@@ -10,8 +10,9 @@
 #include <boost/optional.hpp>
 #include <boost/utility/string_view.hpp>
 #include "core/callbacks.h"
-#include "highlevel/openapi.h"
+#include "core/server.h"
 #include "lowlevel/generated/shared_objects.h"
+#include "highlevel/openapi.h"
 #include "utility/executor.h"
 #include "proto/session.pb.h"
 #include "proto/session.grpc.pb.h"
@@ -36,15 +37,12 @@ namespace impl {
 class QueryScopeImpl;
 
 namespace internal {
-template<typename T>
-class ZamboniQueue : public deephaven::openAPI::core::SFCallback<T> {
-};
-
 class LazyStateOss final : public deephaven::openAPI::core::SFCallback<io::deephaven::proto::backplane::grpc::ExportedTableCreationResponse> {
   struct Private {};
 
   typedef arrow::flight::protocol::Wicket Ticket;
   typedef io::deephaven::proto::backplane::grpc::ExportedTableCreationResponse ExportedTableCreationResponse;
+  typedef deephaven::openAPI::core::remoting::Server Server;
   typedef deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::ColumnDefinition ColumnDefinition;
   typedef deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::InitialTableDefinition InitialTableDefinition;
   typedef deephaven::openAPI::utility::Executor Executor;
@@ -80,6 +78,7 @@ public:
 private:
   bool readyLocked(std::unique_lock<std::mutex> */*lock*/);
 
+  std::shared_ptr<Server> server_;
   std::shared_ptr<Executor> executor_;
 
   std::mutex mutex_;

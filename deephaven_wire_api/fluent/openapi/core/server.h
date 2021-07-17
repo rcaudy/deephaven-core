@@ -100,6 +100,7 @@ public:
   ConsoleService::Stub *consoleStub() { return consoleStub_.get(); }
   SessionService::Stub *sessionStub() { return sessionStub_.get(); }
   TableService::Stub *tableStub() { return tableStub_.get(); }
+  arrow::flight::FlightClient *flightClient() { return flightClient_.get(); }
 
   Ticket newTicket();
 

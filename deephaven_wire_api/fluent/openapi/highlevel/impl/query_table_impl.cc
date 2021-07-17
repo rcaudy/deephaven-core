@@ -5,6 +5,12 @@
 
 #include <map>
 #include <set>
+#include <arrow/flight/client.h>
+#include <arrow/flight/types.h>
+#include <arrow/array.h>
+#include <arrow/array/array_primitive.h>
+#include <arrow/type.h>
+#include <arrow/table.h>
 #include <boost/variant.hpp>
 #include "core/callbacks.h"
 #include "lowlevel/generated/dhworker_requests.h"
@@ -514,28 +520,34 @@ std::vector<std::shared_ptr<ColumnImpl>> QueryTableImpl::getColumnImpls() {
   return result;
 }
 
-std::shared_ptr<NumColImpl> QueryTableImpl::getNumColImpl(std::string columnName) {
-  assertColumnValid(columnName);
-  actually_look_up_the_num_col_and_return_it();
-  return NumColImpl::create(std::move(columnName));
+std::shared_ptr<NumColImpl> QueryTableImpl::getNumColImpl(boost::string_view columnName) {
+  const auto &colImpl = lookupHelper(columnName);
+  auto result = std::dynamic_pointer_cast<NumColImpl>(colImpl);
+  assertColumnValid(columnName, result);
+  return result;
 }
 
-std::shared_ptr<StrColImpl> QueryTableImpl::getStrColImpl(std::string columnName) {
-  assertColumnValid(columnName);
-  return StrColImpl::create(std::move(columnName));
+std::shared_ptr<StrColImpl> QueryTableImpl::getStrColImpl(boost::string_view columnName) {
+  const auto &colImpl = lookupHelper(columnName);
+  auto result = std::dynamic_pointer_cast<StrColImpl>(colImpl);
+  assertColumnValid(columnName, result);
+  return result;
 }
 
-std::shared_ptr<DateTimeColImpl> QueryTableImpl::getDateTimeColImpl(std::string columnName) {
-  assertColumnValid(columnName);
-  return DateTimeColImpl::create(std::move(columnName));
+std::shared_ptr<DateTimeColImpl> QueryTableImpl::getDateTimeColImpl(boost::string_view columnName) {
+  const auto &colImpl = lookupHelper(columnName);
+  auto result = std::dynamic_pointer_cast<DateTimeColImpl>(colImpl);
+  assertColumnValid(columnName, result);
+  return result;
 }
 
-void QueryTableImpl::assertColumnValid(const std::string &columnName) {
+const std::shared_ptr<ColumnImpl> &QueryTableImpl::lookupHelper(boost::string_view columnName) {
   const auto &colDefs = lazyStateOss_->getColumnDefinitions();
   auto ip = colDefs.find(columnName);
   if (ip == colDefs.end()) {
     throw std::runtime_error(stringf(R"(Column name "%o" is not in the table)", columnName));
   }
+  return ip;
 }
 
 void QueryTableImpl::bindToVariableAsync(std::string variable,
@@ -573,56 +585,6 @@ void QueryTableImpl::observe() {
 }
 
 namespace internal {
-LazyState::LazyState(std::shared_ptr<Executor> executor) : executor_(std::move(executor)) {}
-LazyState::~LazyState() = default;
-
-bool LazyState::ready() {
-  std::unique_lock<std::mutex> lock(mutex_);
-  return readyLocked(&lock);
-}
-
-void LazyState::waitUntilReady() {
-  std::unique_lock<std::mutex> lock(mutex_);
-  while (true) {
-    if (error_ != nullptr) {
-      std::rethrow_exception(error_);
-    }
-    if (initialTableDefinition_ != nullptr) {
-      return;
-    }
-    condVar_.wait(lock);
-  }
-}
-
-void LazyState::onSuccess(std::shared_ptr<InitialTableDefinition> initialTableDefinition) {
-  std::unique_lock<std::mutex> lock(mutex_);
-  if (readyLocked(&lock)) {
-    return;
-  }
-
-  const auto &cds = *initialTableDefinition->definition()->columns();
-  for (const auto &cd : cds) {
-    columnDefinitions_[*cd->name()] = cd;
-  }
-  initialTableDefinition_ = initialTableDefinition;
-
-  auto spLocalWaiters = std::make_shared<std::vector<std::shared_ptr<waiter_t>>>();
-  spLocalWaiters->swap(waiters_);
-  lock.unlock();
-  condVar_.notify_all();
-
-  if (spLocalWaiters->empty()) {
-    return;
-  }
-
-  auto cb = [spLocalWaiters, initialTableDefinition](Void) {
-    for (const auto &waiter : *spLocalWaiters) {
-      waiter->onSuccess(initialTableDefinition);
-    }
-  };
-  executor_->invokeCallable(std::move(cb));
-}
-
 LazyStateOss::LazyStateOss(Private, std::shared_ptr<Executor> executor) :
     executor_(std::move(executor)) {}
 LazyStateOss::~LazyStateOss() = default;
@@ -744,16 +706,20 @@ const std::map<std::string, std::string> &LazyStateOss::getColumnDefinitions() {
 
   guard.unlock();
 
-  arrow::flight::FlightClient fc;
-  fc.DoGet(options, ticket, &fsr);
+  arrow::flight::FlightCallOptions options;
+  std::pair<std::string, std::string> auth;
+  server_->bless(&auth.first, &auth.second);
+  options.headers.push_back(std::move(auth));
+  std::unique_ptr<arrow::flight::FlightStreamReader> fsr;
+  auto errcode1 = server_->flightClient()->DoGet(options, ticket_, &fsr);
+  auto schemaHolder = fsr->GetSchema();
+  if (!schemaHolder.ok()) {
+    return sad;
+  }
+  auto &schema = schemaHolder.ValueOrDie();
 
-  fsr->readStringSTupid(&hate);
-
-  setZamboniTime();
-  ahte();
   guard.lock();
   columnDefinitionsState_ = ColumnDefinitionState::Ready;
-  elstupidocopy();
   return columnDefinitions_;
 }
 
