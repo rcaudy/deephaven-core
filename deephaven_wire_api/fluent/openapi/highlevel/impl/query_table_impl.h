@@ -43,8 +43,6 @@ class LazyStateOss final : public deephaven::openAPI::core::SFCallback<io::deeph
   typedef arrow::flight::protocol::Wicket Ticket;
   typedef io::deephaven::proto::backplane::grpc::ExportedTableCreationResponse ExportedTableCreationResponse;
   typedef deephaven::openAPI::core::remoting::Server Server;
-  typedef deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::ColumnDefinition ColumnDefinition;
-  typedef deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::InitialTableDefinition InitialTableDefinition;
   typedef deephaven::openAPI::utility::Executor Executor;
   typedef deephaven::openAPI::utility::Void Void;
 
@@ -73,7 +71,7 @@ public:
     invoke(waiter_t::createFromCallable(std::forward<Callable>(callable)));
   }
 
-  const std::map<std::string, std::string> &getColumnDefinitions();
+  const std::map<boost::string_view, std::shared_ptr<ColumnImpl>> &getColumnDefinitions();
 
 private:
   bool readyLocked(std::unique_lock<std::mutex> */*lock*/);
