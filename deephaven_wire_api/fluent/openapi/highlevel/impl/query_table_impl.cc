@@ -722,13 +722,14 @@ struct invokeDoGet_t {
     auto &schema = schemaHolder.ValueOrDie();
 
     std::cerr << "If you make it this far, I want to give you a hug\n";
-
   }
 
   std::shared_ptr<SFCallback<const columnDefinitions_t &>> outer_;
 };
-struct getColumnDefCallback_t final : public SFCallback<const LazyStateOss::columnDefinitions_t &>,
-    public SFCallback<const Ticket &> {
+
+struct getColumnDefCallback_t final :
+    public SFCallback<const Ticket &>,
+    public SFCallback<const LazyStateOss::columnDefinitions_t &> {
   ~getColumnDefCallback_t() final = default;
 
   void onFailure(std::exception_ptr ep) final {
@@ -736,18 +737,19 @@ struct getColumnDefCallback_t final : public SFCallback<const LazyStateOss::colu
   }
 
   void onSuccess(const Ticket &ticket) final {
-    auto needsTrigger = columnDefinitions_.invoke(self_.lock());
+    auto needsTrigger = owner_->columnDefinitions_.invoke(self_.lock());
     if (!needsTrigger) {
       return;
     }
     auto idg = std::make_shared<invokeDoGet_t>(std::move(outer_));
-    flightExecutor_->invoke(std::move(idg));
+    owner_->flightExecutor_->invoke(std::move(idg));
   }
 
   void onSuccess(const LazyStateOss::columnDefinitions_t &colDefs) final {
     outer_->onSuccess(colDefs);
   }
 
+  std::shared_ptr<LazyStateOss> owner_;
   std::shared_ptr<SFCallback<const columnDefinitions_t &>> outer_;
 };
 }  // namespace
@@ -756,45 +758,6 @@ void LazyStateOss::getColumnDefinitionsAsync(
     std::shared_ptr<SFCallback<const columnDefinitions_t &>> cb) {
   auto innerCb = std::make_shared<getColumnDefCallback_t>(std::move(cb));
   ticketReady_.invoke(std::move(innerCb));
-
-  // First we need to wait until the table has been successfully created.
-  waitUntilReady();
-
-  bool sendRequest = false;
-  std::unique_lock<std::mutex> guard(mutex_);
-  if (columnDefinitionsState_ == ColumnDefinitionState::Ready) {
-    return columnDefinitions_;
-  }
-  if (columnDefinitionsState_ == ColumnDefinitionState::Initial) {
-    columnDefinitionsState_ = ColumnDefinitionState::Waiting;
-    sendRequest = true;
-  }
-
-  if (!sendRequest) {
-    while (columnDefinitionsState_ != ColumnDefinitionState::Ready) {
-      // This doesn't deal with the error state
-      condVar_.wait(guard);
-    }
-    return columnDefinitions_;
-  }
-
-  guard.unlock();
-
-  arrow::flight::FlightCallOptions options;
-  std::pair<std::string, std::string> auth;
-  server_->bless(&auth.first, &auth.second);
-  options.headers.push_back(std::move(auth));
-  std::unique_ptr<arrow::flight::FlightStreamReader> fsr;
-  auto errcode1 = server_->flightClient()->DoGet(options, ticket_, &fsr);
-  auto schemaHolder = fsr->GetSchema();
-  if (!schemaHolder.ok()) {
-    return sad;
-  }
-  auto &schema = schemaHolder.ValueOrDie();
-
-  guard.lock();
-  columnDefinitionsState_ = ColumnDefinitionState::Ready;
-  return columnDefinitions_;
 }
 
 std::shared_ptr<LowToHighSnapshotAdaptor> LowToHighSnapshotAdaptor::create(
