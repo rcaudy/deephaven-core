@@ -710,12 +710,11 @@ struct getColumnDefCallback_t final :
   }
 
   void onSuccess(const Ticket &ticket) final {
-    auto needsTrigger = owner_->columnDefinitions_.invoke(self_.lock());
+    auto needsTrigger = owner_->columnDefsFuture_.then(self_.lock());
     if (!needsTrigger) {
       return;
     }
-    auto idg = std::make_shared<invokeDoGet_t>(std::move(outer_));
-    owner_->flightExecutor_->invoke(std::move(idg));
+    owner_->flightExecutor_->invoke(self_.lock());
   }
 
   void onSuccess(const LazyStateOss::columnDefinitions_t &colDefs) final {
@@ -730,7 +729,7 @@ struct getColumnDefCallback_t final :
     if (!doGetRes.ok()) {
       auto message = stringf("Doget failed with status %o", doGetRes.ToString());
       auto ep = std::make_exception_ptr(std::runtime_error(message));
-      colDefPromise_->setError(std::move(ep));
+      colDefsPromise_->setError(std::move(ep));
       return;
     }
 
@@ -738,7 +737,7 @@ struct getColumnDefCallback_t final :
     if (!schemaHolder.ok()) {
       auto message = stringf("GetSchema failed with status %o", schemaHolder.status().ToString());
       auto ep = std::make_exception_ptr(std::runtime_error(message));
-      colDefPromise_->setError(std::move(ep));
+      colDefsPromise_->setError(std::move(ep));
       return;
     }
 
@@ -755,7 +754,7 @@ struct getColumnDefCallback_t final :
 void LazyStateOss::getColumnDefinitionsAsync(
     std::shared_ptr<SFCallback<const columnDefinitions_t &>> cb) {
   auto innerCb = std::make_shared<getColumnDefCallback_t>(std::move(cb));
-  ticketReady_.invoke(std::move(innerCb));
+  ticketFuture_.then(std::move(innerCb));
 }
 
 std::shared_ptr<LowToHighSnapshotAdaptor> LowToHighSnapshotAdaptor::create(
