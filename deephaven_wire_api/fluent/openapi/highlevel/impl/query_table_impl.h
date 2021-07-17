@@ -52,6 +52,8 @@ class LazyStateOss final : public deephaven::openAPI::core::SFCallback<io::deeph
   enum class ColumnDefinitionState {Initial, Waiting, Ready};
 
 public:
+  typedef std::map<std::string, std::string> columnDefinitions_t;
+
   typedef SFCallback<const Ticket &> waiter_t;
   static std::shared_ptr<LazyStateOss> create(std::shared_ptr<Executor> executor);
 
@@ -71,7 +73,8 @@ public:
     invoke(waiter_t::createFromCallable(std::forward<Callable>(callable)));
   }
 
-  const std::map<boost::string_view, std::shared_ptr<ColumnImpl>> &getColumnDefinitions();
+  const columnDefinitions_t &getColumnDefinitions();
+  void getColumnDefinitionsAsync(std::shared_ptr<SFCallback<const columnDefinitions_t &>> cb);
 
 private:
   bool readyLocked(std::unique_lock<std::mutex> */*lock*/);
@@ -89,7 +92,7 @@ private:
 
   // Some hacky type for column definitions
   ColumnDefinitionState columnDefinitionsState_ = ColumnDefinitionState::Initial;
-  std::map<std::string, std::string> columnDefinitions_;
+  MySharedFuture<columnDefinitions_t> columnDefinitions_;
 
   std::vector<std::shared_ptr<waiter_t>> waiters_;
 };

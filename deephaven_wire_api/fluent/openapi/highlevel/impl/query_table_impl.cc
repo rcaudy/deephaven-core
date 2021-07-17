@@ -25,11 +25,13 @@
 #include "highlevel/openapi.h"
 #include "utility/utility.h"
 
+typedef arrow::flight::protocol::Wicket Ticket;
 using io::deephaven::proto::backplane::grpc::ComboAggregateRequest;
 using io::deephaven::proto::backplane::grpc::SortDescriptor;
 using io::deephaven::proto::backplane::grpc::TableReference;
 using io::deephaven::proto::backplane::script::grpc::BindTableToVariableResponse;
 using deephaven::openAPI::core::Callback;
+using deephaven::openAPI::core::SFCallback;
 using deephaven::openAPI::lowlevel::remoting::DHWorker;
 using deephaven::openAPI::lowlevel::remoting::DHWorkerAPIListenerDefault;
 using deephaven::openAPI::lowlevel::remoting::DHWorkerSession;
@@ -682,7 +684,79 @@ bool LazyStateOss::readyLocked(std::unique_lock<std::mutex> */*lock*/) {
   return error_ != nullptr || success_;
 }
 
-const std::map<std::string, std::string> &LazyStateOss::getColumnDefinitions() {
+
+auto LazyStateOss::getColumnDefinitions() -> const columnDefinitions_t & {
+  // Shortcut if we have column definitions
+  if (columnDefinitions_.valid()) {
+    // value or exception
+    return columnDefinitions_.value();
+  }
+
+  auto res = SFCallback<const columnDefinitions_t &>::createForFuture();
+  getColumnDefinitionsAsync(std::move(res.first));
+  return res.second.get();
+}
+
+namespace {
+struct invokeDoGet_t {
+  void zamboniTime() {
+    arrow::flight::FlightCallOptions options;
+    options.headers.push_back(server_->makeBlessing());
+    std::unique_ptr<arrow::flight::FlightStreamReader> fsr;
+    auto doGetRes = server_->flightClient()->DoGet(options, ticket_, &fsr);
+    if (!doGetRes.ok()) {
+      auto message = stringf("Doget failed with status %o", doGetRes.ToString());
+      auto ep = std::make_exception_ptr(std::runtime_error(message));
+      outer_->onError(std::move(ep));
+      return;
+    }
+
+    auto schemaHolder = fsr->GetSchema();
+    if (!schemaHolder.ok()) {
+      auto message = stringf("GetSchema failed with status %o", schemaHolder.status().ToString());
+      auto ep = std::make_exception_ptr(std::runtime_error(message));
+      outer_->onError(std::move(ep));
+      return;
+    }
+
+    auto &schema = schemaHolder.ValueOrDie();
+
+    std::cerr << "If you make it this far, I want to give you a hug\n";
+
+  }
+
+  std::shared_ptr<SFCallback<const columnDefinitions_t &>> outer_;
+};
+struct getColumnDefCallback_t final : public SFCallback<const LazyStateOss::columnDefinitions_t &>,
+    public SFCallback<const Ticket &> {
+  ~getColumnDefCallback_t() final = default;
+
+  void onFailure(std::exception_ptr ep) final {
+    outer_->onFailure(std::move(ep));
+  }
+
+  void onSuccess(const Ticket &ticket) final {
+    auto needsTrigger = columnDefinitions_.invoke(self_.lock());
+    if (!needsTrigger) {
+      return;
+    }
+    auto idg = std::make_shared<invokeDoGet_t>(std::move(outer_));
+    flightExecutor_->invoke(std::move(idg));
+  }
+
+  void onSuccess(const LazyStateOss::columnDefinitions_t &colDefs) final {
+    outer_->onSuccess(colDefs);
+  }
+
+  std::shared_ptr<SFCallback<const columnDefinitions_t &>> outer_;
+};
+}  // namespace
+
+void LazyStateOss::getColumnDefinitionsAsync(
+    std::shared_ptr<SFCallback<const columnDefinitions_t &>> cb) {
+  auto innerCb = std::make_shared<getColumnDefCallback_t>(std::move(cb));
+  ticketReady_.invoke(std::move(innerCb));
+
   // First we need to wait until the table has been successfully created.
   waitUntilReady();
 
