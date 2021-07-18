@@ -165,7 +165,7 @@ public:
   void removeTableUpdateHandler(const std::shared_ptr<TableHandle> &tableHandle,
       const std::shared_ptr<updateCallback_t> &handler);
 
-  Server *server() const { return server_.get(); }
+  const std::shared_ptr<Server> &server() const { return server_; }
   const std::shared_ptr<Executor> &executor() const { return executor_; }
 
 private:

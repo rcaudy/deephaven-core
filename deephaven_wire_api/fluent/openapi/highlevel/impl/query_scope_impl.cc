@@ -28,14 +28,14 @@ QueryScopeImpl::~QueryScopeImpl() = default;
 
 std::shared_ptr<QueryTableImpl> QueryScopeImpl::emptyTable(int64_t size,
     std::vector<std::string> columnNames, std::vector<std::string> columnTypes) {
-  auto cb = QueryTableImpl::createEtcCallback(executor_);
+  auto cb = QueryTableImpl::createEtcCallback(this);
   auto resultTicket = lowlevelSession_->emptyTableAsync(size, std::move(columnNames),
       std::move(columnTypes), cb);
   return QueryTableImpl::createOss(self_.lock(), std::move(resultTicket), std::move(cb));
 }
 
 std::shared_ptr<QueryTableImpl> QueryScopeImpl::fetchTable(std::string tableName) {
-  auto cb = QueryTableImpl::createEtcCallback(executor_);
+  auto cb = QueryTableImpl::createEtcCallback(this);
   auto resultTicket = lowlevelSession_->fetchTableAsync(std::move(tableName), cb);
   return QueryTableImpl::createOss(self_.lock(), std::move(resultTicket), std::move(cb));
 }
@@ -70,7 +70,7 @@ std::shared_ptr<QueryTableImpl> QueryScopeImpl::tempTable(
 
 std::shared_ptr<QueryTableImpl> QueryScopeImpl::timeTable(int64_t startTimeNanos,
     int64_t periodNanos) {
-  auto cb = QueryTableImpl::createEtcCallback(executor_);
+  auto cb = QueryTableImpl::createEtcCallback(this);
   auto resultTicket = lowlevelSession_->timeTableAsync(startTimeNanos, periodNanos, cb);
   return QueryTableImpl::createOss(self_.lock(), std::move(resultTicket), std::move(cb));
 }

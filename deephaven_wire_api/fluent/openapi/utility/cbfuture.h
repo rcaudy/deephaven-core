@@ -90,9 +90,17 @@ private:
   std::vector<std::shared_ptr<SFCallback<const T&>>> callbacks_;
 };
 }
+
+template<typename T>
+class CBFuture;
+
 template<typename T>
 class CBPromise {
 public:
+  CBPromise() : state_(std::make_shared<internal::PromiseState<T>>()) {}
+
+  CBFuture<T> makeFuture();
+
   void setError(std::exception_ptr ep) {
     state_->setError(std::move(ep));
   }
@@ -104,6 +112,8 @@ private:
 template<typename T>
 class CBFuture {
 public:
+  CBFuture(CBFuture &&other) noexcept = default;
+
   bool valid() { return state_->valid(); }
   const T &value() { return state_->value(); }
 
@@ -112,8 +122,18 @@ public:
   }
 
 private:
+  explicit CBFuture(std::shared_ptr<internal::PromiseState<T>> state) : state_(std::move(state)) {}
+
   std::shared_ptr<internal::PromiseState<T>> state_;
+
+  template<typename>
+  friend class CBPromise;
 };
+
+template<typename T>
+CBFuture<T> CBPromise<T>::makeFuture() {
+  return CBFuture<T>(state_);
+}
 }  // namespace utility
 }  // namespace openAPI
 }  // namespace deephaven

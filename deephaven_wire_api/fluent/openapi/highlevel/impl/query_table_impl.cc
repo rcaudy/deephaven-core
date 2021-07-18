@@ -83,8 +83,9 @@ std::shared_ptr<BitSet> getColumnsBitSet(const std::vector<std::string> &desired
     const InitialTableDefinition &itd);
 }  // namespace
 
-std::shared_ptr<internal::LazyStateOss> QueryTableImpl::createEtcCallback(std::shared_ptr<Executor> executor) {
-  return internal::LazyStateOss::create(std::move(executor));
+std::shared_ptr<internal::LazyStateOss> QueryTableImpl::createEtcCallback(const QueryScopeImpl *scope) {
+  const auto *lls = scope->lowLevelSession().get();
+  return internal::LazyStateOss::create(lls->server(), lls->executor());
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::createOss(std::shared_ptr<QueryScopeImpl> scope,
@@ -123,43 +124,43 @@ std::shared_ptr<QueryTableImpl> QueryTableImpl::snapshot(
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::select(std::vector<std::string> columnSpecs) {
-  auto cb = QueryTableImpl::createEtcCallback(scope_->lowLevelSession()->executor());
+  auto cb = QueryTableImpl::createEtcCallback(scope_.get());
   auto resultTicket = scope_->lowLevelSession()->selectAsync(ticket_, std::move(columnSpecs), cb);
   return QueryTableImpl::createOss(scope_, std::move(resultTicket), std::move(cb));
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::update(std::vector<std::string> columnSpecs) {
-  auto cb = QueryTableImpl::createEtcCallback(scope_->lowLevelSession()->executor());
+  auto cb = QueryTableImpl::createEtcCallback(scope_.get());
   auto resultTicket = scope_->lowLevelSession()->updateAsync(ticket_, std::move(columnSpecs), cb);
   return QueryTableImpl::createOss(scope_, std::move(resultTicket), std::move(cb));
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::view(std::vector<std::string> columnSpecs) {
-  auto cb = QueryTableImpl::createEtcCallback(scope_->lowLevelSession()->executor());
+  auto cb = QueryTableImpl::createEtcCallback(scope_.get());
   auto resultTicket = scope_->lowLevelSession()->viewAsync(ticket_, std::move(columnSpecs), cb);
   return QueryTableImpl::createOss(scope_, std::move(resultTicket), std::move(cb));
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::dropColumns(std::vector<std::string> columnSpecs) {
-  auto cb = QueryTableImpl::createEtcCallback(scope_->lowLevelSession()->executor());
+  auto cb = QueryTableImpl::createEtcCallback(scope_.get());
   auto resultTicket = scope_->lowLevelSession()->dropColumnsAsync(ticket_, std::move(columnSpecs), cb);
   return QueryTableImpl::createOss(scope_, std::move(resultTicket), std::move(cb));
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::updateView(std::vector<std::string> columnSpecs) {
-  auto cb = QueryTableImpl::createEtcCallback(scope_->lowLevelSession()->executor());
+  auto cb = QueryTableImpl::createEtcCallback(scope_.get());
   auto resultTicket = scope_->lowLevelSession()->updateViewAsync(ticket_, std::move(columnSpecs), cb);
   return QueryTableImpl::createOss(scope_, std::move(resultTicket), std::move(cb));
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::where(std::string condition) {
-  auto cb = QueryTableImpl::createEtcCallback(scope_->lowLevelSession()->executor());
+  auto cb = QueryTableImpl::createEtcCallback(scope_.get());
   auto resultTicket = scope_->lowLevelSession()->whereAsync(ticket_, std::move(condition), cb);
   return QueryTableImpl::createOss(scope_, std::move(resultTicket), std::move(cb));
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::sort(std::vector<SortPair> sortPairs) {
-  auto cb = QueryTableImpl::createEtcCallback(scope_->lowLevelSession()->executor());
+  auto cb = QueryTableImpl::createEtcCallback(scope_.get());
   std::vector<SortDescriptor> sortDescriptors;
   sortDescriptors.reserve(sortPairs.size());
 
@@ -190,7 +191,7 @@ std::shared_ptr<QueryTableImpl> QueryTableImpl::defaultAggregateByDescriptor(
   descriptors.reserve(1);
   descriptors.push_back(std::move(descriptor));
 
-  auto cb = QueryTableImpl::createEtcCallback(scope_->lowLevelSession()->executor());
+  auto cb = QueryTableImpl::createEtcCallback(scope_.get());
   auto resultTicket = scope_->lowLevelSession()->comboAggregateDescriptorAsync(ticket_,
       std::move(descriptors), std::move(columnSpecs), false, cb);
   return QueryTableImpl::createOss(scope_, std::move(resultTicket), std::move(cb));
@@ -210,7 +211,7 @@ std::shared_ptr<QueryTableImpl> QueryTableImpl::by(std::vector<std::string> colu
 std::shared_ptr<QueryTableImpl> QueryTableImpl::by(
     std::vector<ComboAggregateRequest::Aggregate> descriptors,
     std::vector<std::string> groupByColumns) {
-  auto cb = QueryTableImpl::createEtcCallback(scope_->lowLevelSession()->executor());
+  auto cb = QueryTableImpl::createEtcCallback(scope_.get());
   auto resultTicket = scope_->lowLevelSession()->comboAggregateDescriptorAsync(ticket_,
       std::move(descriptors), std::move(groupByColumns), false, cb);
   return QueryTableImpl::createOss(scope_, std::move(resultTicket), std::move(cb));
@@ -298,7 +299,7 @@ std::shared_ptr<QueryTableImpl> QueryTableImpl::headBy(int64_t n,
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::headOrTailByHelper(int64_t n, bool head,
     std::vector<std::string> columnSpecs) {
-  auto cb = QueryTableImpl::createEtcCallback(scope_->lowLevelSession()->executor());
+  auto cb = QueryTableImpl::createEtcCallback(scope_.get());
   auto resultTicket = scope_->lowLevelSession()->headOrTailByAsync(ticket_, head, n,
       std::move(columnSpecs), cb);
   return QueryTableImpl::createOss(scope_, std::move(resultTicket), std::move(cb));
@@ -313,14 +314,14 @@ std::shared_ptr<QueryTableImpl> QueryTableImpl::head(int64_t n) {
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::headOrTailHelper(bool head, int64_t n) {
-  auto cb = QueryTableImpl::createEtcCallback(scope_->lowLevelSession()->executor());
+  auto cb = QueryTableImpl::createEtcCallback(scope_.get());
   auto resultTicket = scope_->lowLevelSession()->headOrTailAsync(ticket_, head, n, cb);
   return QueryTableImpl::createOss(scope_, std::move(resultTicket), std::move(cb));
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::ungroup(bool nullFill,
     std::vector<std::string> groupByColumns) {
-  auto cb = QueryTableImpl::createEtcCallback(scope_->lowLevelSession()->executor());
+  auto cb = QueryTableImpl::createEtcCallback(scope_.get());
   auto resultTicket = scope_->lowLevelSession()->ungroupAsync(ticket_, nullFill, std::move(groupByColumns),
       cb);
   return QueryTableImpl::createOss(scope_, std::move(resultTicket), std::move(cb));
@@ -328,7 +329,7 @@ std::shared_ptr<QueryTableImpl> QueryTableImpl::ungroup(bool nullFill,
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::merge(std::string keyColumn,
     std::vector<Ticket> sourceTickets) {
-  auto cb = QueryTableImpl::createEtcCallback(scope_->lowLevelSession()->executor());
+  auto cb = QueryTableImpl::createEtcCallback(scope_.get());
   auto resultTicket = scope_->lowLevelSession()->mergeAsync(std::move(sourceTickets),
       std::move(keyColumn), cb);
   return QueryTableImpl::createOss(scope_, std::move(resultTicket), std::move(cb));
@@ -338,7 +339,7 @@ std::shared_ptr<QueryTableImpl> QueryTableImpl::internalJoin(JoinType joinType,
     const QueryTableImpl &rightSide, std::vector<std::string> columnsToMatch,
     std::vector<std::string> columnsToAdd) {
   std::cerr << "TODO(kosak): why am I calling this method `InternalJoin`\n";
-  auto cb = QueryTableImpl::createEtcCallback(scope_->lowLevelSession()->executor());
+  auto cb = QueryTableImpl::createEtcCallback(scope_.get());
   auto resultTicket = scope_->lowLevelSession()->internalJoinAsync(joinType, ticket_,
       rightSide.ticket(), std::move(columnsToMatch), std::move(columnsToAdd), cb);
   return QueryTableImpl::createOss(scope_, std::move(resultTicket), std::move(cb));
@@ -511,15 +512,18 @@ void QueryTableImpl::observe() {
 }
 
 namespace internal {
-std::shared_ptr<LazyStateOss> LazyStateOss::create(std::shared_ptr<Executor> executor) {
-  auto result = std::make_shared<LazyStateOss>(Private(), std::move(executor));
+std::shared_ptr<LazyStateOss> LazyStateOss::create(std::shared_ptr<Server> server,
+    std::shared_ptr<Executor> executor) {
+  auto result = std::make_shared<LazyStateOss>(Private(), std::move(server), std::move(executor));
   result->weakSelf_ = result;
   return result;
 }
 
-LazyStateOss::LazyStateOss(Private, std::shared_ptr<Executor> executor) :
-    executor_(std::move(executor)) {}
-LazyStateOss::~LazyStateOss() = default;
+LazyStateOss::LazyStateOss(Private, std::shared_ptr<Server> &&server,
+    std::shared_ptr<Executor> &&executor) : server_(std::move(server)),
+    executor_(std::move(executor)), ticketFuture_(ticketPromise_.makeFuture()),
+    colDefsFuture_(colDefsPromise_.makeFuture()) {}
+  LazyStateOss::~LazyStateOss() = default;
 
 void LazyStateOss::onSuccess(ExportedTableCreationResponse item) {
   if (!item.result_id().has_ticket()) {

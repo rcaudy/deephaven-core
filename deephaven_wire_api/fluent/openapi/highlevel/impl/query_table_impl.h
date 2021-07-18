@@ -60,9 +60,10 @@ public:
   typedef std::map<std::string, std::string> columnDefinitions_t;
 
   typedef SFCallback<const Ticket &> waiter_t;
-  static std::shared_ptr<LazyStateOss> create(std::shared_ptr<Executor> executor);
+  static std::shared_ptr<LazyStateOss> create(std::shared_ptr<Server> server,
+      std::shared_ptr<Executor> executor);
 
-  LazyStateOss(Private, std::shared_ptr<Executor> executor);
+  LazyStateOss(Private, std::shared_ptr<Server> &&server, std::shared_ptr<Executor> &&executor);
   ~LazyStateOss() final;
 
   bool ready();
@@ -134,7 +135,7 @@ class QueryTableImpl {
   template<typename T>
   using SFCallback = deephaven::openAPI::utility::SFCallback<T>;
 public:
-  static std::shared_ptr<internal::LazyStateOss> createEtcCallback(std::shared_ptr<Executor> executor);
+  static std::shared_ptr<internal::LazyStateOss> createEtcCallback(const QueryScopeImpl *scope);
 
   static std::shared_ptr<QueryTableImpl> createOss(std::shared_ptr<QueryScopeImpl> scope,
       Ticket ticket, std::shared_ptr<internal::LazyStateOss> etcCallback);
