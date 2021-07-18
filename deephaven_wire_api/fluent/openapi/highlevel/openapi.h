@@ -386,8 +386,9 @@ class QueryTable {
 
   template<typename... Args>
   using Callback = deephaven::openAPI::utility::Callback<Args...>;
-  template<typename T>
-  using SFCallback = deephaven::openAPI::utility::SFCallback<T>;
+
+  template<typename... Args>
+  using SFCallback = deephaven::openAPI::utility::SFCallback<Args...>;
 
 public:
   typedef Callback<const QueryTable&, const XXXTableSnapshot&> snapshotCallback_t;
@@ -952,7 +953,7 @@ QueryTable QueryTable::ungroup(bool nullFill, Args &&... args) const {
 
 template<typename ...Args>
 void QueryTable::subscribeAll(Args &&... args) const {
-  auto res = SFCallback<Void>::createForFuture();
+  auto res = SFCallback<>::createForFutureTuple();
   subscribeAllAsync(std::move(res.first), std::forward<Args>(args)...);
   (void)res.second.get();
 }

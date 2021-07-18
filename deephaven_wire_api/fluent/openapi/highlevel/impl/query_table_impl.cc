@@ -479,15 +479,8 @@ const std::string &QueryTableImpl::lookupHelper(const std::string &columnName) {
 
 void QueryTableImpl::bindToVariableAsync(std::string variable,
     std::shared_ptr<SFCallback<>> callback) {
-  struct cb_t : public SFCallback<const Ticket &>, public SFCallback<BindTableToVariableResponse> {
-    cb_t(std::shared_ptr<QueryScopeImpl> scope, std::string variable,
-        std::shared_ptr<SFCallback<>> outerCb) : scope_(std::move(scope)),
-        variable_(std::move(variable)), outerCb_(std::move(outerCb)) {}
-
-    void onSuccess(const Ticket &ticket) final {
-      std::cerr << "This is completely unnecessary, as ticket is known already...lazystateoss doesn't even need a ticketeroo\n";
-      scope_->lowLevelSession()->bindToVariableAsync(ticket, std::move(variable_), weakSelf_.lock());
-    }
+  struct cb_t final : public SFCallback<BindTableToVariableResponse> {
+    explicit cb_t(std::shared_ptr<SFCallback<>> outerCb) : outerCb_(std::move(outerCb)) {}
 
     void onSuccess(BindTableToVariableResponse /*item*/) final {
       outerCb_->onSuccess();
@@ -497,14 +490,12 @@ void QueryTableImpl::bindToVariableAsync(std::string variable,
       outerCb_->onFailure(std::move(ep));
     }
 
-    std::shared_ptr<QueryScopeImpl> scope_;
-    std::string variable_;
     std::shared_ptr<SFCallback<>> outerCb_;
-    std::weak_ptr<cb_t> weakSelf_;
   };
-  auto cb = std::make_shared<cb_t>(scope_, std::move(variable), std::move(callback));
-  cb->weakSelf_ = cb;
-  lazyStateOss_->invoke(std::move(cb));
+  std::unique_ptr<int[]> up;
+  up[5] = 3;
+  auto cb = std::make_shared<cb_t>(std::move(callback));
+  scope_->lowLevelSession()->bindToVariableAsync(ticket_, std::move(variable), std::move(cb));
 }
 
 void QueryTableImpl::observe() {
