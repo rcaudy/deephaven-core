@@ -46,14 +46,14 @@ void SnapshotExample::run(const QueryScope &scope) {
 
   auto callback = QueryTable::updateCallback_t::createFromCallable(&PrintUtils::showTableUpdate);
 
-  samplingTable.addTableUpdateHandler(callback);
+  // samplingTable.addTableUpdateHandler(callback);
   samplingTable.subscribeAll();
 
   std::string line;
   std::cout << "Hit enter to unregister callback...";
   std::getline(std::cin, line);
 
-  samplingTable.removeTableUpdateHandler(callback);
+  // samplingTable.removeTableUpdateHandler(callback);
 
   std::cout << "Hit enter to unsubscribe...";
   std::getline(std::cin, line);

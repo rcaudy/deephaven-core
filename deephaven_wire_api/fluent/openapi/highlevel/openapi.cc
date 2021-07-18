@@ -444,28 +444,7 @@ TableData QueryTable::getTableData(long first, long last, std::vector<std::strin
 
 void QueryTable::getTableDataAsync(long first, long last,
     std::vector<std::string> columns, std::shared_ptr<SFCallback<TableData>> callback) const {
-
-  struct adapter_t final : public SFCallback<std::shared_ptr<TableSnapshot>> {
-    adapter_t(std::shared_ptr<impl::QueryTableImpl> impl, std::shared_ptr<SFCallback<TableData>> outer) :
-        impl_(std::move(impl)), outer_(std::move(outer)) {}
-
-    void onSuccess(std::shared_ptr<TableSnapshot> snapshot) final {
-      // This is not blocking because we won't be called back until we have an initial table definition ready
-      const auto &colDefs = impl_->getColumnDefinitions();
-      auto td = TableData::create(*colDefs, *snapshot);
-      outer_->onSuccess(std::move(td));
-    }
-
-    void onFailure(std::exception_ptr ep) final {
-      outer_->onFailure(std::move(ep));
-    }
-
-    std::shared_ptr<impl::QueryTableImpl> impl_;
-    std::shared_ptr<SFCallback<TableData>> outer_;
-  };
-
-  auto outerCallback = std::make_shared<adapter_t>(impl_, std::move(callback));
-  impl_->getTableDataAsync(first, last, std::move(columns), std::move(outerCallback));
+  throw std::runtime_error("kosak(TODO): SAD: QueryTable::getTableDataAsync");
 }
 
 void QueryTable::subscribeAll(std::vector<std::string> columnSpecs) const {
@@ -491,14 +470,6 @@ void QueryTable::unsubscribeAsync(std::shared_ptr<SFCallback<Void>> callback) co
 
 void QueryTable::getData(std::shared_ptr<getDataCallback_t> handler) const {
   impl_->getData(std::move(handler));
-}
-
-void QueryTable::addTableUpdateHandler(std::shared_ptr<updateCallback_t> handler) const {
-  return impl_->addTableUpdateHandler(std::move(handler));
-}
-
-void QueryTable::removeTableUpdateHandler(const std::shared_ptr<updateCallback_t> &handler) const {
-  return impl_->removeTableUpdateHandler(handler);
 }
 
 std::vector<Column> QueryTable::getColumns() const {
@@ -760,9 +731,7 @@ void QueryTable::observe() const {
 }
 
 std::pair<std::string, std::string> QueryTable::getHackStuff() const {
-  std::pair<std::string, std::string> result;
-  impl_->scope()->lowLevelSession()->server()->bless(&result.first, &result.second);
-  return result;
+  return impl_->scope()->lowLevelSession()->server()->makeBlessing();
 }
 
 WorkerOptions WorkerOptions::create(std::string profile) {

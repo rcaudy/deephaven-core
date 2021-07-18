@@ -117,16 +117,16 @@ public:
 
   grpc::CompletionQueue &cq() { return completionQueue_; }
 
-  // TODO(kosak)
-  void bless(ServerCQCallback *cqb) {
-    cqb->ctx_.AddMetadata(metadataHeader_, sessionToken_);
-  }
+//  // TODO(kosak)
+//  void bless(ServerCQCallback *cqb) {
+//    cqb->ctx_.AddMetadata(metadataHeader_, sessionToken_);
+//  }
 
   // TODO(kosak)
-  void bless(std::string *header, std::string *token) {
-    *header = metadataHeader_;
-    *token = sessionToken_;
-  }
+//  void bless(std::string *header, std::string *token) {
+//    *header = metadataHeader_;
+//    *token = sessionToken_;
+//  }
 
   std::pair<std::string, std::string> makeBlessing();
 

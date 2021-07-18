@@ -588,9 +588,6 @@ public:
 
   void getData(std::shared_ptr<getDataCallback_t> handler) const;
 
-  void addTableUpdateHandler(std::shared_ptr<updateCallback_t> handler) const;
-  void removeTableUpdateHandler(const std::shared_ptr<updateCallback_t> &handler) const;
-
   std::vector<Column> getColumns() const;
 
   StrCol getStrCol(std::string columnName) const;

@@ -20,7 +20,7 @@ void TimeTableExample::run(const QueryScope &scope) {
       .preemptive(100);
   tt.getColumns();
   auto callback = QueryTable::updateCallback_t::createFromCallable(&PrintUtils::showTableUpdate);
-  tt.addTableUpdateHandler(callback);
+  // tt.addTableUpdateHandler(callback);
 
   tt.subscribeAll("Blah");
 

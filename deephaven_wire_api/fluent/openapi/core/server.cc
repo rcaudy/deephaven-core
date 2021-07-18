@@ -73,6 +73,10 @@ void Server::setAuthentication(std::string metadataHeader, std::string sessionTo
   sessionToken_ = std::move(sessionToken);
 }
 
+std::pair<std::string, std::string> Server::makeBlessing() {
+  return std::make_pair(metadataHeader_, sessionToken_);
+}
+
 void Server::processCompletionQueueForever(const std::shared_ptr<Server> &self) {
   std::cerr << "Completion queue thread waking up\n";
   while (true) {

@@ -511,6 +511,12 @@ void QueryTableImpl::observe() {
 }
 
 namespace internal {
+std::shared_ptr<LazyStateOss> LazyStateOss::create(std::shared_ptr<Executor> executor) {
+  auto result = std::make_shared<LazyStateOss>(Private(), std::move(executor));
+  result->weakSelf_ = result;
+  return result;
+}
+
 LazyStateOss::LazyStateOss(Private, std::shared_ptr<Executor> executor) :
     executor_(std::move(executor)) {}
 LazyStateOss::~LazyStateOss() = default;
