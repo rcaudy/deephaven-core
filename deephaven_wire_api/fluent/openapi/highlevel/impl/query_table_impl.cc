@@ -477,34 +477,28 @@ std::vector<std::shared_ptr<ColumnImpl>> QueryTableImpl::getColumnImpls() {
   return result;
 }
 
-std::shared_ptr<NumColImpl> QueryTableImpl::getNumColImpl(boost::string_view columnName) {
-  const auto &colImpl = lookupHelper(columnName);
-  auto result = std::dynamic_pointer_cast<NumColImpl>(colImpl);
-  assertColumnValid(columnName, result);
-  return result;
+std::shared_ptr<NumColImpl> QueryTableImpl::getNumColImpl(std::string columnName) {
+  const auto &colType = lookupHelper(columnName);
+  return NumColImpl::create(std::move(columnName));
 }
 
-std::shared_ptr<StrColImpl> QueryTableImpl::getStrColImpl(boost::string_view columnName) {
-  const auto &colImpl = lookupHelper(columnName);
-  auto result = std::dynamic_pointer_cast<StrColImpl>(colImpl);
-  assertColumnValid(columnName, result);
-  return result;
+std::shared_ptr<StrColImpl> QueryTableImpl::getStrColImpl(std::string columnName) {
+  const auto &colType = lookupHelper(columnName);
+  return StrColImpl::create(std::move(columnName));
 }
 
-std::shared_ptr<DateTimeColImpl> QueryTableImpl::getDateTimeColImpl(boost::string_view columnName) {
-  const auto &colImpl = lookupHelper(columnName);
-  auto result = std::dynamic_pointer_cast<DateTimeColImpl>(colImpl);
-  assertColumnValid(columnName, result);
-  return result;
+std::shared_ptr<DateTimeColImpl> QueryTableImpl::getDateTimeColImpl(std::string columnName) {
+  const auto &colType = lookupHelper(columnName);
+  return DateTimeColImpl::create(std::move(columnName));
 }
 
-const std::shared_ptr<ColumnImpl> &QueryTableImpl::lookupHelper(boost::string_view columnName) {
+const std::string &QueryTableImpl::lookupHelper(const std::string &columnName) {
   const auto &colDefs = lazyStateOss_->getColumnDefinitions();
   auto ip = colDefs.find(columnName);
   if (ip == colDefs.end()) {
     throw std::runtime_error(stringf(R"(Column name "%o" is not in the table)", columnName));
   }
-  return ip;
+  return ip->second;
 }
 
 void QueryTableImpl::bindToVariableAsync(std::string variable,

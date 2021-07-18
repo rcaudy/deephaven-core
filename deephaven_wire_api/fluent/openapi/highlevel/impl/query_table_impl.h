@@ -108,9 +108,6 @@ private:
 
   friend class GetColumnDefsCallback;
 };
-
-class LowToHighSnapshotAdaptor;
-class LowToHighUpdateAdaptor;
 }  // namespace internal
 
 class QueryTableImpl {
@@ -133,9 +130,9 @@ class QueryTableImpl {
   typedef io::deephaven::proto::backplane::grpc::ComboAggregateRequest ComboAggregateRequest;
 
   template<typename... Args>
-  using Callback = deephaven::openAPI::core::Callback<Args...>;
+  using Callback = deephaven::openAPI::utility::Callback<Args...>;
   template<typename T>
-  using SFCallback = deephaven::openAPI::core::SFCallback<T>;
+  using SFCallback = deephaven::openAPI::utility::SFCallback<T>;
 public:
   static std::shared_ptr<internal::LazyStateOss> createEtcCallback(std::shared_ptr<Executor> executor);
 
@@ -213,7 +210,7 @@ public:
   const Ticket &ticket() const { return ticket_; }
 
 private:
-  void assertColumnValid(const std::string &columnName);
+  const std::string &lookupHelper(const std::string &columnName);
 
   std::shared_ptr<QueryTableImpl> defaultAggregateByDescriptor(
       ComboAggregateRequest::Aggregate descriptor, std::vector<std::string> groupByColumns);
@@ -227,8 +224,6 @@ private:
   std::shared_ptr<QueryScopeImpl> scope_;
   Ticket ticket_;
   std::shared_ptr<internal::LazyStateOss> lazyStateOss_;
-  std::mutex mutex_;
-  std::vector<std::shared_ptr<internal::LowToHighUpdateAdaptor>> adaptors_;
   std::weak_ptr<QueryTableImpl> weakSelf_;
 };
 }  // namespace impl
