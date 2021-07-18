@@ -625,9 +625,18 @@ class GetColumnDefsCallback final :
     public SFCallback<const Ticket &>,
     public SFCallback<const LazyStateOss::columnDefinitions_t &>,
     public Callback<> {
+  struct Private {};
 public:
-  GetColumnDefsCallback(std::shared_ptr<LazyStateOss> owner,
-      std::shared_ptr<SFCallback<const LazyStateOss::columnDefinitions_t &>> cb);
+  static std::shared_ptr<GetColumnDefsCallback> create(std::shared_ptr<LazyStateOss> owner,
+      std::shared_ptr<SFCallback<const LazyStateOss::columnDefinitions_t &>> cb) {
+    auto result = std::make_shared<GetColumnDefsCallback>(Private(), std::move(owner), std::move(cb));
+    result->weakSelf_ = result;
+    return result;
+  }
+
+  GetColumnDefsCallback(Private, std::shared_ptr<LazyStateOss> &&owner,
+      std::shared_ptr<SFCallback<const LazyStateOss::columnDefinitions_t &>> &&cb) : owner_(std::move(owner)),
+      outer_(std::move(cb)) {}
   ~GetColumnDefsCallback() final = default;
 
   void onFailure(std::exception_ptr ep) final {
@@ -635,11 +644,11 @@ public:
   }
 
   void onSuccess(const Ticket &ticket) final {
-    auto needsTrigger = owner_->colDefsFuture_.invoke(self_.lock());
+    auto needsTrigger = owner_->colDefsFuture_.invoke(weakSelf_.lock());
     if (!needsTrigger) {
       return;
     }
-    owner_->flightExecutor_->invoke(self_.lock());
+    owner_->flightExecutor_->invoke(weakSelf_.lock());
   }
 
   void onSuccess(const LazyStateOss::columnDefinitions_t &colDefs) final {
@@ -677,12 +686,12 @@ public:
 
   std::shared_ptr<LazyStateOss> owner_;
   std::shared_ptr<SFCallback<const LazyStateOss::columnDefinitions_t &>> outer_;
-  std::weak_ptr<GetColumnDefsCallback> self_;
+  std::weak_ptr<GetColumnDefsCallback> weakSelf_;
 };
 
 void LazyStateOss::getColumnDefinitionsAsync(
     std::shared_ptr<SFCallback<const columnDefinitions_t &>> cb) {
-  auto innerCb = std::make_shared<GetColumnDefsCallback>(weakSelf_.lock(), std::move(cb));
+  auto innerCb = GetColumnDefsCallback::create(weakSelf_.lock(), std::move(cb));
   ticketFuture_.invoke(std::move(innerCb));
 }
 }  // namespace internal

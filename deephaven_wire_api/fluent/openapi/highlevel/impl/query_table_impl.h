@@ -193,9 +193,6 @@ public:
 
   void getData(std::shared_ptr<QueryTable::getDataCallback_t> handler) const;
 
-  void addTableUpdateHandler(std::shared_ptr<QueryTable::updateCallback_t> handler);
-  void removeTableUpdateHandler(const std::shared_ptr<QueryTable::updateCallback_t> &handler);
-
   std::vector<std::shared_ptr<ColumnImpl>> getColumnImpls();
   std::shared_ptr<StrColImpl> getStrColImpl(std::string columnName);
   std::shared_ptr<NumColImpl> getNumColImpl(std::string columnName);
