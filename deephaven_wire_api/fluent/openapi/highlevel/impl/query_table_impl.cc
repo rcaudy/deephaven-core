@@ -84,52 +84,6 @@ std::shared_ptr<BitSet> getColumnsBitSet(const std::vector<std::string> &desired
     const InitialTableDefinition &itd);
 }  // namespace
 
-namespace internal {
-class LowToHighSnapshotAdaptor final : public DHWorkerSession::snapshotCallback_t {
-  struct Private {};
-public:
-  std::shared_ptr<LowToHighSnapshotAdaptor> create(
-      std::shared_ptr<QueryTableImpl> queryTableImpl,
-      std::shared_ptr<QueryTable::snapshotCallback_t> highLevelHandler);
-
-  LowToHighSnapshotAdaptor(Private, QueryTable queryTable,
-      std::shared_ptr<QueryTable::snapshotCallback_t> highLevelHandler);
-  ~LowToHighSnapshotAdaptor() final;
-
-  void invoke(const std::shared_ptr<TableHandle> &tableHandle,
-      const std::shared_ptr<TableSnapshot> &snapshot) final;
-
-  const std::shared_ptr<QueryTable::snapshotCallback_t> &highLevelHandler() const { return highLevelHandler_; }
-
-private:
-  // Keep one of these around so we can reuse it in our callback
-  QueryTable queryTable_;
-  std::shared_ptr<QueryTable::snapshotCallback_t> highLevelHandler_;
-};
-
-class LowToHighUpdateAdaptor final : public DHWorkerSession::updateCallback_t {
-  struct Private {};
-public:
-  static std::shared_ptr<LowToHighUpdateAdaptor> create(
-      std::shared_ptr<QueryTableImpl> queryTableImpl,
-      std::shared_ptr<QueryTable::updateCallback_t> highLevelHandler);
-
-  LowToHighUpdateAdaptor(Private, QueryTable queryTable,
-      std::shared_ptr<QueryTable::updateCallback_t> highLevelHandler);
-  ~LowToHighUpdateAdaptor() final;
-
-  void invoke(const std::shared_ptr<TableHandle> &tableHandle,
-      const std::shared_ptr<DeltaUpdates> &deltaUpdates) final;
-
-  const std::shared_ptr<QueryTable::updateCallback_t> &highLevelHandler() const { return highLevelHandler_; }
-
-private:
-  // Keep one of these around so we can reuse it in our callback
-  QueryTable queryTable_;
-  std::shared_ptr<QueryTable::updateCallback_t> highLevelHandler_;
-};
-}  // namespace internal
-
 std::shared_ptr<internal::LazyStateOss> QueryTableImpl::createEtcCallback(std::shared_ptr<Executor> executor) {
   return internal::LazyStateOss::create(std::move(executor));
 }
@@ -688,9 +642,9 @@ bool LazyStateOss::readyLocked(std::unique_lock<std::mutex> */*lock*/) {
 
 auto LazyStateOss::getColumnDefinitions() -> const columnDefinitions_t & {
   // Shortcut if we have column definitions
-  if (columnDefinitions_.valid()) {
+  if (colDefsFuture_.valid()) {
     // value or exception
-    return columnDefinitions_.value();
+    return colDefsFuture_.value();
   }
 
   auto res = SFCallback<const columnDefinitions_t &>::createForFuture();
@@ -698,19 +652,21 @@ auto LazyStateOss::getColumnDefinitions() -> const columnDefinitions_t & {
   return res.second.get();
 }
 
-namespace {
-struct getColumnDefCallback_t final :
+class GetColumnDefsCallback final :
     public SFCallback<const Ticket &>,
     public SFCallback<const LazyStateOss::columnDefinitions_t &>,
     public Callback<> {
-~getColumnDefCallback_t() final = default;
+public:
+  GetColumnDefsCallback(std::shared_ptr<LazyStateOss> owner,
+      std::shared_ptr<SFCallback<const LazyStateOss::columnDefinitions_t &>> cb);
+  ~GetColumnDefsCallback() final = default;
 
   void onFailure(std::exception_ptr ep) final {
     outer_->onFailure(std::move(ep));
   }
 
   void onSuccess(const Ticket &ticket) final {
-    auto needsTrigger = owner_->columnDefsFuture_.then(self_.lock());
+    auto needsTrigger = owner_->colDefsFuture_.invoke(self_.lock());
     if (!needsTrigger) {
       return;
     }
@@ -723,13 +679,16 @@ struct getColumnDefCallback_t final :
 
   void invoke() final {
     arrow::flight::FlightCallOptions options;
-    options.headers.push_back(server_->makeBlessing());
+    options.headers.push_back(owner_->server_->makeBlessing());
     std::unique_ptr<arrow::flight::FlightStreamReader> fsr;
-    auto doGetRes = server_->flightClient()->DoGet(options, ticket_, &fsr);
+    arrow::flight::Ticket tkt;
+    tkt.ticket = owner_->ticket_.ticket();
+
+    auto doGetRes = owner_->server_->flightClient()->DoGet(options, tkt, &fsr);
     if (!doGetRes.ok()) {
       auto message = stringf("Doget failed with status %o", doGetRes.ToString());
       auto ep = std::make_exception_ptr(std::runtime_error(message));
-      colDefsPromise_->setError(std::move(ep));
+      owner_->colDefsPromise_.setError(std::move(ep));
       return;
     }
 
@@ -737,7 +696,7 @@ struct getColumnDefCallback_t final :
     if (!schemaHolder.ok()) {
       auto message = stringf("GetSchema failed with status %o", schemaHolder.status().ToString());
       auto ep = std::make_exception_ptr(std::runtime_error(message));
-      colDefsPromise_->setError(std::move(ep));
+      owner_->colDefsPromise_.setError(std::move(ep));
       return;
     }
 
@@ -747,14 +706,14 @@ struct getColumnDefCallback_t final :
   }
 
   std::shared_ptr<LazyStateOss> owner_;
-  std::shared_ptr<SFCallback<const columnDefinitions_t &>> outer_;
+  std::shared_ptr<SFCallback<const LazyStateOss::columnDefinitions_t &>> outer_;
+  std::weak_ptr<GetColumnDefsCallback> self_;
 };
-}  // namespace
 
 void LazyStateOss::getColumnDefinitionsAsync(
     std::shared_ptr<SFCallback<const columnDefinitions_t &>> cb) {
-  auto innerCb = std::make_shared<getColumnDefCallback_t>(std::move(cb));
-  ticketFuture_.then(std::move(innerCb));
+  auto innerCb = std::make_shared<GetColumnDefsCallback>(weakSelf_.lock(), std::move(cb));
+  ticketFuture_.invoke(std::move(innerCb));
 }
 
 std::shared_ptr<LowToHighSnapshotAdaptor> LowToHighSnapshotAdaptor::create(

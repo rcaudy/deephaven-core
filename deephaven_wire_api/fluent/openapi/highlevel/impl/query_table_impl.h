@@ -38,6 +38,8 @@ namespace impl {
 class QueryScopeImpl;
 
 namespace internal {
+class GetColumnDefsCallback;
+
 class LazyStateOss final : public deephaven::openAPI::utility::SFCallback<io::deephaven::proto::backplane::grpc::ExportedTableCreationResponse> {
   struct Private {};
 
@@ -53,8 +55,6 @@ class LazyStateOss final : public deephaven::openAPI::utility::SFCallback<io::de
   using CBPromise = deephaven::openAPI::utility::CBPromise<T>;
   template<typename T>
   using CBFuture = deephaven::openAPI::utility::CBFuture<T>;
-
-  enum class ColumnDefinitionState {Initial, Waiting, Ready};
 
 public:
   typedef std::map<std::string, std::string> columnDefinitions_t;
@@ -87,6 +87,8 @@ private:
   std::shared_ptr<Server> server_;
   std::shared_ptr<Executor> executor_;
 
+  std::shared_ptr<Executor> flightExecutor_;
+
   std::mutex mutex_;
   std::condition_variable condVar_;
   // Error condition ('onException' has been called).
@@ -95,12 +97,16 @@ private:
   bool success_ = false;
   Ticket ticket_;
 
-  // Some hacky type for column definitions
-  ColumnDefinitionState columnDefinitionsState_ = ColumnDefinitionState::Initial;
+  CBPromise<Ticket> ticketPromise_;
+  CBFuture<Ticket> ticketFuture_;
   CBPromise<columnDefinitions_t> colDefsPromise_;
   CBFuture<columnDefinitions_t> colDefsFuture_;
 
   std::vector<std::shared_ptr<waiter_t>> waiters_;
+
+  std::weak_ptr<LazyStateOss> weakSelf_;
+
+  friend class GetColumnDefsCallback;
 };
 
 class LowToHighSnapshotAdaptor;

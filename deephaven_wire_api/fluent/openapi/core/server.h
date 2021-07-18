@@ -123,6 +123,8 @@ public:
     *token = sessionToken_;
   }
 
+  std::pair<std::string, std::string> makeBlessing();
+
 private:
   static void processCompletionQueueForever(const std::shared_ptr<Server> &self);
   bool processNextCompletionQueueItem();
