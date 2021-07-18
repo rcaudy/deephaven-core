@@ -51,7 +51,7 @@ public:
 
   void login(std::string user, std::string password, std::string operateAs);
   void loginAsync(std::string user, std::string password, std::string operateAs,
-      std::shared_ptr<SFCallback<Void>> callback);
+      std::shared_ptr<SFCallback<>> callback);
 
   WorkerSession startWorker(const WorkerOptions &options);
   void startWorkerAsync(const WorkerOptions &options,
@@ -560,7 +560,7 @@ public:
       std::vector<SelectColumn> columnsToAdd) const;
 
   void bindToVariable(std::string variable) const;
-  void bindToVariableAsync(std::string variable, std::shared_ptr<SFCallback<Void>> callback) const;
+  void bindToVariableAsync(std::string variable, std::shared_ptr<SFCallback<>> callback) const;
 
   TableData getTableData() const {
     return getTableData(0, std::numeric_limits<int64_t>::max(), {});

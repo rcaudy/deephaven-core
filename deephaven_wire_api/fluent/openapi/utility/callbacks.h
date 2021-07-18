@@ -25,10 +25,17 @@ public:
   virtual void onFailure(std::exception_ptr ep) = 0;
 };
 
+namespace internal {
+// We do this so that in the special case where there is only one arg, there is an extra static
+// method called createForFuture()
+template<bool, typename ...Args>
+class SFCallbackBase;
+} // namespace internal
+
 // Success-or-failure callbacks. The callee is required to eventually invoke either onSuccess or
 // onFailure exactly once.
 template<typename... Args>
-class SFCallback : public FailureCallback {
+class SFCallback : public internal::SFCallbackBase<sizeof...(Args), Args...> {
 public:
   template<typename Callable>
   static std::shared_ptr<SFCallback> createFromCallable(Callable &&callable);
@@ -38,6 +45,19 @@ public:
   ~SFCallback() override = default;
   virtual void onSuccess(Args... item) = 0;
 };
+
+namespace internal {
+template<typename T>
+class SFCallbackBase<true, T> : public FailureCallback {
+public:
+  static std::pair<std::shared_ptr<SFCallback<T>>, std::future<T>> createForFuture();
+};
+
+template<typename... Args>
+class SFCallbackBase<false, Args...> : public FailureCallback {
+};
+} // namespace internal
+
 
 // This helps us make a Callback<T> that can hold some kind of invokeable item (function object or
 // lambda or std::function).
