@@ -111,7 +111,7 @@ set(SRC_FILES
     utility/executor.h
     utility/utility.cc
     utility/utility.h
-    )
+        utility/cbfuture.cc utility/cbfuture.h)
 
 add_library(openapi ${SRC_FILES})
 target_link_libraries(openapi arrow_flight_static)

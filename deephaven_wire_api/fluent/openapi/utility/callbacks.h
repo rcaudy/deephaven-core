@@ -6,7 +6,7 @@
 
 namespace deephaven {
 namespace openAPI {
-namespace core {
+namespace utility {
 // For simple callbacks.
 template<typename... Args>
 class Callback {
@@ -118,6 +118,6 @@ std::pair<std::shared_ptr<SFCallback<T>>, std::future<T>> SFCallback<T>::createF
   auto cb = std::make_shared<internal::SFCallbackFutureable<T>>(std::move(promise));
   return std::make_pair(std::move(cb), std::move(fut));
 }
-}  // namespace core
+}  // namespace utility
 }  // namespace openAPI
 }  // namespace deephaven

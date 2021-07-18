@@ -49,7 +49,7 @@ void Executor::runForever() {
     // invoke callback while not under lock
     for (const auto &cb : localCallbacks) {
       try {
-        cb->invoke(Void());
+        cb->invoke();
       } catch (const std::exception &e) {
         streamf(std::cerr, "Executor ignored exception: %o\n", e.what());
       } catch (...) {

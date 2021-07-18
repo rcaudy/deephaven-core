@@ -9,10 +9,11 @@
 #include <string>
 #include <boost/optional.hpp>
 #include <boost/utility/string_view.hpp>
-#include "utility/callbacks.h"
 #include "core/server.h"
 #include "lowlevel/generated/shared_objects.h"
 #include "highlevel/openapi.h"
+#include "utility/callbacks.h"
+#include "utility/cbfuture.h"
 #include "utility/executor.h"
 #include "proto/session.pb.h"
 #include "proto/session.grpc.pb.h"
@@ -37,7 +38,7 @@ namespace impl {
 class QueryScopeImpl;
 
 namespace internal {
-class LazyStateOss final : public deephaven::openAPI::core::SFCallback<io::deephaven::proto::backplane::grpc::ExportedTableCreationResponse> {
+class LazyStateOss final : public deephaven::openAPI::utility::SFCallback<io::deephaven::proto::backplane::grpc::ExportedTableCreationResponse> {
   struct Private {};
 
   typedef arrow::flight::protocol::Wicket Ticket;
@@ -47,7 +48,11 @@ class LazyStateOss final : public deephaven::openAPI::core::SFCallback<io::deeph
   typedef deephaven::openAPI::utility::Void Void;
 
   template<typename T>
-  using SFCallback = deephaven::openAPI::core::SFCallback<T>;
+  using SFCallback = deephaven::openAPI::utility::SFCallback<T>;
+  template<typename T>
+  using CBPromise = deephaven::openAPI::utility::CBPromise<T>;
+  template<typename T>
+  using CBFuture = deephaven::openAPI::utility::CBFuture<T>;
 
   enum class ColumnDefinitionState {Initial, Waiting, Ready};
 
@@ -92,7 +97,8 @@ private:
 
   // Some hacky type for column definitions
   ColumnDefinitionState columnDefinitionsState_ = ColumnDefinitionState::Initial;
-  MySharedFuture<columnDefinitions_t> columnDefinitions_;
+  CBPromise<columnDefinitions_t> colDefsPromise_;
+  CBFuture<columnDefinitions_t> colDefsFuture_;
 
   std::vector<std::shared_ptr<waiter_t>> waiters_;
 };

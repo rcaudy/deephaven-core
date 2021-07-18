@@ -5,18 +5,14 @@
 #include <functional>
 #include <memory>
 #include <mutex>
-#include "callbacks.h"
+#include "utility/callbacks.h"
 #include "utility/utility.h"
 
 namespace deephaven {
 namespace openAPI {
 namespace utility {
 class Executor {
-  typedef deephaven::openAPI::utility::Void Void;
   struct Private {};
-
-  template<typename T>
-  using Callback = deephaven::openAPI::core::Callback<T>;
 
 public:
   static std::shared_ptr<Executor> create();
@@ -24,7 +20,7 @@ public:
   explicit Executor(Private);
   ~Executor();
 
-  typedef Callback<Void> callback_t;
+  typedef Callback<> callback_t;
 
   void invoke(std::shared_ptr<callback_t> f);
 
