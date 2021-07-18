@@ -952,7 +952,7 @@ QueryTable QueryTable::ungroup(bool nullFill, Args &&... args) const {
 
 template<typename ...Args>
 void QueryTable::subscribeAll(Args &&... args) const {
-  auto res = SFCallback<>::createForFutureTuple();
+  auto res = SFCallback<>::createForFuture();
   subscribeAllAsync(std::move(res.first), std::forward<Args>(args)...);
   (void)res.second.get();
 }

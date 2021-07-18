@@ -37,6 +37,7 @@ using deephaven::openAPI::highlevel::impl::AggregateComboImpl;
 using deephaven::openAPI::highlevel::impl::AggregateImpl;
 using deephaven::openAPI::highlevel::impl::ClientImpl;
 using deephaven::openAPI::highlevel::impl::WorkerOptionsImpl;
+using deephaven::openAPI::utility::createForFuture;
 using deephaven::openAPI::utility::SFCallback;
 using deephaven::openAPI::utility::stringf;
 using deephaven::openAPI::utility::stringVecToShared;
@@ -68,7 +69,7 @@ Client::~Client() {
 }
 
 void Client::login(std::string user, std::string password, std::string operateAs) {
-  auto res = SFCallback<>::createForFutureTuple();
+  auto res = SFCallback<>::createForFuture();
   loginAsync(std::move(user), std::move(password), std::move(operateAs), std::move(res.first));
   (void)res.second.get();
 }
@@ -79,10 +80,9 @@ void Client::loginAsync(std::string user, std::string password, std::string oper
 }
 
 WorkerSession Client::startWorker(const WorkerOptions &options) {
-  auto res = SFCallback<WorkerSession>::createForFuture();
+  auto res = createForFuture<WorkerSession>();
   startWorkerAsync(options, std::move(res.first));
-  auto result = res.second.get();
-  return result;
+  return res.second.get();
 }
 
 void Client::startWorkerAsync(const WorkerOptions &options,

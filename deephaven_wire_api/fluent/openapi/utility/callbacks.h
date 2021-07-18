@@ -25,39 +25,17 @@ public:
   virtual void onFailure(std::exception_ptr ep) = 0;
 };
 
-namespace internal {
-// We do this so that in the special case where there is only one arg, there is an extra static
-// method called createForFuture()
-template<bool, typename ...Args>
-class SFCallbackBase;
-} // namespace internal
-
 // Success-or-failure callbacks. The callee is required to eventually invoke either onSuccess or
 // onFailure exactly once.
 template<typename... Args>
-class SFCallback : public internal::SFCallbackBase<sizeof...(Args), Args...> {
+class SFCallback : public FailureCallback {
 public:
   template<typename Callable>
   static std::shared_ptr<SFCallback> createFromCallable(Callable &&callable);
 
-  static std::pair<std::shared_ptr<SFCallback<Args...>>, std::future<std::tuple<Args...>>> createForFutureTuple();
-
   ~SFCallback() override = default;
   virtual void onSuccess(Args... item) = 0;
 };
-
-namespace internal {
-template<typename T>
-class SFCallbackBase<true, T> : public FailureCallback {
-public:
-  static std::pair<std::shared_ptr<SFCallback<T>>, std::future<T>> createForFuture();
-};
-
-template<typename... Args>
-class SFCallbackBase<false, Args...> : public FailureCallback {
-};
-} // namespace internal
-
 
 // This helps us make a Callback<T> that can hold some kind of invokeable item (function object or
 // lambda or std::function).
@@ -102,14 +80,16 @@ private:
 template<typename T>
 class SFCallbackFutureable final : public SFCallback<T> {
 public:
-  explicit SFCallbackFutureable(std::promise<T> promise) : promise_(std::move(promise)) {}
-
-  void onSuccess(T item) final {
-    promise_.set_value(std::move(item));
+  void onSuccess(T arg) final {
+    promise_.set_value(std::move(arg));
   }
 
   void onFailure(std::exception_ptr ep) final {
     promise_.set_exception(std::move(ep));
+  }
+
+  std::future<T> makeFuture() {
+    return promise_.get_future();
   }
 
 private:
@@ -131,11 +111,10 @@ std::shared_ptr<SFCallback<Args...>> SFCallback<Args...>::createFromCallable(Cal
 
 // Returns a pair whose first item is a SFCallback<T> which satisfies a promise, and whose second
 // item is a std::future<T> which is the future corresponding to that promise.
-template<typename... Args>
-std::pair<std::shared_ptr<SFCallback<Args...>>, std::future<std::tuple<Args...>>> SFCallback<Args...>::createForFutureTuple() {
-  std::promise<std::tuple<Args...>> promise;
-  auto fut = promise.get_future();
-  auto cb = std::make_shared<internal::SFCallbackFutureable<std::tuple<Args...>>>(std::move(promise));
+template<typename T>
+std::pair<std::shared_ptr<SFCallback<T>>, std::future<T>> createForFuture() {
+  auto cb = std::make_shared<internal::SFCallbackFutureable<T>>();
+  auto fut = cb->makeFuture();
   return std::make_pair(std::move(cb), std::move(fut));
 }
 }  // namespace utility
