@@ -14,7 +14,7 @@ using deephaven::openAPI::highlevel::util::DemoConstants;
 using deephaven::openAPI::highlevel::util::PrintUtils;
 using deephaven::openAPI::highlevel::QueryTable;
 using deephaven::openAPI::highlevel::XXXTableData;
-using deephaven::openAPI::core::Callback;
+using deephaven::openAPI::utility::Callback;
 
 namespace deephaven {
 namespace openAPI {

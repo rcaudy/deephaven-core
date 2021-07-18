@@ -3,10 +3,10 @@
 #include <future>
 #include <memory>
 #include <boost/utility/string_view.hpp>
-#include "openapi/utility/callbacks.h"
 #include "highlevel/data/column_data.h"
 #include "highlevel/data/column_data_holder.h"
 #include "highlevel/columns.h"
+#include "utility/callbacks.h"
 #include "proto/session.pb.h"
 #include "proto/session.grpc.pb.h"
 #include "proto/table.pb.h"
@@ -41,7 +41,7 @@ class Client {
   typedef deephaven::openAPI::utility::Void Void;
 
   template<typename T>
-  using SFCallback = deephaven::openAPI::core::SFCallback<T>;
+  using SFCallback = deephaven::openAPI::utility::SFCallback<T>;
 
 public:
   explicit Client(std::shared_ptr<impl::ClientImpl> impl);
@@ -160,7 +160,7 @@ class QueryScope {
   typedef deephaven::openAPI::highlevel::data::ColumnDataHolder ColumnDataHolder;
 
   template<typename T>
-  using SFCallback = deephaven::openAPI::core::SFCallback<T>;
+  using SFCallback = deephaven::openAPI::utility::SFCallback<T>;
 
 public:
   explicit QueryScope(std::shared_ptr<impl::QueryScopeImpl> impl);
@@ -385,9 +385,9 @@ class QueryTable {
   typedef deephaven::openAPI::utility::Void Void;
 
   template<typename... Args>
-  using Callback = deephaven::openAPI::core::Callback<Args...>;
+  using Callback = deephaven::openAPI::utility::Callback<Args...>;
   template<typename T>
-  using SFCallback = deephaven::openAPI::core::SFCallback<T>;
+  using SFCallback = deephaven::openAPI::utility::SFCallback<T>;
 
 public:
   typedef Callback<const QueryTable&, const XXXTableSnapshot&> snapshotCallback_t;
@@ -593,11 +593,10 @@ public:
 
   std::vector<Column> getColumns() const;
 
-  StrCol getStrCol(boost::string_view columnName) const;
-  NumCol getNumCol(boost::string_view columnName) const;
-  DateTimeCol getDateTimeCol(boost::string_view columnName) const;
+  StrCol getStrCol(std::string columnName) const;
+  NumCol getNumCol(std::string columnName) const;
+  DateTimeCol getDateTimeCol(std::string columnName) const;
 
-  int64_t hackGetSizeFromTableDefinition() const;
   const arrow::flight::protocol::Wicket &hackGetTicket() const;
 
   // for debugging

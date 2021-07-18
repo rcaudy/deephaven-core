@@ -29,9 +29,6 @@ using io::deephaven::proto::backplane::grpc::UnstructuredFilterTableRequest;
 using io::deephaven::proto::backplane::script::grpc::BindTableToVariableRequest;
 using io::deephaven::proto::backplane::script::grpc::FetchTableRequest;
 using io::deephaven::proto::backplane::script::grpc::ConsoleService;
-using deephaven::openAPI::core::Callback;
-using deephaven::openAPI::core::FailureCallback;
-using deephaven::openAPI::core::SFCallback;
 using deephaven::openAPI::core::remoting::ServerCQCallback;
 using deephaven::openAPI::core::remoting::ServerResponseHolder;
 using deephaven::openAPI::core::remoting::Server;
@@ -66,7 +63,10 @@ using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web
 using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::worker::Unsubscribe;
 using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::worker::Ungroup;
 using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::worker::Update;
+using deephaven::openAPI::utility::Callback;
 using deephaven::openAPI::utility::Executor;
+using deephaven::openAPI::utility::FailureCallback;
+using deephaven::openAPI::utility::SFCallback;
 using deephaven::openAPI::utility::streamf;
 using deephaven::openAPI::utility::stringf;
 using deephaven::openAPI::utility::Void;
@@ -709,7 +709,7 @@ SnapshotAndDeltaUpdateHandler::~SnapshotAndDeltaUpdateHandler() = default;
 void SnapshotAndDeltaUpdateHandler::onInitialSnapshot(const std::shared_ptr<TableHandle> &tableHandle,
     const std::shared_ptr<TableSnapshot> &snapshot) {
   auto self = weakSelf_.lock();
-  auto cb = [self, tableHandle, snapshot](Void) {
+  auto cb = [self, tableHandle, snapshot]() {
     TableHandleKey thk;
     if (!TableHandleKey::tryCreate(*tableHandle, &thk)) {
       // Server sent a table handle that we don't want to deal with (one without clientId set)
@@ -729,7 +729,7 @@ void SnapshotAndDeltaUpdateHandler::onInitialSnapshot(const std::shared_ptr<Tabl
 void SnapshotAndDeltaUpdateHandler::onIncrementalUpdates(const std::shared_ptr<TableHandle> &tableHandle,
     const std::shared_ptr<DeltaUpdates> &updates) {
   auto self = weakSelf_.lock();
-  auto cb = [self, tableHandle, updates](Void) {
+  auto cb = [self, tableHandle, updates]() {
     TableHandleKey thk;
     if (!TableHandleKey::tryCreate(*tableHandle, &thk)) {
       // Server sent a table handle that we don't want to deal with (one without clientId set)
@@ -769,7 +769,7 @@ void SnapshotAndDeltaUpdateHandler::addTableSnapshotHandler(
     const std::shared_ptr<snapshotCallback_t> &handler) {
   auto self = weakSelf_.lock();
   auto thk = TableHandleKey::create(*tableHandle);
-  auto cb = [self, thk, handler](Void) {
+  auto cb = [self, thk, handler]() {
     self->snapshotHandlers_[thk].push_back(handler);
   };
   executor_->invokeCallable(std::move(cb));
@@ -780,7 +780,7 @@ void SnapshotAndDeltaUpdateHandler::removeTableSnapshotHandler(
     const std::shared_ptr<snapshotCallback_t> &handler) {
   auto self = weakSelf_.lock();
   auto thk = TableHandleKey::create(*tableHandle);
-  auto cb = [self, thk, handler](Void) {
+  auto cb = [self, thk, handler]() {
     removeFromMap(self->snapshotHandlers_, thk, handler);
   };
   executor_->invokeCallable(std::move(cb));
@@ -791,7 +791,7 @@ void SnapshotAndDeltaUpdateHandler::addTableUpdateHandler(
     const std::shared_ptr<updateCallback_t> &handler) {
   auto self = weakSelf_.lock();
   auto thk = TableHandleKey::create(*tableHandle);
-  auto cb = [self, thk, handler](Void) {
+  auto cb = [self, thk, handler]() {
     self->updateHandlers_[thk].push_back(handler);
   };
   executor_->invokeCallable(std::move(cb));
@@ -802,7 +802,7 @@ void SnapshotAndDeltaUpdateHandler::removeTableUpdateHandler(
     const std::shared_ptr<updateCallback_t> &handler) {
   auto self = weakSelf_.lock();
   auto thk = TableHandleKey::create(*tableHandle);
-  auto cb = [self, thk, handler](Void) {
+  auto cb = [self, thk, handler]() {
     removeFromMap(self->updateHandlers_, thk, handler);
   };
   executor_->invokeCallable(std::move(cb));

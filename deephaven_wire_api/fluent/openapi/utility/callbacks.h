@@ -48,7 +48,7 @@ public:
   explicit CallbackCallable(Callable &&callable) : callable_(std::forward<Callable>(callable)) {}
 
   void invoke(Args... args) final {
-    callable_(std::forward<Args...>(args)...);
+    callable_(std::forward<Args>(args)...);
   }
 
 private:

@@ -4,9 +4,9 @@
 #include <future>
 #include <memory>
 #include "core/server.h"
-#include "openapi/utility/callbacks.h"
 #include "lowlevel/generated/shared_objects.h"
 #include "lowlevel/dhworker.h"
+#include "utility/callbacks.h"
 #include "utility/executor.h"
 #include "proto/session.pb.h"
 #include "proto/session.grpc.pb.h"
@@ -50,9 +50,9 @@ class DHWorkerSession {
   typedef deephaven::openAPI::utility::Void Void;
 
   template<typename... Args>
-  using Callback = deephaven::openAPI::core::Callback<Args...>;
+  using Callback = deephaven::openAPI::utility::Callback<Args...>;
   template<typename T>
-  using SFCallback = deephaven::openAPI::core::SFCallback<T>;
+  using SFCallback = deephaven::openAPI::utility::SFCallback<T>;
 
   typedef SFCallback<std::shared_ptr<InitialTableDefinition>> ItdCallback;
   typedef SFCallback<ExportedTableCreationResponse> EtcCallback;

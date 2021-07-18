@@ -20,7 +20,6 @@ typedef arrow::flight::protocol::Wicket Ticket;
 using io::deephaven::proto::backplane::grpc::ComboAggregateRequest;
 using io::deephaven::proto::backplane::grpc::HandshakeRequest;
 using io::deephaven::proto::backplane::grpc::HandshakeResponse;
-using deephaven::openAPI::core::SFCallback;
 using deephaven::openAPI::lowlevel::remoting::generated::java::lang::Void;
 using deephaven::openAPI::lowlevel::remoting::DHServer;
 using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::batch::aggregates::AggregateDescriptor;
@@ -38,6 +37,7 @@ using deephaven::openAPI::highlevel::impl::AggregateComboImpl;
 using deephaven::openAPI::highlevel::impl::AggregateImpl;
 using deephaven::openAPI::highlevel::impl::ClientImpl;
 using deephaven::openAPI::highlevel::impl::WorkerOptionsImpl;
+using deephaven::openAPI::utility::SFCallback;
 using deephaven::openAPI::utility::stringf;
 using deephaven::openAPI::utility::stringVecToShared;
 using deephaven::openAPI::utility::Executor;
@@ -511,23 +511,19 @@ std::vector<Column> QueryTable::getColumns() const {
   return result;
 }
 
-StrCol QueryTable::getStrCol(boost::string_view columnName) const {
-  auto scImpl = impl_->getStrColImpl(columnName);
+StrCol QueryTable::getStrCol(std::string columnName) const {
+  auto scImpl = impl_->getStrColImpl(std::move(columnName));
   return StrCol(std::move(scImpl));
 }
 
-NumCol QueryTable::getNumCol(boost::string_view columnName) const {
-  auto ncImpl = impl_->getNumColImpl(columnName);
+NumCol QueryTable::getNumCol(std::string columnName) const {
+  auto ncImpl = impl_->getNumColImpl(std::move(columnName));
   return NumCol(std::move(ncImpl));
 }
 
-DateTimeCol QueryTable::getDateTimeCol(boost::string_view columnName) const {
-  auto dtImpl = impl_->getDateTimeColImpl(columnName);
+DateTimeCol QueryTable::getDateTimeCol(std::string columnName) const {
+  auto dtImpl = impl_->getDateTimeColImpl(std::move(columnName));
   return DateTimeCol(std::move(dtImpl));
-}
-
-int64_t QueryTable::hackGetSizeFromTableDefinition() const {
-  return impl_->hackGetSizeFromTableDefinition();
 }
 
 const Ticket &QueryTable::hackGetTicket() const {

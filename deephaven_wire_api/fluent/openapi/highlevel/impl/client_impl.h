@@ -18,13 +18,13 @@ class WorkerOptionsImpl;
 
 class ClientImpl {
   struct Private {};
-  typedef deephaven::openAPI::core::FailureCallback FailureCallback;
   typedef deephaven::openAPI::lowlevel::remoting::DHServer DHServer;
   typedef deephaven::openAPI::utility::Executor Executor;
+  typedef deephaven::openAPI::utility::FailureCallback FailureCallback;
   typedef deephaven::openAPI::utility::Void Void;
 
   template<typename T>
-  using SFCallback = deephaven::openAPI::core::SFCallback<T>;
+  using SFCallback = deephaven::openAPI::utility::SFCallback<T>;
 
   enum class LoginState { NotLoggedIn, Pending, LoggedIn };
 

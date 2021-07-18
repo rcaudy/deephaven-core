@@ -5,7 +5,6 @@
 #include <memory>
 #include <boost/utility/string_view.hpp>
 #include "core/server.h"
-#include "openapi/utility/callbacks.h"
 #include "lowlevel/generated/shared_objects.h"
 #include "lowlevel/util/server_callbacks.h"
 #include "proto/console.pb.h"
@@ -14,6 +13,7 @@
 #include "proto/session.grpc.pb.h"
 #include "proto/table.pb.h"
 #include "proto/table.grpc.pb.h"
+#include "utility/callbacks.h"
 #include "utility/executor.h"
 
 namespace deephaven {
@@ -39,7 +39,7 @@ class DHServer {
   struct Private {};
 
   template<typename T>
-  using SFCallback = deephaven::openAPI::core::SFCallback<T>;
+  using SFCallback = deephaven::openAPI::utility::SFCallback<T>;
 
 public:
   static std::shared_ptr<DHServer> createFromTarget(const std::string &target,

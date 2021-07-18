@@ -26,7 +26,7 @@ class QueryScopeImpl {
   typedef deephaven::openAPI::utility::Executor Executor;
 
   template<typename T>
-  using SFCallback = deephaven::openAPI::core::SFCallback<T>;
+  using SFCallback = deephaven::openAPI::utility::SFCallback<T>;
 
 public:
   static std::shared_ptr<QueryScopeImpl> create(std::shared_ptr<WorkerSessionImpl> session,

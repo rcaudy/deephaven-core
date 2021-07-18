@@ -6,7 +6,7 @@
 #include "utility/utility.h"
 
 using namespace std;
-using deephaven::openAPI::core::SFCallback;
+using deephaven::openAPI::utility::SFCallback;
 using deephaven::openAPI::utility::streamf;
 using deephaven::openAPI::utility::streamSeparatedList;
 using deephaven::openAPI::utility::stringf;
@@ -70,36 +70,36 @@ void PrintUtils::printChunk(std::ostream &s, const std::vector<Column> &columns,
 void PrintUtils::streamTableData(const QueryTable &queryTable,
     const std::vector<std::string> &columns, const std::function<void(const TableData &)> &callback,
     size_t numSimultaneousRequests) {
-  const int64_t chunkSize = 100000;  // 100K
-  auto empty = queryTable.scope().emptyTable(0, {}, {});
-  auto snapshotted = empty.snapshot(queryTable, true, {});
-  auto size = snapshotted.hackGetSizeFromTableDefinition();
-
-  int64_t current = 0;
-  std::queue<std::future<TableData>> queue;
-  while (true) {
-    // If there are rows left to fetch *and* there is room left in the queue, start another fetch
-    // task
-    if (current < size && queue.size() < numSimultaneousRequests) {
-      auto end = std::min(current + chunkSize, size);
-      auto res = SFCallback<TableData>::createForFuture();
-      snapshotted.getTableDataAsync(current, end - 1, columns, std::move(res.first));
-      queue.push(std::move(res.second));
-      current = end;
-      continue;
-    }
-
-    // Otherwise if queue is empty, then we are done
-    if (queue.empty()) {
-      break;
-    }
-
-    // Otherwise, pop a task off the front of the queue, wait for it, and give the results to the
-    // callback.
-    auto tableData = queue.front().get();
-    queue.pop();
-    callback(tableData);
-  }
+//  const int64_t chunkSize = 100000;  // 100K
+//  auto empty = queryTable.scope().emptyTable(0, {}, {});
+//  auto snapshotted = empty.snapshot(queryTable, true, {});
+//  auto size = snapshotted.hackGetSizeFromTableDefinition();
+//
+//  int64_t current = 0;
+//  std::queue<std::future<TableData>> queue;
+//  while (true) {
+//    // If there are rows left to fetch *and* there is room left in the queue, start another fetch
+//    // task
+//    if (current < size && queue.size() < numSimultaneousRequests) {
+//      auto end = std::min(current + chunkSize, size);
+//      auto res = SFCallback<TableData>::createForFuture();
+//      snapshotted.getTableDataAsync(current, end - 1, columns, std::move(res.first));
+//      queue.push(std::move(res.second));
+//      current = end;
+//      continue;
+//    }
+//
+//    // Otherwise if queue is empty, then we are done
+//    if (queue.empty()) {
+//      break;
+//    }
+//
+//    // Otherwise, pop a task off the front of the queue, wait for it, and give the results to the
+//    // callback.
+//    auto tableData = queue.front().get();
+//    queue.pop();
+//    callback(tableData);
+//  }
 }
 
 namespace {

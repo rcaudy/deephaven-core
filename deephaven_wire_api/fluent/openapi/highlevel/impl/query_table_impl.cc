@@ -12,7 +12,6 @@
 #include <arrow/type.h>
 #include <arrow/table.h>
 #include <boost/variant.hpp>
-#include <z3_fixedpoint.h>
 #include "utility/callbacks.h"
 #include "lowlevel/generated/dhworker_requests.h"
 #include "lowlevel/generated/shared_objects.h"
@@ -31,8 +30,6 @@ using io::deephaven::proto::backplane::grpc::ComboAggregateRequest;
 using io::deephaven::proto::backplane::grpc::SortDescriptor;
 using io::deephaven::proto::backplane::grpc::TableReference;
 using io::deephaven::proto::backplane::script::grpc::BindTableToVariableResponse;
-using deephaven::openAPI::core::Callback;
-using deephaven::openAPI::core::SFCallback;
 using deephaven::openAPI::lowlevel::remoting::DHWorker;
 using deephaven::openAPI::lowlevel::remoting::DHWorkerAPIListenerDefault;
 using deephaven::openAPI::lowlevel::remoting::DHWorkerSession;
@@ -69,6 +66,8 @@ using deephaven::openAPI::highlevel::fluent::impl::NumColImpl;
 using deephaven::openAPI::highlevel::fluent::impl::StrColImpl;
 using deephaven::openAPI::highlevel::XXXTableSnapshot;
 using deephaven::openAPI::highlevel::XXXTableUpdate;
+using deephaven::openAPI::utility::Callback;
+using deephaven::openAPI::utility::SFCallback;
 using deephaven::openAPI::utility::streamf;
 using deephaven::openAPI::utility::stringf;
 using deephaven::openAPI::utility::stringVecToShared;
@@ -440,33 +439,6 @@ void QueryTableImpl::getData(std::shared_ptr<QueryTable::getDataCallback_t> hand
   scope_->lowLevelSession()->getDataAsync(ticket_, std::move(zamboniHandler));
 }
 
-void QueryTableImpl::addTableUpdateHandler(std::shared_ptr<QueryTable::updateCallback_t> handler) {
-  auto self = weakSelf_.lock();
-  auto adaptor = internal::LowToHighUpdateAdaptor::create(std::move(self), std::move(handler));
-  mutex_.lock();
-  adaptors_.push_back(adaptor);
-  mutex_.unlock();
-//  streamf(std::cerr, "Adding a table handle update handler %o %o\n", tableHandle_->custom().serverId(), tableHandle_->custom().clientId());
-//  scope_->lowLevelSession()->addTableUpdateHandler(tableHandle_, adaptor);
-}
-
-void QueryTableImpl::removeTableUpdateHandler(
-    const std::shared_ptr<QueryTable::updateCallback_t> &handler) {
-  std::unique_lock<std::mutex> lock(mutex_);
-  auto pred = [&handler](const std::shared_ptr<internal::LowToHighUpdateAdaptor> &a) {
-    return a->highLevelHandler() == handler;
-  };
-  auto ip = std::find_if(adaptors_.begin(), adaptors_.end(), pred);
-  if (ip == adaptors_.end()) {
-    return;
-  }
-  auto adaptor = std::move(*ip);
-  adaptors_.erase(ip);
-  lock.unlock();
-//  streamf(std::cerr, "Removing a table handle update handler %o %o\n", tableHandle_->custom().serverId(), tableHandle_->custom().clientId());
-//  scope_->lowLevelSession()->removeTableUpdateHandler(tableHandle_, adaptor);
-}
-
 std::vector<std::shared_ptr<ColumnImpl>> QueryTableImpl::getColumnImpls() {
   const auto &colDefs = lazyStateOss_->getColumnDefinitions();
   std::vector<std::shared_ptr<ColumnImpl>> result;
@@ -479,16 +451,19 @@ std::vector<std::shared_ptr<ColumnImpl>> QueryTableImpl::getColumnImpls() {
 
 std::shared_ptr<NumColImpl> QueryTableImpl::getNumColImpl(std::string columnName) {
   const auto &colType = lookupHelper(columnName);
+  (void)colType;
   return NumColImpl::create(std::move(columnName));
 }
 
 std::shared_ptr<StrColImpl> QueryTableImpl::getStrColImpl(std::string columnName) {
   const auto &colType = lookupHelper(columnName);
+  (void)colType;
   return StrColImpl::create(std::move(columnName));
 }
 
 std::shared_ptr<DateTimeColImpl> QueryTableImpl::getDateTimeColImpl(std::string columnName) {
   const auto &colType = lookupHelper(columnName);
+  (void)colType;
   return DateTimeColImpl::create(std::move(columnName));
 }
 
@@ -567,7 +542,7 @@ void LazyStateOss::onSuccess(ExportedTableCreationResponse item) {
   }
 
   auto spTicket = std::make_shared<Ticket>(ticket_);
-  auto cb = [spLocalWaiters, spTicket](Void) {
+  auto cb = [spLocalWaiters, spTicket]() {
     for (const auto &waiter : *spLocalWaiters) {
       waiter->onSuccess(*spTicket);
     }
@@ -591,7 +566,7 @@ void LazyStateOss::onFailure(std::exception_ptr error) {
     return;
   }
 
-  auto cb = [spLocalWaiters, error](Void) {
+  auto cb = [spLocalWaiters, error]() {
     for (const auto &waiter : *spLocalWaiters) {
       waiter->onFailure(error);
     }
@@ -696,6 +671,7 @@ public:
 
     auto &schema = schemaHolder.ValueOrDie();
     std::cerr << "If you make it this far, I want to give you a hug\n";
+    (void)schema;
     // colDefPromise_->setValue(zamboniTime);
   }
 
@@ -709,45 +685,6 @@ void LazyStateOss::getColumnDefinitionsAsync(
   auto innerCb = std::make_shared<GetColumnDefsCallback>(weakSelf_.lock(), std::move(cb));
   ticketFuture_.invoke(std::move(innerCb));
 }
-
-std::shared_ptr<LowToHighSnapshotAdaptor> LowToHighSnapshotAdaptor::create(
-    std::shared_ptr<QueryTableImpl> queryTableImpl,
-    std::shared_ptr<QueryTable::snapshotCallback_t> handler) {
-  QueryTable queryTable(std::move(queryTableImpl));
-  return std::make_shared<LowToHighSnapshotAdaptor>(Private(), std::move(queryTable),
-      std::move(handler));
-}
-
-LowToHighSnapshotAdaptor::LowToHighSnapshotAdaptor(Private, QueryTable queryTable,
-    std::shared_ptr<QueryTable::snapshotCallback_t> highLevelHandler) :
-    queryTable_(std::move(queryTable)), highLevelHandler_(std::move(highLevelHandler)) {}
-LowToHighSnapshotAdaptor::~LowToHighSnapshotAdaptor() = default;
-
-void LowToHighSnapshotAdaptor::invoke(const std::shared_ptr<TableHandle> &tableHandle,
-    const std::shared_ptr<TableSnapshot> &snapshot) {
-  XXXTableSnapshot highLevelSnapshot;
-  highLevelHandler_->invoke(queryTable_, highLevelSnapshot);
-}
-
-std::shared_ptr<LowToHighUpdateAdaptor> LowToHighUpdateAdaptor::create(
-    std::shared_ptr<QueryTableImpl> queryTableImpl,
-    std::shared_ptr<QueryTable::updateCallback_t> handler) {
-  QueryTable queryTable(std::move(queryTableImpl));
-  return std::make_shared<LowToHighUpdateAdaptor>(Private(), std::move(queryTable), std::move(handler));
-}
-
-LowToHighUpdateAdaptor::LowToHighUpdateAdaptor(Private, QueryTable queryTable,
-    std::shared_ptr<QueryTable::updateCallback_t> highLevelHandler) :
-    queryTable_(std::move(queryTable)), highLevelHandler_(std::move(highLevelHandler)) {}
-LowToHighUpdateAdaptor::~LowToHighUpdateAdaptor() = default;
-
-void LowToHighUpdateAdaptor::invoke(const std::shared_ptr<TableHandle> &tableHandle,
-    const std::shared_ptr<DeltaUpdates> &deltaUpdates) {
-  // assert tableHandle == queryTable_.tableHandle()
-  // TODO(kosak): translate deltaUpdates here
-  XXXTableUpdate update;
-  highLevelHandler_->invoke(queryTable_, update);
-}
 }  // namespace internal
 
 namespace {
@@ -760,8 +697,8 @@ std::shared_ptr<BitSet> getColumnsBitSet(const std::vector<std::string> &desired
   if (desiredColumns.empty()) {
     // empty vector means "all".
     items.reserve(tableColumns.size());
-    for (int32_t i = 0; i < tableColumns.size(); ++i) {
-      items.push_back(i);
+    for (size_t i = 0; i < tableColumns.size(); ++i) {
+      items.push_back(static_cast<int32_t>(i));
     }
   } else {
     std::vector<boost::string_view> lookup;
@@ -770,9 +707,9 @@ std::shared_ptr<BitSet> getColumnsBitSet(const std::vector<std::string> &desired
       lookup.emplace_back(s);
     }
     std::sort(lookup.begin(), lookup.end());
-    for (int32_t i = 0; i < tableColumns.size(); ++i) {
+    for (size_t i = 0; i < tableColumns.size(); ++i) {
       if (std::binary_search(lookup.begin(), lookup.end(), *tableColumns[i]->name())) {
-        items.push_back(i);
+        items.push_back(static_cast<int32_t>(i));
       }
     }
   }

@@ -19,8 +19,8 @@
 #include "core/protocol_base_classes.h"
 #include "core/deserializer.h"
 #include "core/serializer.h"
-#include "openapi/utility/callbacks.h"
 #include "core/protocol_base_classes.h"
+#include "utility/callbacks.h"
 #include "utility/executor.h"
 #include "proto/barrage.pb.h"
 #include "proto/barrage.grpc.pb.h"
@@ -38,6 +38,8 @@ namespace openAPI {
 namespace core {
 namespace remoting {
 class ServerCQCallback {
+  typedef deephaven::openAPI::utility::FailureCallback FailureCallback;
+
 public:
   ServerCQCallback(std::shared_ptr<FailureCallback> failureCallback);
   ServerCQCallback(const ServerCQCallback &other) = delete;
@@ -53,6 +55,9 @@ public:
 
 template<typename Response>
 class ServerResponseHolder final : public ServerCQCallback {
+  template<typename T>
+  using SFCallback = deephaven::openAPI::utility::SFCallback<T>;
+
 public:
   explicit ServerResponseHolder(std::shared_ptr<SFCallback<Response>> callback) :
   ServerCQCallback(callback), callback_(std::move(callback)) {}
@@ -81,7 +86,7 @@ class Server {
   typedef deephaven::openAPI::utility::Void Void;
 
   template<typename T>
-  using SFCallback = deephaven::openAPI::core::SFCallback<T>;
+  using SFCallback = deephaven::openAPI::utility::SFCallback<T>;
 
   struct Private {};
 

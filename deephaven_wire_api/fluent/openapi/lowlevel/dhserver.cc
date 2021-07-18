@@ -23,7 +23,6 @@ using deephaven::openAPI::core::remoting::Notification;
 using deephaven::openAPI::core::remoting::Server;
 using deephaven::openAPI::core::remoting::ServerCQCallback;
 using deephaven::openAPI::core::remoting::ServerResponseHolder;
-using deephaven::openAPI::core::SFCallback;
 using deephaven::openAPI::lowlevel::remoting::generated::DHServerNotificationVisitor;
 using deephaven::openAPI::lowlevel::remoting::generated::deserializeDHServerNotification;
 using deephaven::openAPI::lowlevel::remoting::generated::dynamicDeserializerNames;
@@ -43,6 +42,7 @@ using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web
 using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::primary::ConsoleDeath;
 using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::primary::Ids6976;
 using deephaven::openAPI::utility::Executor;
+using deephaven::openAPI::utility::SFCallback;
 using deephaven::openAPI::utility::streamf;
 using deephaven::openAPI::utility::stringf;
 

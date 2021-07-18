@@ -10,7 +10,6 @@
 
 using io::deephaven::proto::backplane::grpc::HandshakeResponse;
 using io::deephaven::proto::backplane::script::grpc::StartConsoleResponse;
-using deephaven::openAPI::core::SFCallback;
 using deephaven::openAPI::core::remoting::Server;
 using deephaven::openAPI::lowlevel::remoting::DHServer;
 using deephaven::openAPI::lowlevel::remoting::DHWorker;
@@ -20,6 +19,7 @@ using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web
 using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::RefreshToken;
 using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::ide::ConsoleAddress;
 using deephaven::openAPI::utility::Executor;
+using deephaven::openAPI::utility::SFCallback;
 using deephaven::openAPI::utility::stringf;
 using deephaven::openAPI::utility::streamf;
 
@@ -28,7 +28,7 @@ namespace openAPI {
 namespace highlevel {
 namespace impl {
 namespace {
-const char remoteQueryProcessorName[] = "RemoteQueryProcessor";
+// const char remoteQueryProcessorName[] = "RemoteQueryProcessor";
 }  // namespace
 
 std::shared_ptr<ClientImpl> ClientImpl::create(std::shared_ptr<DHServer> server,

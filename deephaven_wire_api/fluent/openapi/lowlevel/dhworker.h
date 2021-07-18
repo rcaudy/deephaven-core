@@ -2,10 +2,10 @@
 
 #include <future>
 #include <memory>
-#include "openapi/utility/callbacks.h"
 #include "core/server.h"
 #include "lowlevel/generated/shared_objects.h"
 #include "lowlevel/util/server_callbacks.h"
+#include "utility/callbacks.h"
 #include "utility/executor.h"
 
 namespace deephaven {
@@ -29,7 +29,7 @@ class DHWorker {
   typedef deephaven::openAPI::utility::Executor Executor;
 
   template<typename T>
-  using SFCallback = deephaven::openAPI::core::SFCallback<T>;
+  using SFCallback = deephaven::openAPI::utility::SFCallback<T>;
 
 public:
   static std::shared_ptr<DHWorker> createFromUrl(boost::string_view url, int32_t clientId,
