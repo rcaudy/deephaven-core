@@ -478,10 +478,10 @@ const std::string &QueryTableImpl::lookupHelper(const std::string &columnName) {
 }
 
 void QueryTableImpl::bindToVariableAsync(std::string variable,
-    std::shared_ptr<SFCallback<Void>> callback) {
+    std::shared_ptr<SFCallback<>> callback) {
   struct cb_t : public SFCallback<const Ticket &>, public SFCallback<BindTableToVariableResponse> {
     cb_t(std::shared_ptr<QueryScopeImpl> scope, std::string variable,
-        std::shared_ptr<SFCallback<Void>> outerCb) : scope_(std::move(scope)),
+        std::shared_ptr<SFCallback<>> outerCb) : scope_(std::move(scope)),
         variable_(std::move(variable)), outerCb_(std::move(outerCb)) {}
 
     void onSuccess(const Ticket &ticket) final {
@@ -490,7 +490,7 @@ void QueryTableImpl::bindToVariableAsync(std::string variable,
     }
 
     void onSuccess(BindTableToVariableResponse /*item*/) final {
-      outerCb_->onSuccess(Void());
+      outerCb_->onSuccess();
     }
 
     void onFailure(std::exception_ptr ep) override {
@@ -499,7 +499,7 @@ void QueryTableImpl::bindToVariableAsync(std::string variable,
 
     std::shared_ptr<QueryScopeImpl> scope_;
     std::string variable_;
-    std::shared_ptr<SFCallback<Void>> outerCb_;
+    std::shared_ptr<SFCallback<>> outerCb_;
     std::weak_ptr<cb_t> weakSelf_;
   };
   auto cb = std::make_shared<cb_t>(scope_, std::move(variable), std::move(callback));
@@ -532,92 +532,16 @@ void LazyStateOss::onSuccess(ExportedTableCreationResponse item) {
     onFailure(std::move(ep));
     return;
   }
-
-  std::unique_lock<std::mutex> lock(mutex_);
-  if (readyLocked(&lock)) {
-    return;
-  }
-
-  ticket_ = std::move(*item.mutable_result_id()->mutable_ticket());
-  success_ = true;
-
-  // Notify any waiters
-  auto spLocalWaiters = std::make_shared<std::vector<std::shared_ptr<waiter_t>>>();
-  spLocalWaiters->swap(waiters_);
-  lock.unlock();
-  condVar_.notify_all();
-
-  if (spLocalWaiters->empty()) {
-    return;
-  }
-
-  auto spTicket = std::make_shared<Ticket>(ticket_);
-  auto cb = [spLocalWaiters, spTicket]() {
-    for (const auto &waiter : *spLocalWaiters) {
-      waiter->onSuccess(*spTicket);
-    }
-  };
-  executor_->invokeCallable(std::move(cb));
+  ticketPromise_.setValue(item.result_id().ticket());
 }
 
 void LazyStateOss::onFailure(std::exception_ptr error) {
-  std::unique_lock<std::mutex> lock(mutex_);
-  if (readyLocked(&lock)) {
-    return;
-  }
-  error_ = error;
-
-  auto spLocalWaiters = std::make_shared<std::vector<std::shared_ptr<waiter_t>>>();
-  spLocalWaiters->swap(waiters_);
-  lock.unlock();
-  condVar_.notify_all();
-
-  if (spLocalWaiters->empty()) {
-    return;
-  }
-
-  auto cb = [spLocalWaiters, error]() {
-    for (const auto &waiter : *spLocalWaiters) {
-      waiter->onFailure(error);
-    }
-  };
-  executor_->invokeCallable(std::move(cb));
-}
-
-void LazyStateOss::invoke(std::shared_ptr<waiter_t> callback) {
-  std::unique_lock<std::mutex> lock(mutex_);
-  if (!readyLocked(&lock)) {
-    waiters_.push_back(std::move(callback));
-    return;
-  }
-  // Already ready, so grab state
-  auto ep = error_;
-  lock.unlock();
-
-  // And then invoke callback (but not under lock)
-  if (ep != nullptr) {
-    callback->onFailure(std::move(ep));
-  }
-  callback->onSuccess(ticket_);
+  ticketPromise_.setError(std::move(error));
 }
 
 void LazyStateOss::waitUntilReady() {
-  std::unique_lock<std::mutex> lock(mutex_);
-  while (true) {
-    if (error_ != nullptr) {
-      std::rethrow_exception(error_);
-    }
-    if (success_) {
-      return;
-    }
-    condVar_.wait(lock);
-  }
+  (void)ticketFuture_.value();
 }
-
-bool LazyStateOss::readyLocked(std::unique_lock<std::mutex> */*lock*/) {
-  return error_ != nullptr || success_;
-}
-
 
 auto LazyStateOss::getColumnDefinitions() -> const columnDefinitions_t & {
   // Shortcut if we have column definitions
@@ -658,6 +582,7 @@ public:
     if (!needsTrigger) {
       return;
     }
+    ticket_ = ticket;
     owner_->flightExecutor_->invoke(weakSelf_.lock());
   }
 
@@ -670,7 +595,7 @@ public:
     options.headers.push_back(owner_->server_->makeBlessing());
     std::unique_ptr<arrow::flight::FlightStreamReader> fsr;
     arrow::flight::Ticket tkt;
-    tkt.ticket = owner_->ticket_.ticket();
+    tkt.ticket = ticket_.ticket();
 
     auto doGetRes = owner_->server_->flightClient()->DoGet(options, tkt, &fsr);
     if (!doGetRes.ok()) {
@@ -697,6 +622,7 @@ public:
   std::shared_ptr<LazyStateOss> owner_;
   std::shared_ptr<SFCallback<const LazyStateOss::columnDefinitions_t &>> outer_;
   std::weak_ptr<GetColumnDefsCallback> weakSelf_;
+  Ticket ticket_;
 };
 
 void LazyStateOss::getColumnDefinitionsAsync(

@@ -72,13 +72,6 @@ public:
   void onSuccess(ExportedTableCreationResponse item) final;
   void onFailure(std::exception_ptr ep) final;
 
-  void invoke(std::shared_ptr<waiter_t> callback);
-
-  template<typename Callable>
-  void invokeCallable(Callable &&callable) {
-    invoke(waiter_t::createFromCallable(std::forward<Callable>(callable)));
-  }
-
   const columnDefinitions_t &getColumnDefinitions();
   void getColumnDefinitionsAsync(std::shared_ptr<SFCallback<const columnDefinitions_t &>> cb);
 
@@ -87,23 +80,12 @@ private:
 
   std::shared_ptr<Server> server_;
   std::shared_ptr<Executor> executor_;
-
   std::shared_ptr<Executor> flightExecutor_;
-
-  std::mutex mutex_;
-  std::condition_variable condVar_;
-  // Error condition ('onException' has been called).
-  std::exception_ptr error_;
-  // Success condition ('onSuccess' has been called).
-  bool success_ = false;
-  Ticket ticket_;
 
   CBPromise<Ticket> ticketPromise_;
   CBFuture<Ticket> ticketFuture_;
   CBPromise<columnDefinitions_t> colDefsPromise_;
   CBFuture<columnDefinitions_t> colDefsFuture_;
-
-  std::vector<std::shared_ptr<waiter_t>> waiters_;
 
   std::weak_ptr<LazyStateOss> weakSelf_;
 
@@ -132,8 +114,8 @@ class QueryTableImpl {
 
   template<typename... Args>
   using Callback = deephaven::openAPI::utility::Callback<Args...>;
-  template<typename T>
-  using SFCallback = deephaven::openAPI::utility::SFCallback<T>;
+  template<typename ...Args>
+  using SFCallback = deephaven::openAPI::utility::SFCallback<Args...>;
 public:
   static std::shared_ptr<internal::LazyStateOss> createEtcCallback(const QueryScopeImpl *scope);
 
@@ -199,7 +181,7 @@ public:
   std::shared_ptr<NumColImpl> getNumColImpl(std::string columnName);
   std::shared_ptr<DateTimeColImpl> getDateTimeColImpl(std::string columnName);
 
-  void bindToVariableAsync(std::string variable, std::shared_ptr<SFCallback<Void>> callback);
+  void bindToVariableAsync(std::string variable, std::shared_ptr<SFCallback<>> callback);
 
   // For debugging
   void observe();

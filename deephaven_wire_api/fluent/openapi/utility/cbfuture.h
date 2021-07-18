@@ -101,6 +101,10 @@ public:
 
   CBFuture<T> makeFuture();
 
+  void setValue(T value) {
+    state_->setValue(std::move(value));
+  }
+
   void setError(std::exception_ptr ep) {
     state_->setError(std::move(ep));
   }
