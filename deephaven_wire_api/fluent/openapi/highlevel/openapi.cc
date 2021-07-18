@@ -68,13 +68,13 @@ Client::~Client() {
 }
 
 void Client::login(std::string user, std::string password, std::string operateAs) {
-  auto res = SFCallback<Void>::createForFuture();
+  auto res = SFCallback<>::createForFutureTuple();
   loginAsync(std::move(user), std::move(password), std::move(operateAs), std::move(res.first));
   (void)res.second.get();
 }
 
 void Client::loginAsync(std::string user, std::string password, std::string operateAs,
-    std::shared_ptr<SFCallback<Void>> callback) {
+    std::shared_ptr<SFCallback<>> callback) {
   impl_->loginAsync(std::move(user), std::move(password), std::move(operateAs), std::move(callback));
 }
 
@@ -448,23 +448,23 @@ void QueryTable::getTableDataAsync(long first, long last,
 }
 
 void QueryTable::subscribeAll(std::vector<std::string> columnSpecs) const {
-  auto res = SFCallback<Void>::createForFuture();
+  auto res = SFCallback<>::createForFutureTuple();
   subscribeAllAsync(std::move(columnSpecs), std::move(res.first));
-  res.second.get();
+  (void)res.second.get();
 }
 
 void QueryTable::subscribeAllAsync(std::vector<std::string> columnSpecs,
-    std::shared_ptr<SFCallback<Void>> callback) const {
+    std::shared_ptr<SFCallback<>> callback) const {
   impl_->subscribeAllAsync(std::move(columnSpecs), std::move(callback));
 }
 
 void QueryTable::unsubscribe() const {
-  auto res = SFCallback<Void>::createForFuture();
+  auto res = SFCallback<>::createForFutureTuple();
   unsubscribeAsync(std::move(res.first));
-  res.second.get();
+  (void)res.second.get();
 }
 
-void QueryTable::unsubscribeAsync(std::shared_ptr<SFCallback<Void>> callback) const {
+void QueryTable::unsubscribeAsync(std::shared_ptr<SFCallback<>> callback) const {
   impl_->unsubscribeAsync(std::move(callback));
 }
 
@@ -716,13 +716,13 @@ QueryTable QueryTable::reverseAsOfJoin(const QueryTable &rightSide,
 }
 
 void QueryTable::bindToVariable(std::string variable) const {
-  auto res = SFCallback<Void>::createForFuture();
+  auto res = SFCallback<>::createForFutureTuple();
   bindToVariableAsync(std::move(variable), std::move(res.first));
-  res.second.get();
+  (void)res.second.get();
 }
 
 void QueryTable::bindToVariableAsync(std::string variable,
-    std::shared_ptr<SFCallback<Void>> callback) const {
+    std::shared_ptr<SFCallback<>> callback) const {
   return impl_->bindToVariableAsync(std::move(variable), std::move(callback));
 }
 

@@ -40,8 +40,8 @@ public:
 class Client {
   typedef deephaven::openAPI::utility::Void Void;
 
-  template<typename T>
-  using SFCallback = deephaven::openAPI::utility::SFCallback<T>;
+  template<typename... Args>
+  using SFCallback = deephaven::openAPI::utility::SFCallback<Args...>;
 
 public:
   explicit Client(std::shared_ptr<impl::ClientImpl> impl);
@@ -382,7 +382,6 @@ class QueryTable {
   typedef deephaven::openAPI::highlevel::fluent::SortPair SortPair;
   typedef deephaven::openAPI::highlevel::fluent::StrCol StrCol;
   typedef deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::joinDescriptor::JoinType JoinType;
-  typedef deephaven::openAPI::utility::Void Void;
 
   template<typename... Args>
   using Callback = deephaven::openAPI::utility::Callback<Args...>;
@@ -580,12 +579,12 @@ public:
   void subscribeAll(Args &&... args) const;
 
   void subscribeAllAsync(std::vector<std::string> columnSpecs,
-      std::shared_ptr<SFCallback<Void>> callback) const;
+      std::shared_ptr<SFCallback<>> callback) const;
   template<typename ...Args>
-  void subscribeAllAsync(std::shared_ptr<SFCallback<Void>> callback, Args &&... args) const;
+  void subscribeAllAsync(std::shared_ptr<SFCallback<>> callback, Args &&... args) const;
 
   void unsubscribe() const;
-  void unsubscribeAsync(std::shared_ptr<SFCallback<Void>> callback) const;
+  void unsubscribeAsync(std::shared_ptr<SFCallback<>> callback) const;
 
   void getData(std::shared_ptr<getDataCallback_t> handler) const;
 
@@ -959,7 +958,7 @@ void QueryTable::subscribeAll(Args &&... args) const {
 }
 
 template<typename ...Args>
-void QueryTable::subscribeAllAsync(std::shared_ptr<SFCallback<Void>> callback,
+void QueryTable::subscribeAllAsync(std::shared_ptr<SFCallback<>> callback,
     Args &&... args) const {
   std::vector<std::string> columnSpecs = {
       internal::ConvertToString::toString(std::forward<Args>(args))...

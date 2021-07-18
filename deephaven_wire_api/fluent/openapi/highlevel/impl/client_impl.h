@@ -23,8 +23,8 @@ class ClientImpl {
   typedef deephaven::openAPI::utility::FailureCallback FailureCallback;
   typedef deephaven::openAPI::utility::Void Void;
 
-  template<typename T>
-  using SFCallback = deephaven::openAPI::utility::SFCallback<T>;
+  template<typename... Args>
+  using SFCallback = deephaven::openAPI::utility::SFCallback<Args...>;
 
   enum class LoginState { NotLoggedIn, Pending, LoggedIn };
 
@@ -36,7 +36,7 @@ public:
   ~ClientImpl();
 
   void loginAsync(std::string user, std::string password, std::string operateAs,
-      std::shared_ptr<SFCallback<Void>> callback);
+      std::shared_ptr<SFCallback<>> callback);
 
   void startWorkerAsync(const std::shared_ptr<WorkerOptionsImpl> &options,
       std::shared_ptr<SFCallback<std::shared_ptr<WorkerSessionImpl>>> callback);

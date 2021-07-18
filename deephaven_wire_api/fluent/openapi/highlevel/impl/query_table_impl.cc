@@ -395,7 +395,7 @@ void QueryTableImpl::getTableDataAsync(int64_t first, int64_t last,
 }
 
 void QueryTableImpl::subscribeAllAsync(std::vector<std::string> columns,
-    std::shared_ptr<SFCallback<Void>> callback) {
+    std::shared_ptr<SFCallback<>> callback) {
   auto self = weakSelf_.lock();
   auto spColumns = std::make_shared<std::vector<std::string>>(std::move(columns));
 
@@ -424,7 +424,7 @@ void QueryTableImpl::subscribeAllAsync(std::vector<std::string> columns,
   // lazyState_->invokeCallable(std::move(outer));
 }
 
-void QueryTableImpl::unsubscribeAsync(std::shared_ptr<SFCallback<Void>> callback) {
+void QueryTableImpl::unsubscribeAsync(std::shared_ptr<SFCallback<>> callback) {
 //  scope_->lowLevelSession()->unsubscribeAsync(tableHandle_, std::move(callback));
 }
 

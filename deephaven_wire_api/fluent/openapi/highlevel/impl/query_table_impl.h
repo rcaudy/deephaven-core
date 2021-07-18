@@ -171,8 +171,8 @@ public:
   const std::shared_ptr<std::vector<std::shared_ptr<ColumnDefinition>>> &getColumnDefinitions() const;
 
   void subscribeAllAsync(std::vector<std::string> columns,
-      std::shared_ptr<SFCallback<Void>> callback);
-  void unsubscribeAsync(std::shared_ptr<SFCallback<Void>> callback);
+      std::shared_ptr<SFCallback<>> callback);
+  void unsubscribeAsync(std::shared_ptr<SFCallback<>> callback);
 
   void getData(std::shared_ptr<QueryTable::getDataCallback_t> handler) const;
 

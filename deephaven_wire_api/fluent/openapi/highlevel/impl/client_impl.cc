@@ -43,13 +43,13 @@ ClientImpl::ClientImpl(Private, std::shared_ptr<DHServer> dhServer, std::shared_
 ClientImpl::~ClientImpl() = default;
 
 void ClientImpl::loginAsync(std::string user, std::string password, std::string operateAs,
-    std::shared_ptr<SFCallback<Void>> callback) {
+    std::shared_ptr<SFCallback<>> callback) {
   if (!assertLoggedInState(LoginState::NotLoggedIn, callback.get())) {
     return;
   }
   std::cerr << "Warning: ignoring login credentials (for now)\n";
   loginState_ = LoginState::LoggedIn;
-  callback->onSuccess(Void());
+  callback->onSuccess();
 }
 
 namespace {
