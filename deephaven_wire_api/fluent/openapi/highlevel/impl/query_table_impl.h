@@ -71,8 +71,8 @@ public:
   void onSuccess(ExportedTableCreationResponse item) final;
   void onFailure(std::exception_ptr ep) final;
 
-  const columnDefinitions_t &getColumnDefinitions();
-  void getColumnDefinitionsAsync(std::shared_ptr<SFCallback<const columnDefinitions_t &>> cb);
+  const columnDefinitions_t *getColumnDefinitions();
+  void getColumnDefinitionsAsync(std::shared_ptr<SFCallback<const columnDefinitions_t *>> cb);
 
 private:
   bool readyLocked(std::unique_lock<std::mutex> */*lock*/);
@@ -166,7 +166,6 @@ public:
 
   void getTableDataAsync(int64_t first, int64_t last, std::vector<std::string> columns,
       std::shared_ptr<SFCallback<std::shared_ptr<TableSnapshot>>> callback);
-  const std::shared_ptr<std::vector<std::shared_ptr<ColumnDefinition>>> &getColumnDefinitions() const;
 
   void subscribeAllAsync(std::vector<std::string> columns,
       std::shared_ptr<SFCallback<>> callback);

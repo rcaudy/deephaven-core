@@ -441,10 +441,10 @@ void QueryTableImpl::getData(std::shared_ptr<QueryTable::getDataCallback_t> hand
 }
 
 std::vector<std::shared_ptr<ColumnImpl>> QueryTableImpl::getColumnImpls() {
-  const auto &colDefs = lazyStateOss_->getColumnDefinitions();
+  const auto *colDefs = lazyStateOss_->getColumnDefinitions();
   std::vector<std::shared_ptr<ColumnImpl>> result;
-  result.reserve(colDefs.size());
-  for (const auto &cd : colDefs) {
+  result.reserve(colDefs->size());
+  for (const auto &cd : *colDefs) {
     result.push_back(ColumnImpl::create(cd.first));
   }
   return result;
@@ -469,9 +469,9 @@ std::shared_ptr<DateTimeColImpl> QueryTableImpl::getDateTimeColImpl(std::string 
 }
 
 const std::string &QueryTableImpl::lookupHelper(const std::string &columnName) {
-  const auto &colDefs = lazyStateOss_->getColumnDefinitions();
-  auto ip = colDefs.find(columnName);
-  if (ip == colDefs.end()) {
+  const auto *colDefs = lazyStateOss_->getColumnDefinitions();
+  auto ip = colDefs->find(columnName);
+  if (ip == colDefs->end()) {
     throw std::runtime_error(stringf(R"(Column name "%o" is not in the table)", columnName));
   }
   return ip->second;
@@ -534,14 +534,14 @@ void LazyStateOss::waitUntilReady() {
   (void)ticketFuture_.value();
 }
 
-auto LazyStateOss::getColumnDefinitions() -> const columnDefinitions_t & {
+auto LazyStateOss::getColumnDefinitions() -> const columnDefinitions_t * {
   // Shortcut if we have column definitions
   if (colDefsFuture_.valid()) {
     // value or exception
-    return colDefsFuture_.value();
+    return &colDefsFuture_.value();
   }
 
-  auto res = SFCallback<const columnDefinitions_t &>::createForFuture();
+  auto res = SFCallback<const columnDefinitions_t *>::createForFuture();
   getColumnDefinitionsAsync(std::move(res.first));
   return std::get<0>(res.second.get());
 }
@@ -553,14 +553,14 @@ class GetColumnDefsCallback final :
   struct Private {};
 public:
   static std::shared_ptr<GetColumnDefsCallback> create(std::shared_ptr<LazyStateOss> owner,
-      std::shared_ptr<SFCallback<const LazyStateOss::columnDefinitions_t &>> cb) {
+      std::shared_ptr<SFCallback<const LazyStateOss::columnDefinitions_t *>> cb) {
     auto result = std::make_shared<GetColumnDefsCallback>(Private(), std::move(owner), std::move(cb));
     result->weakSelf_ = result;
     return result;
   }
 
   GetColumnDefsCallback(Private, std::shared_ptr<LazyStateOss> &&owner,
-      std::shared_ptr<SFCallback<const LazyStateOss::columnDefinitions_t &>> &&cb) : owner_(std::move(owner)),
+      std::shared_ptr<SFCallback<const LazyStateOss::columnDefinitions_t *>> &&cb) : owner_(std::move(owner)),
       outer_(std::move(cb)) {}
   ~GetColumnDefsCallback() final = default;
 
@@ -578,7 +578,7 @@ public:
   }
 
   void onSuccess(const LazyStateOss::columnDefinitions_t &colDefs) final {
-    outer_->onSuccess(colDefs);
+    outer_->onSuccess(&colDefs);
   }
 
   void invoke() final {
@@ -615,13 +615,13 @@ public:
   }
 
   std::shared_ptr<LazyStateOss> owner_;
-  std::shared_ptr<SFCallback<const LazyStateOss::columnDefinitions_t &>> outer_;
+  std::shared_ptr<SFCallback<const LazyStateOss::columnDefinitions_t *>> outer_;
   std::weak_ptr<GetColumnDefsCallback> weakSelf_;
   Ticket ticket_;
 };
 
 void LazyStateOss::getColumnDefinitionsAsync(
-    std::shared_ptr<SFCallback<const columnDefinitions_t &>> cb) {
+    std::shared_ptr<SFCallback<const columnDefinitions_t *>> cb) {
   auto innerCb = GetColumnDefsCallback::create(weakSelf_.lock(), std::move(cb));
   ticketFuture_.invoke(std::move(innerCb));
 }
