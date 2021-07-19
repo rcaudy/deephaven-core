@@ -32,14 +32,17 @@ namespace {
 }  // namespace
 
 std::shared_ptr<ClientImpl> ClientImpl::create(std::shared_ptr<DHServer> server,
-    std::shared_ptr<Executor> executor) {
-  auto result = std::make_shared<ClientImpl>(Private(), std::move(server), std::move(executor));
+    std::shared_ptr<Executor> executor, std::shared_ptr<Executor> flightExecutor) {
+  auto result = std::make_shared<ClientImpl>(Private(), std::move(server), std::move(executor),
+      std::move(flightExecutor));
   result->weakSelf_ = result;
   return result;
 }
 
-ClientImpl::ClientImpl(Private, std::shared_ptr<DHServer> dhServer, std::shared_ptr<Executor> executor) :
-    dhServer_(std::move(dhServer)), executor_(std::move(executor)), loginState_(LoginState::NotLoggedIn) {}
+ClientImpl::ClientImpl(Private, std::shared_ptr<DHServer> &&dhServer,
+    std::shared_ptr<Executor> &&executor, std::shared_ptr<Executor> &&flightExecutor) :
+    dhServer_(std::move(dhServer)), executor_(std::move(executor)),
+    flightExecutor_(std::move(flightExecutor)), loginState_(LoginState::NotLoggedIn) {}
 ClientImpl::~ClientImpl() = default;
 
 void ClientImpl::loginAsync(std::string user, std::string password, std::string operateAs,
@@ -58,9 +61,11 @@ class Everything final : public SFCallback<HandshakeResponse>, public SFCallback
 
 public:
   static std::shared_ptr<Everything> create(std::shared_ptr<SFCallback<std::shared_ptr<WorkerSessionImpl>>> outerCb,
-      std::shared_ptr<DHServer> dhServer, std::shared_ptr<Executor> executor);
+      std::shared_ptr<DHServer> dhServer, std::shared_ptr<Executor> executor,
+      std::shared_ptr<Executor> flightExecutor);
   Everything(Private, std::shared_ptr<SFCallback<std::shared_ptr<WorkerSessionImpl>>> &&outerCb,
-      std::shared_ptr<DHServer> &&dhServer, std::shared_ptr<Executor> &&executor);
+      std::shared_ptr<DHServer> &&dhServer, std::shared_ptr<Executor> &&executor,
+      std::shared_ptr<Executor> &&flightExecutor);
   ~Everything() final;
   void onSuccess(HandshakeResponse item) final;
   void onSuccess(StartConsoleResponse item) final;
@@ -70,6 +75,7 @@ private:
   std::shared_ptr<SFCallback<std::shared_ptr<WorkerSessionImpl>>> outerCb_;
   std::shared_ptr<DHServer> dhServer_;
   std::shared_ptr<Executor> executor_;
+  std::shared_ptr<Executor> flightExecutor_;
   std::weak_ptr<Everything> weakSelf_;
 };
 }  // namespace
@@ -80,7 +86,7 @@ void ClientImpl::startWorkerAsync(const std::shared_ptr<WorkerOptionsImpl> &opti
     return;
   }
 
-  auto cb = Everything::create(std::move(callback), dhServer_, executor_);
+  auto cb = Everything::create(std::move(callback), dhServer_, executor_, flightExecutor_);
   dhServer_->newSessionAsync(std::move(cb));
 }
 
@@ -98,9 +104,10 @@ bool ClientImpl::assertLoggedInState(LoginState expected, FailureCallback *onFai
 namespace {
 std::shared_ptr<Everything> Everything::create(
     std::shared_ptr<SFCallback<std::shared_ptr<WorkerSessionImpl>>> outerCb,
-    std::shared_ptr<DHServer> dhServer, std::shared_ptr<Executor> executor) {
+    std::shared_ptr<DHServer> dhServer, std::shared_ptr<Executor> executor,
+    std::shared_ptr<Executor> flightExecutor) {
   auto result = std::make_shared<Everything>(Private(), std::move(outerCb), std::move(dhServer),
-      std::move(executor));
+      std::move(executor), std::move(flightExecutor));
   result->weakSelf_ = result;
   return result;
 }
@@ -108,8 +115,10 @@ std::shared_ptr<Everything> Everything::create(
 Everything::Everything(Private,
     std::shared_ptr<SFCallback<std::shared_ptr<WorkerSessionImpl>>> &&outerCb,
     std::shared_ptr<DHServer> &&dhServer,
-    std::shared_ptr<Executor> &&executor) : outerCb_(std::move(outerCb)), dhServer_(std::move(dhServer)),
-    executor_(std::move(executor)) {}
+    std::shared_ptr<Executor> &&executor,
+    std::shared_ptr<Executor> &&flightExecutor) :
+    outerCb_(std::move(outerCb)), dhServer_(std::move(dhServer)), executor_(std::move(executor)),
+    flightExecutor_(std::move(flightExecutor)) {}
 
 Everything::~Everything() = default;
 
@@ -124,8 +133,8 @@ void Everything::onSuccess(HandshakeResponse item) {
 
 void Everything::onSuccess(StartConsoleResponse item) {
   streamf(std::cerr, "WE HAVE A CONSOLE\n");
-  auto lls = DHWorkerSession::createOss(std::move(*item.mutable_result_id()),
-      dhServer_->server(), executor_);
+  auto lls = DHWorkerSession::create(std::move(*item.mutable_result_id()),
+      dhServer_->server(), executor_, flightExecutor_);
   auto ws = WorkerSessionImpl::create(std::move(lls), std::move(executor_));
   outerCb_->onSuccess(std::move(ws));
 }

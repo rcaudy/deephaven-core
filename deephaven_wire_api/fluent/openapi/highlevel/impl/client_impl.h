@@ -30,9 +30,10 @@ class ClientImpl {
 
 public:
   static std::shared_ptr<ClientImpl> create(std::shared_ptr<DHServer> dhServer,
-      std::shared_ptr<Executor> executor);
+      std::shared_ptr<Executor> executor, std::shared_ptr<Executor> flightExecutor);
 
-  ClientImpl(Private, std::shared_ptr<DHServer> dhServer, std::shared_ptr<Executor> executor);
+  ClientImpl(Private, std::shared_ptr<DHServer> &&dhServer, std::shared_ptr<Executor> &&executor,
+      std::shared_ptr<Executor> &&flightExecutor);
   ~ClientImpl();
 
   void loginAsync(std::string user, std::string password, std::string operateAs,
@@ -46,6 +47,7 @@ private:
 
   std::shared_ptr<DHServer> dhServer_;
   std::shared_ptr<Executor> executor_;
+  std::shared_ptr<Executor> flightExecutor_;
   std::atomic<LoginState> loginState_;
   std::weak_ptr<ClientImpl> weakSelf_;
 };

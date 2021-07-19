@@ -85,7 +85,7 @@ std::shared_ptr<BitSet> getColumnsBitSet(const std::vector<std::string> &desired
 
 std::shared_ptr<internal::LazyStateOss> QueryTableImpl::createEtcCallback(const QueryScopeImpl *scope) {
   const auto *lls = scope->lowLevelSession().get();
-  return internal::LazyStateOss::create(lls->server(), lls->executor());
+  return internal::LazyStateOss::create(lls->server(), lls->flightExecutor());
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::createOss(std::shared_ptr<QueryScopeImpl> scope,
@@ -511,8 +511,8 @@ std::shared_ptr<LazyStateOss> LazyStateOss::create(std::shared_ptr<Server> serve
 }
 
 LazyStateOss::LazyStateOss(Private, std::shared_ptr<Server> &&server,
-    std::shared_ptr<Executor> &&executor) : server_(std::move(server)),
-    executor_(std::move(executor)), ticketFuture_(ticketPromise_.makeFuture()),
+    std::shared_ptr<Executor> &&flightExecutor) : server_(std::move(server)),
+    flightExecutor_(std::move(flightExecutor)), ticketFuture_(ticketPromise_.makeFuture()),
     colDefsFuture_(colDefsPromise_.makeFuture()) {}
   LazyStateOss::~LazyStateOss() = default;
 
@@ -543,7 +543,7 @@ auto LazyStateOss::getColumnDefinitions() -> const columnDefinitions_t & {
 
   auto res = SFCallback<const columnDefinitions_t &>::createForFuture();
   getColumnDefinitionsAsync(std::move(res.first));
-  return res.second.get();
+  return std::get<0>(res.second.get());
 }
 
 class GetColumnDefsCallback final :
@@ -607,7 +607,11 @@ public:
     auto &schema = schemaHolder.ValueOrDie();
     std::cerr << "If you make it this far, I want to give you a hug\n";
     (void)schema;
-    // colDefPromise_->setValue(zamboniTime);
+
+    std::map<std::string, std::string> fake;
+    fake["foo"] = "bar";
+    fake["baz"] = "qux";
+    owner_->colDefsPromise_.setValue(std::move(fake));
   }
 
   std::shared_ptr<LazyStateOss> owner_;

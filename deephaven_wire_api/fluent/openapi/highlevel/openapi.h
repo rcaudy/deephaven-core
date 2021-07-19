@@ -33,7 +33,6 @@ class WorkerOptions;
 
 class OpenApi {
 public:
-  static Client connect(boost::string_view host, int port = 8123);
   static Client connectOss(const std::string &target);
 };
 

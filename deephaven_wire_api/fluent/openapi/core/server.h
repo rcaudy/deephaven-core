@@ -98,7 +98,8 @@ public:
       std::unique_ptr<BarrageService::Stub> barrageStub,
       std::unique_ptr<ConsoleService::Stub> consoleStub,
       std::unique_ptr<SessionService::Stub> sessionStub,
-      std::unique_ptr<TableService::Stub> tableStub);
+      std::unique_ptr<TableService::Stub> tableStub,
+      std::unique_ptr<arrow::flight::FlightClient> flightClient);
   ~Server();
 
   BarrageService::Stub *barrageStub() { return barrageStub_.get(); }

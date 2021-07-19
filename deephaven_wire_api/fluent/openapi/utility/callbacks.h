@@ -33,6 +33,8 @@ public:
   template<typename Callable>
   static std::shared_ptr<SFCallback> createFromCallable(Callable &&callable);
 
+  static std::pair<std::shared_ptr<SFCallback<Args...>>, std::future<std::tuple<Args...>>> createForFuture();
+
   ~SFCallback() override = default;
   virtual void onSuccess(Args... item) = 0;
 };
@@ -77,23 +79,23 @@ private:
 };
 
 // This helps us make a SFCallback<T> that holds a promise. It works with the method 'createForFuture'
-template<typename T>
-class SFCallbackFutureable final : public SFCallback<T> {
+template<typename... Args>
+class SFCallbackFutureable final : public SFCallback<Args...> {
 public:
-  void onSuccess(T arg) final {
-    promise_.set_value(std::move(arg));
+  void onSuccess(Args... args) final {
+    promise_.set_value(std::make_tuple(std::forward<Args>(args)...));
   }
 
   void onFailure(std::exception_ptr ep) final {
     promise_.set_exception(std::move(ep));
   }
 
-  std::future<T> makeFuture() {
+  std::future<std::tuple<Args...>> makeFuture() {
     return promise_.get_future();
   }
 
 private:
-  std::promise<T> promise_;
+  std::promise<std::tuple<Args...>> promise_;
 };
 }  // namespace internal
 
@@ -111,9 +113,9 @@ std::shared_ptr<SFCallback<Args...>> SFCallback<Args...>::createFromCallable(Cal
 
 // Returns a pair whose first item is a SFCallback<T> which satisfies a promise, and whose second
 // item is a std::future<T> which is the future corresponding to that promise.
-template<typename T>
-std::pair<std::shared_ptr<SFCallback<T>>, std::future<T>> createForFuture() {
-  auto cb = std::make_shared<internal::SFCallbackFutureable<T>>();
+template<typename... Args>
+std::pair<std::shared_ptr<SFCallback<Args...>>, std::future<std::tuple<Args...>>> SFCallback<Args...>::createForFuture() {
+  auto cb = std::make_shared<internal::SFCallbackFutureable<Args...>>();
   auto fut = cb->makeFuture();
   return std::make_pair(std::move(cb), std::move(fut));
 }

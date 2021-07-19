@@ -59,11 +59,10 @@ class LazyStateOss final : public deephaven::openAPI::utility::SFCallback<io::de
 public:
   typedef std::map<std::string, std::string> columnDefinitions_t;
 
-  typedef SFCallback<const Ticket &> waiter_t;
   static std::shared_ptr<LazyStateOss> create(std::shared_ptr<Server> server,
-      std::shared_ptr<Executor> executor);
+      std::shared_ptr<Executor> flightExecutor);
 
-  LazyStateOss(Private, std::shared_ptr<Server> &&server, std::shared_ptr<Executor> &&executor);
+  LazyStateOss(Private, std::shared_ptr<Server> &&server, std::shared_ptr<Executor> &&flightExecutor);
   ~LazyStateOss() final;
 
   bool ready();
@@ -79,7 +78,6 @@ private:
   bool readyLocked(std::unique_lock<std::mutex> */*lock*/);
 
   std::shared_ptr<Server> server_;
-  std::shared_ptr<Executor> executor_;
   std::shared_ptr<Executor> flightExecutor_;
 
   CBPromise<Ticket> ticketPromise_;

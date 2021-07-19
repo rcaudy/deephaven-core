@@ -152,15 +152,17 @@ private:
 namespace {
 void moveVectorData(std::vector<std::string> src, google::protobuf::RepeatedPtrField<std::string> *dest);
 }  // namespace
-std::shared_ptr<DHWorkerSession> DHWorkerSession::createOss(Ticket consoleId,
-    std::shared_ptr<Server> server, std::shared_ptr<Executor> executor) {
+std::shared_ptr<DHWorkerSession> DHWorkerSession::create(Ticket consoleId,
+    std::shared_ptr<Server> server, std::shared_ptr<Executor> executor,
+    std::shared_ptr<Executor> flightExecutor) {
   return std::make_shared<DHWorkerSession>(Private(), std::move(consoleId), std::move(server),
-      std::move(executor));
+      std::move(executor), std::move(flightExecutor));
 }
 
-DHWorkerSession::DHWorkerSession(Private, Ticket &&consoleId, std::shared_ptr<Server> server,
-    std::shared_ptr<Executor> executor) :
-    consoleId_(std::move(consoleId)), server_(std::move(server)), executor_(std::move(executor)) {}
+DHWorkerSession::DHWorkerSession(Private, Ticket &&consoleId, std::shared_ptr<Server> &&server,
+    std::shared_ptr<Executor> &&executor, std::shared_ptr<Executor> &&flightExecutor) :
+    consoleId_(std::move(consoleId)), server_(std::move(server)), executor_(std::move(executor)),
+    flightExecutor_(std::move(flightExecutor)) {}
 DHWorkerSession::~DHWorkerSession() = default;
 
 Ticket DHWorkerSession::emptyTableAsync(int64_t size, std::vector<std::string> columnNames,

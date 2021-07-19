@@ -3,6 +3,10 @@
 #include <exception>
 #include <grpcpp/grpcpp.h>
 #include <regex>
+#include <arrow/flight/client.h>
+#include <arrow/flight/types.h>
+#include <arrow/array.h>
+#include <arrow/array/array_primitive.h>
 
 #include "core/protocol_base_classes.h"
 #include "utility/utility.h"
@@ -11,8 +15,10 @@
 #include "proto/table.pb.h"
 #include "proto/table.grpc.pb.h"
 
+
 using namespace std;
 using arrow::flight::protocol::Wicket;
+using arrow::flight::FlightClient;
 typedef Wicket Ticket;
 using deephaven::openAPI::utility::bit_cast;
 using deephaven::openAPI::utility::streamf;
@@ -29,8 +35,25 @@ std::shared_ptr<Server> Server::createFromTarget(const std::string &target) {
   auto cs = ConsoleService::NewStub(channel);
   auto ss = SessionService::NewStub(channel);
   auto ts = TableService::NewStub(channel);
+
+  auto flightTarget = "grpc://" + target;
+  streamf(std::cerr, "TODO(kosak): Converting %o to %o for Arrow Flight\n", target, flightTarget);
+  arrow::flight::Location location;
+  auto rc1 = arrow::flight::Location::Parse(flightTarget, &location);
+  if (!rc1.ok()) {
+    auto message = stringf("Location::Parse(%o) failed, error = %o", flightTarget, rc1.ToString());
+    throw std::runtime_error(message);
+  }
+
+  std::unique_ptr<arrow::flight::FlightClient> fc;
+  auto rc2 = arrow::flight::FlightClient::Connect(location, &fc);
+  if (!rc2.ok()) {
+    auto message = stringf("FlightClient::Connect() failed, error = %o", rc2.ToString());
+    throw std::runtime_error(message);
+  }
+
   auto result = std::make_shared<Server>(Private(), std::move(bs), std::move(cs),
-      std::move(ss), std::move(ts));
+      std::move(ss), std::move(ts), std::move(fc));
   result->self_ = result;
 
   std::thread t(&processCompletionQueueForever, result);
@@ -43,11 +66,13 @@ Server::Server(Private,
     std::unique_ptr<BarrageService::Stub> barrageStub,
     std::unique_ptr<ConsoleService::Stub> consoleStub,
     std::unique_ptr<SessionService::Stub> sessionStub,
-    std::unique_ptr<TableService::Stub> tableStub) :
+    std::unique_ptr<TableService::Stub> tableStub,
+    std::unique_ptr<arrow::flight::FlightClient> flightClient) :
     barrageStub_(std::move(barrageStub)),
     consoleStub_(std::move(consoleStub)),
     sessionStub_(std::move(sessionStub)),
     tableStub_(std::move(tableStub)),
+    flightClient_(std::move(flightClient)),
     nextFreeTicketId_(1) {}
 
 Server::~Server() = default;

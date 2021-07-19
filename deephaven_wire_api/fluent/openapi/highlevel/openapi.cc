@@ -37,7 +37,6 @@ using deephaven::openAPI::highlevel::impl::AggregateComboImpl;
 using deephaven::openAPI::highlevel::impl::AggregateImpl;
 using deephaven::openAPI::highlevel::impl::ClientImpl;
 using deephaven::openAPI::highlevel::impl::WorkerOptionsImpl;
-using deephaven::openAPI::utility::createForFuture;
 using deephaven::openAPI::utility::SFCallback;
 using deephaven::openAPI::utility::stringf;
 using deephaven::openAPI::utility::stringVecToShared;
@@ -46,17 +45,11 @@ using deephaven::openAPI::utility::Executor;
 namespace deephaven {
 namespace openAPI {
 namespace highlevel {
-Client OpenApi::connect(boost::string_view host, int port) {
-  auto executor = Executor::create();
-  auto server = DHServer::createFromHostAndPort(host, port, executor);
-  auto impl = ClientImpl::create(std::move(server), executor);
-  return Client(std::move(impl));
-}
-
 Client OpenApi::connectOss(const std::string &target) {
   auto executor = Executor::create();
+  auto flightExecutor = Executor::create();
   auto server = DHServer::createFromTarget(target, executor);
-  auto impl = ClientImpl::create(std::move(server), executor);
+  auto impl = ClientImpl::create(std::move(server), executor, flightExecutor);
   return Client(std::move(impl));
 }
 
@@ -80,9 +73,9 @@ void Client::loginAsync(std::string user, std::string password, std::string oper
 }
 
 WorkerSession Client::startWorker(const WorkerOptions &options) {
-  auto res = createForFuture<WorkerSession>();
+  auto res = SFCallback<WorkerSession>::createForFuture();
   startWorkerAsync(options, std::move(res.first));
-  return res.second.get();
+  return std::get<0>(res.second.get());
 }
 
 void Client::startWorkerAsync(const WorkerOptions &options,
@@ -225,7 +218,7 @@ DatabaseCatalog QueryScope::getDatabaseCatalog(bool systemNamespaces, bool userN
   auto res = SFCallback<DatabaseCatalog>::createForFuture();
   getDatabaseCatalogAsync(systemNamespaces, userNamespaces, std::move(namespaceRegex),
       std::move(tableRegex), std::move(res.first));
-  return res.second.get();
+  return std::get<0>(res.second.get());
 }
 
 void QueryScope::getDatabaseCatalogAsync(bool systemNamespaces, bool userNamespaces,
@@ -439,7 +432,7 @@ QueryTable QueryTable::preemptive(int sampleIntervalMs) {
 TableData QueryTable::getTableData(long first, long last, std::vector<std::string> columns) const {
   auto res = SFCallback<TableData>::createForFuture();
   getTableDataAsync(first, last, std::move(columns), std::move(res.first));
-  return res.second.get();
+  return std::get<0>(res.second.get());
 }
 
 void QueryTable::getTableDataAsync(long first, long last,
@@ -448,7 +441,7 @@ void QueryTable::getTableDataAsync(long first, long last,
 }
 
 void QueryTable::subscribeAll(std::vector<std::string> columnSpecs) const {
-  auto res = SFCallback<>::createForFutureTuple();
+  auto res = SFCallback<>::createForFuture();
   subscribeAllAsync(std::move(columnSpecs), std::move(res.first));
   (void)res.second.get();
 }
@@ -459,7 +452,7 @@ void QueryTable::subscribeAllAsync(std::vector<std::string> columnSpecs,
 }
 
 void QueryTable::unsubscribe() const {
-  auto res = SFCallback<>::createForFutureTuple();
+  auto res = SFCallback<>::createForFuture();
   unsubscribeAsync(std::move(res.first));
   (void)res.second.get();
 }
@@ -716,7 +709,7 @@ QueryTable QueryTable::reverseAsOfJoin(const QueryTable &rightSide,
 }
 
 void QueryTable::bindToVariable(std::string variable) const {
-  auto res = SFCallback<>::createForFutureTuple();
+  auto res = SFCallback<>::createForFuture();
   bindToVariableAsync(std::move(variable), std::move(res.first));
   (void)res.second.get();
 }

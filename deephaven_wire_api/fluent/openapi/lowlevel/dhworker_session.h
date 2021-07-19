@@ -62,11 +62,11 @@ public:
   typedef Callback<const std::shared_ptr<TableHandle> &, const std::shared_ptr<DeltaUpdates> &> updateCallback_t;
   typedef Callback<const Ticket &, const char *> getDataCallback_t;
 
-  static std::shared_ptr<DHWorkerSession> createOss(Ticket consoleId, std::shared_ptr<Server> server,
-      std::shared_ptr<Executor> executor);
+  static std::shared_ptr<DHWorkerSession> create(Ticket consoleId, std::shared_ptr<Server> server,
+      std::shared_ptr<Executor> executor, std::shared_ptr<Executor> flightExecutor);
 
-  DHWorkerSession(Private, Ticket &&consoleId, std::shared_ptr<Server> server,
-      std::shared_ptr<Executor> executor);
+  DHWorkerSession(Private, Ticket &&consoleId, std::shared_ptr<Server> &&server,
+      std::shared_ptr<Executor> &&executor, std::shared_ptr<Executor> &&flightExecutor);
   DHWorkerSession(const DHWorkerSession &other) = delete;
   DHWorkerSession &operator=(const DHWorkerSession &other) = delete;
   ~DHWorkerSession();
@@ -167,6 +167,7 @@ public:
 
   const std::shared_ptr<Server> &server() const { return server_; }
   const std::shared_ptr<Executor> &executor() const { return executor_; }
+  const std::shared_ptr<Executor> &flightExecutor() const { return flightExecutor_; }
 
 private:
   void processBatchOperation(std::shared_ptr<SerializedTableOps> tableOps,
@@ -177,6 +178,7 @@ private:
   Ticket consoleId_;
   std::shared_ptr<Server> server_;
   std::shared_ptr<Executor> executor_;
+  std::shared_ptr<Executor> flightExecutor_;
 };
 }  // namespace remoting
 }  // namespace lowlevel
