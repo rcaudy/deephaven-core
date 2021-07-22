@@ -468,7 +468,7 @@ std::shared_ptr<DateTimeColImpl> QueryTableImpl::getDateTimeColImpl(std::string 
   return DateTimeColImpl::create(std::move(columnName));
 }
 
-const std::string &QueryTableImpl::lookupHelper(const std::string &columnName) {
+const std::shared_ptr<arrow::DataType> &QueryTableImpl::lookupHelper(const std::string &columnName) {
   const auto *colDefs = lazyStateOss_->getColumnDefinitions();
   auto ip = colDefs->find(columnName);
   if (ip == colDefs->end()) {
@@ -605,13 +605,12 @@ public:
     }
 
     auto &schema = schemaHolder.ValueOrDie();
-    std::cerr << "If you make it this far, I want to give you a hug\n";
-    (void)schema;
-
-    std::map<std::string, std::string> fake;
-    fake["foo"] = "bar";
-    fake["baz"] = "qux";
-    owner_->colDefsPromise_.setValue(std::move(fake));
+    LazyStateOss::columnDefinitions_t colDefs;
+    for (const auto &f : schema->fields()) {
+      streamf(std::cerr, "field %o has type %o\n", f->name(), f->type()->id());
+      colDefs[f->name()] = f->type();
+    }
+    owner_->colDefsPromise_.setValue(std::move(colDefs));
   }
 
   std::shared_ptr<LazyStateOss> owner_;

@@ -57,7 +57,7 @@ class LazyStateOss final : public deephaven::openAPI::utility::SFCallback<io::de
   using CBFuture = deephaven::openAPI::utility::CBFuture<T>;
 
 public:
-  typedef std::map<std::string, std::string> columnDefinitions_t;
+  typedef std::map<std::string, std::shared_ptr<arrow::DataType>> columnDefinitions_t;
 
   static std::shared_ptr<LazyStateOss> create(std::shared_ptr<Server> server,
       std::shared_ptr<Executor> flightExecutor);
@@ -187,7 +187,7 @@ public:
   const Ticket &ticket() const { return ticket_; }
 
 private:
-  const std::string &lookupHelper(const std::string &columnName);
+  const std::shared_ptr<arrow::DataType> &lookupHelper(const std::string &columnName);
 
   std::shared_ptr<QueryTableImpl> defaultAggregateByDescriptor(
       ComboAggregateRequest::Aggregate descriptor, std::vector<std::string> groupByColumns);
