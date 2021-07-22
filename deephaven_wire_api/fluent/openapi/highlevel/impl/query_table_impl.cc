@@ -451,30 +451,48 @@ std::vector<std::shared_ptr<ColumnImpl>> QueryTableImpl::getColumnImpls() {
 }
 
 std::shared_ptr<NumColImpl> QueryTableImpl::getNumColImpl(std::string columnName) {
-  const auto &colType = lookupHelper(columnName);
-  (void)colType;
+  lookupHelper(columnName,
+      {
+          arrow::Type::INT8,
+          arrow::Type::INT16,
+          arrow::Type::INT32,
+          arrow::Type::INT64,
+          arrow::Type::UINT8,
+          arrow::Type::UINT16,
+          arrow::Type::UINT32,
+          arrow::Type::UINT64,
+          arrow::Type::FLOAT,
+          arrow::Type::DOUBLE,
+      });
   return NumColImpl::create(std::move(columnName));
 }
 
 std::shared_ptr<StrColImpl> QueryTableImpl::getStrColImpl(std::string columnName) {
-  const auto &colType = lookupHelper(columnName);
-  (void)colType;
+  lookupHelper(columnName, {arrow::Type::STRING});
   return StrColImpl::create(std::move(columnName));
 }
 
 std::shared_ptr<DateTimeColImpl> QueryTableImpl::getDateTimeColImpl(std::string columnName) {
-  const auto &colType = lookupHelper(columnName);
-  (void)colType;
+  lookupHelper(columnName, {arrow::Type::DATE64});
   return DateTimeColImpl::create(std::move(columnName));
 }
 
-const std::shared_ptr<arrow::DataType> &QueryTableImpl::lookupHelper(const std::string &columnName) {
+void QueryTableImpl::lookupHelper(const std::string &columnName,
+    std::initializer_list<arrow::Type::type> validTypes) {
   const auto *colDefs = lazyStateOss_->getColumnDefinitions();
   auto ip = colDefs->find(columnName);
   if (ip == colDefs->end()) {
     throw std::runtime_error(stringf(R"(Column name "%o" is not in the table)", columnName));
   }
-  return ip->second;
+  auto actualType = ip->second->id();
+  for (auto type : validTypes) {
+    if (actualType == type) {
+      return;
+    }
+  }
+  auto message = stringf("Expected Arrow type: one of {%o}. Actual type %o",
+    zamboniStream(validTypes.begin(), validTypes.end(), ", "), actualType);
+  throw std::runtime_error(message);
 }
 
 void QueryTableImpl::bindToVariableAsync(std::string variable,
@@ -611,6 +629,17 @@ public:
       colDefs[f->name()] = f->type();
     }
     owner_->colDefsPromise_.setValue(std::move(colDefs));
+
+    std::cerr << "READING DATA HERE FOR FUN\n";
+    while (true) {
+      arrow::flight::FlightStreamChunk chunk;
+      auto stat = fsr->Next(&chunk);
+      std::cerr << "GOT A CHUNK\n";
+      if (chunk.data == nullptr) {
+        std::cerr << "THE STREAM ENDS\n";
+        break;
+      }
+    }
   }
 
   std::shared_ptr<LazyStateOss> owner_;

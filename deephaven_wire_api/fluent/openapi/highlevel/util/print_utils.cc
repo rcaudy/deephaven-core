@@ -70,6 +70,7 @@ void PrintUtils::printChunk(std::ostream &s, const std::vector<Column> &columns,
 void PrintUtils::streamTableData(const QueryTable &queryTable,
     const std::vector<std::string> &columns, const std::function<void(const TableData &)> &callback,
     size_t numSimultaneousRequests) {
+  std::cerr << "IT IS PARTY TIME\n";
 //  const int64_t chunkSize = 100000;  // 100K
 //  auto empty = queryTable.scope().emptyTable(0, {}, {});
 //  auto snapshotted = empty.snapshot(queryTable, true, {});

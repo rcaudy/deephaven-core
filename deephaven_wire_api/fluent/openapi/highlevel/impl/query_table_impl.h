@@ -187,7 +187,8 @@ public:
   const Ticket &ticket() const { return ticket_; }
 
 private:
-  const std::shared_ptr<arrow::DataType> &lookupHelper(const std::string &columnName);
+  void lookupHelper(const std::string &columnName,
+      std::initializer_list<arrow::Type::type> validTypes);
 
   std::shared_ptr<QueryTableImpl> defaultAggregateByDescriptor(
       ComboAggregateRequest::Aggregate descriptor, std::vector<std::string> groupByColumns);
