@@ -37,10 +37,10 @@ using deephaven::openAPI::highlevel::impl::AggregateComboImpl;
 using deephaven::openAPI::highlevel::impl::AggregateImpl;
 using deephaven::openAPI::highlevel::impl::ClientImpl;
 using deephaven::openAPI::highlevel::impl::WorkerOptionsImpl;
+using deephaven::openAPI::utility::Executor;
+using deephaven::openAPI::utility::MyOstringStream;
 using deephaven::openAPI::utility::SFCallback;
 using deephaven::openAPI::utility::stringf;
-using deephaven::openAPI::utility::stringVecToShared;
-using deephaven::openAPI::utility::Executor;
 
 namespace deephaven {
 namespace openAPI {
@@ -409,9 +409,9 @@ QueryTable QueryTable::snapshot(const QueryTable &targetTable, bool doInitialSna
 }
 
 QueryTable QueryTable::where(const BooleanExpression &condition) const {
-  // TODO(kosak): get rid of the temporary shared ptr created here
-  auto conditionAsString = condition.implAsBooleanExpressionImpl()->toIrisRepresentation();
-  return where(std::move(conditionAsString));
+  MyOstringStream oss;
+  condition.implAsBooleanExpressionImpl()->streamIrisRepresentation(oss);
+  return where(std::move(oss.str()));
 }
 
 QueryTable QueryTable::where(std::string condition) const {
@@ -650,10 +650,14 @@ QueryTable QueryTable::internalJoin(JoinType joinType, const QueryTable &rightSi
   ctmStrings.reserve(columnsToMatch.size());
   ctaStrings.reserve(columnsToAdd.size());
   for (const auto &ctm : columnsToMatch) {
-    ctmStrings.push_back(ctm.getIrisRepresentableImpl()->toIrisRepresentation());
+    MyOstringStream oss;
+    ctm.getIrisRepresentableImpl()->streamIrisRepresentation(oss);
+    ctmStrings.push_back(std::move(oss.str()));
   }
   for (const auto &cta : columnsToAdd) {
-    ctaStrings.push_back(cta.getIrisRepresentableImpl()->toIrisRepresentation());
+    MyOstringStream oss;
+    cta.getIrisRepresentableImpl()->streamIrisRepresentation(oss);
+    ctaStrings.push_back(std::move(oss.str()));
   }
   return internalJoin(joinType, rightSide, std::move(ctmStrings), std::move(ctaStrings));
 }
@@ -746,10 +750,10 @@ auto WorkerOptions::config() const -> const std::shared_ptr<ConsoleConfig> & {
 }
 
 namespace internal {
-std::string ConvertToString::toString(
-    const deephaven::openAPI::highlevel::fluent::SelectColumn &selectColumn) {
-  return selectColumn.getIrisRepresentableImpl()->toIrisRepresentation();
-}
+//std::string ConvertToString::toString(
+//    const deephaven::openAPI::highlevel::fluent::SelectColumn &selectColumn) {
+//  return selectColumn.getIrisRepresentableImpl()->toIrisRepresentation();
+//}
 }  // namespace internal
 }  // namespace highlevel
 }  // namespace openAPI

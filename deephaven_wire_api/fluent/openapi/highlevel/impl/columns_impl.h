@@ -24,7 +24,7 @@ public:
 
   const std::string &name() const { return name_; }
 
-  void appendIrisRepresentation(std::string *result) const final;
+  void streamIrisRepresentation(std::ostream &s) const final;
 
 private:
   std::string name_;
@@ -63,7 +63,7 @@ public:
 
   AssignedColumnImpl(Private, std::string name, std::shared_ptr<ExpressionImpl> expr);
   ~AssignedColumnImpl() final;
-  void appendIrisRepresentation(std::string *result) const final;
+  void streamIrisRepresentation(std::ostream &s) const final;
 
 private:
   std::string name_;

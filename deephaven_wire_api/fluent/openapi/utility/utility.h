@@ -130,8 +130,8 @@ internal::SeparatedListAdaptor<Iterator, Callback> separatedList(Iterator begin,
   return internal::SeparatedListAdaptor<Iterator, Callback>(begin, end, separator, std::move(cb));
 }
 
-template<typename Iterator, typename Callback>
-internal::SeparatedListAdaptor<Iterator, Callback> separatedList(Iterator begin, Iterator end,
+template<typename Iterator>
+internal::SeparatedListAdaptor<Iterator, internal::DefaultCallback> separatedList(Iterator begin, Iterator end,
     const char *separator) {
   auto defaultCb = [](std::ostream &s, const decltype(*begin) &o) {
     return s << o;

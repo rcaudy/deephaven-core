@@ -3,7 +3,6 @@
 #include "utility/utility.h"
 
 using deephaven::openAPI::utility::stringf;
-using deephaven::openAPI::utility::makeEmptyArray;
 
 namespace deephaven {
 namespace openAPI {
@@ -24,14 +23,14 @@ std::shared_ptr<WorkerOptionsImpl> WorkerOptionsImpl::create(std::string profile
       spEmpty,
       0,
       std::move(spProfile),
-      makeEmptyArray(),
+      nullptr,
       2048,
       std::move(spDesc),
       false,
       false,
       false,
-      makeEmptyArray(),
-      makeEmptyArray()
+      nullptr,
+      nullptr
   );
   return std::make_shared<WorkerOptionsImpl>(Private(), std::move(consoleConfig));
 }

@@ -33,14 +33,13 @@ public:
 
   int64_t nanos() const { return nanos_; }
 
-  void appendIrisRepresentation(std::string *result) const;
-  void appendIrisRepresentation(std::ostream &result) const;
+  void streamIrisRepresentation(std::ostream &result) const;
 
 private:
   int64_t nanos_ = 0;
 
   friend std::ostream &operator<<(std::ostream &s, const DBDateTime &o) {
-    o.appendIrisRepresentation(s);
+    o.streamIrisRepresentation(s);
     return s;
   }
 };

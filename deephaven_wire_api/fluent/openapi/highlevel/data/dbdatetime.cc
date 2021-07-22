@@ -34,12 +34,7 @@ DBDateTime::DBDateTime(int year, int month, int day, int hour, int minute, int s
   nanos_ = static_cast<long>(time) + nanos;
 }
 
-void DBDateTime::appendIrisRepresentation(std::string *result) const {
-  MyOstringStream oss(result);
-  appendIrisRepresentation(oss);
-}
-
-void DBDateTime::appendIrisRepresentation(std::ostream &s) const {
+void DBDateTime::streamIrisRepresentation(std::ostream &s) const {
   size_t oneBillion = 1000000000;
   time_t timeSecs = nanos_ / oneBillion;
   auto nanos = nanos_ % oneBillion;

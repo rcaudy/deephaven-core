@@ -12,8 +12,8 @@ std::shared_ptr<ColumnImpl> ColumnImpl::create(std::string name) {
 ColumnImpl::ColumnImpl(Private, std::string name) : name_(std::move(name)) {}
 ColumnImpl::~ColumnImpl() = default;
 
-void ColumnImpl::appendIrisRepresentation(std::string *result) const {
-  result->append(name_);
+void ColumnImpl::streamIrisRepresentation(std::ostream &s) const {
+  s << name_;
 }
 
 std::shared_ptr<NumColImpl> NumColImpl::create(std::string name) {
@@ -46,10 +46,10 @@ AssignedColumnImpl::AssignedColumnImpl(Private, std::string name, std::shared_pt
     : name_(std::move(name)), expr_(std::move(expr)) {}
 AssignedColumnImpl::~AssignedColumnImpl() = default;
 
-void AssignedColumnImpl::appendIrisRepresentation(std::string *result) const {
-  result->append(name_);
-  result->append(" = ");
-  expr_->appendIrisRepresentation(result);
+void AssignedColumnImpl::streamIrisRepresentation(std::ostream &s) const {
+  s << name_;
+  s << " = ";
+  expr_->streamIrisRepresentation(s);
 }
 }  // namespace impl
 }  // namespace fluent

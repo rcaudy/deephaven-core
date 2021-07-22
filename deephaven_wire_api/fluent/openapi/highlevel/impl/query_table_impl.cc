@@ -67,10 +67,10 @@ using deephaven::openAPI::highlevel::fluent::impl::StrColImpl;
 using deephaven::openAPI::highlevel::XXXTableSnapshot;
 using deephaven::openAPI::highlevel::XXXTableUpdate;
 using deephaven::openAPI::utility::Callback;
+using deephaven::openAPI::utility::separatedList;
 using deephaven::openAPI::utility::SFCallback;
 using deephaven::openAPI::utility::streamf;
 using deephaven::openAPI::utility::stringf;
-using deephaven::openAPI::utility::stringVecToShared;
 using deephaven::openAPI::utility::Void;
 
 namespace deephaven {
@@ -491,7 +491,7 @@ void QueryTableImpl::lookupHelper(const std::string &columnName,
     }
   }
   auto message = stringf("Expected Arrow type: one of {%o}. Actual type %o",
-    zamboniStream(validTypes.begin(), validTypes.end(), ", "), actualType);
+    separatedList(validTypes.begin(), validTypes.end(), ", "), actualType);
   throw std::runtime_error(message);
 }
 

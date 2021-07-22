@@ -9,7 +9,6 @@
 #include "utility/utility.h"
 
 using deephaven::openAPI::highlevel::data::DBDateTime;
-using deephaven::openAPI::utility::appendSeparatedList;
 using deephaven::openAPI::utility::EscapeUtils;
 
 namespace deephaven {
@@ -23,7 +22,7 @@ public:
   explicit DateTimeLiteralImpl(std::string value) : value_(std::move(value)) {}
   ~DateTimeLiteralImpl() final = default;
 
-  void appendIrisRepresentation(std::string *result) const final;
+  void streamIrisRepresentation(std::ostream &s) const final;
 
 private:
   std::string value_;
@@ -34,7 +33,7 @@ public:
   explicit DateTimeDBDateTimeImpl(const DBDateTime &value) : value_(value) {}
   ~DateTimeDBDateTimeImpl() final = default;
 
-  void appendIrisRepresentation(std::string *result) const final;
+  void streamIrisRepresentation(std::ostream &s) const final;
 
 private:
   DBDateTime value_;
@@ -47,18 +46,12 @@ public:
       rhs_(std::move(rhs)) {}
   ~DateTimeComparisonImpl() final = default;
 
-  void appendIrisRepresentation(std::string *result) const final;
+  void streamIrisRepresentation(std::ostream &s) const final;
 
 private:
   std::shared_ptr<DateTimeExpressionImpl> lhs_;
   const char *compareOp_ = nullptr;
   std::shared_ptr<DateTimeExpressionImpl> rhs_;
-};
-
-struct IrisAppender {
-  void operator()(const std::shared_ptr<IrisRepresentableImpl> &item, std::string *result) const {
-    item->appendIrisRepresentation(result);
-  }
 };
 }  // namespace
 
@@ -67,7 +60,7 @@ std::shared_ptr<DateTimeExpressionImpl> DateTimeExpressionImpl::createFromLitera
 }
 
 std::shared_ptr<DateTimeExpressionImpl> DateTimeExpressionImpl::createFromDBDateTime(const DBDateTime &value) {
-  return std::make_shared<DateTimeDBDateTimeImpl>(std::move(value));
+  return std::make_shared<DateTimeDBDateTimeImpl>(value);
 }
 
 std::shared_ptr<BooleanExpressionImpl> DateTimeExpressionImpl::createComparison(
@@ -79,26 +72,26 @@ std::shared_ptr<BooleanExpressionImpl> DateTimeExpressionImpl::createComparison(
 DateTimeExpressionImpl::~DateTimeExpressionImpl() = default;
 
 namespace {
-void DateTimeLiteralImpl::appendIrisRepresentation(std::string *result) const {
-  result->push_back('`');
-  EscapeUtils::appendEscapedJava(value_, result);
-  result->push_back('`');
+void DateTimeLiteralImpl::streamIrisRepresentation(std::ostream &s) const {
+  s << '`';
+  s << EscapeUtils::escapeJava(value_);
+  s << '`';
 }
 
-void DateTimeDBDateTimeImpl::appendIrisRepresentation(std::string *result) const {
-  result->push_back('`');
-  value_.appendIrisRepresentation(result);
-  result->push_back('`');
+void DateTimeDBDateTimeImpl::streamIrisRepresentation(std::ostream &s) const {
+  s << '`';
+  value_.streamIrisRepresentation(s);
+  s << '`';
 }
 
-void DateTimeComparisonImpl::appendIrisRepresentation(std::string *result) const {
-  result->push_back('(');
-  lhs_->appendIrisRepresentation(result);
-  result->push_back(' ');
-  result->append(compareOp_);
-  result->push_back(' ');
-  rhs_->appendIrisRepresentation(result);
-  result->push_back(')');
+void DateTimeComparisonImpl::streamIrisRepresentation(std::ostream &s) const {
+  s << '(';
+  lhs_->streamIrisRepresentation(s);
+  s << ' ';
+  s << compareOp_;
+  s << ' ';
+  rhs_->streamIrisRepresentation(s);
+  s << ')';
 }
 }   // namespace
 }  // namespace impl

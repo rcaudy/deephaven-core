@@ -6,7 +6,6 @@
 
 using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::ColumnHolder;
 using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::TableHandle;
-using deephaven::openAPI::utility::stringVecToShared;
 
 namespace deephaven {
 namespace openAPI {
