@@ -16,7 +16,7 @@ public:
   IsNullExpressionImpl &operator=(const IsNullExpressionImpl &) = delete;
   ~IsNullExpressionImpl() final;
 
-  void appendIrisRepresentation(std::string *result) const final;
+  void streamIrisRepresentation(std::ostream &s) const final;
 
 private:
   std::shared_ptr<impl::ExpressionImpl> impl_;
@@ -24,11 +24,11 @@ private:
 }  // namespace
 
 IrisRepresentableImpl::~IrisRepresentableImpl() = default;
-std::string IrisRepresentableImpl::toIrisRepresentation() const {
-  std::string result;
-  appendIrisRepresentation(&result);
-  return result;
-}
+//std::string IrisRepresentableImpl::toIrisRepresentation() const {
+//  std::string result;
+//  appendIrisRepresentation(&result);
+//  return result;
+//}
 
 std::shared_ptr<BooleanExpressionImpl> ExpressionImpl::createIsNull(
     std::shared_ptr<ExpressionImpl> impl) {
@@ -39,14 +39,17 @@ ExpressionImpl::~ExpressionImpl() = default;
 
 namespace {
 IsNullExpressionImpl::~IsNullExpressionImpl() = default;
-void IsNullExpressionImpl::appendIrisRepresentation(std::string *result) const {
-  // TODO(kosak)
-  result->append("isNull(");
-  impl_->appendIrisRepresentation(result);
-  result->push_back(')');
+void IsNullExpressionImpl::streamIrisRepresentation(std::ostream &s) const {
+  s << "isNull(";
+  impl_->streamIrisRepresentation(s);
+  s << ')';
 }
 }  // namespace
-}  // namespace impl {
+
+void streamIris(std::ostream &s, const std::shared_ptr<IrisRepresentableImpl> &o) {
+  o->streamIrisRepresentation(s);
+}
+}  // namespace impl
 }  // namespace fluent
 }  // namespace highlevel
 }  // namespace openAPI

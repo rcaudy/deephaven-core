@@ -17,16 +17,13 @@ class PrintUtils {
   typedef deephaven::openAPI::highlevel::data::ColumnData ColumnData;
 
 public:
-  static void printTableData(std::ostream &s, const QueryTable &table);
-  static void printTableData(std::ostream &s, const QueryTable &table, std::initializer_list<Column> columns);
-  static void printTableData(std::ostream &s, const QueryTable &table, const std::vector<Column> &columns);
-  static void printTableData(std::ostream &s, const QueryTable &table, const std::vector<std::string> &columns);
+  static void printTableData(std::ostream &s, const QueryTable &table, bool wantHeaders);
 
-  static void printChunk(std::ostream &s, const std::vector<Column> &columns, bool wantHeaders, long rows,
+  static void printChunk(std::ostream &s, bool wantHeaders, long rows,
       const std::vector<std::shared_ptr<ColumnData>> &columnData);
 
   static void streamTableData(const QueryTable &queryTable,
-      const std::vector<std::string> &columns, const std::function<void(const TableData &)> &callback,
+      const std::function<void(const TableData &)> &callback,
       size_t numSimultaneousRequests);
 
   static void showTableUpdate(const QueryTable &table, const XXXTableUpdate &tableUpdate);

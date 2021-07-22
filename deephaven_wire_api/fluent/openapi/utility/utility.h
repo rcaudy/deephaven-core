@@ -87,6 +87,15 @@ std::string stringf(const char *fmt, ARGS &&... args) {
 }
 
 namespace internal {
+// Forward declaration for class
+template<typename Iterator, typename Callback>
+class SeparatedListAdaptor;
+
+// Then, forward declaration for operator<<
+template<typename Iterator, typename Callback>
+std::ostream &operator<<(std::ostream &s, const SeparatedListAdaptor<Iterator, Callback> &o);
+
+// Finally, the class
 template<typename Iterator, typename Callback>
 class SeparatedListAdaptor {
 public:
@@ -99,7 +108,7 @@ private:
   const char *separator_;
   Callback cb_;
 
-  friend std::ostream &operator<<(std::ostream &s, const SeparatedListAdaptor &o);
+  friend std::ostream &operator<<<>(std::ostream &s, const SeparatedListAdaptor &o);
 };
 
 template<typename Iterator, typename Callback>

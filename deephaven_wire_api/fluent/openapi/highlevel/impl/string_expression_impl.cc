@@ -7,7 +7,7 @@
 #include "utility/escape_utils.h"
 #include "utility/utility.h"
 
-using deephaven::openAPI::utility::appendSeparatedList;
+using deephaven::openAPI::utility::separatedList;
 using deephaven::openAPI::utility::EscapeUtils;
 
 namespace deephaven {
@@ -22,7 +22,7 @@ public:
   explicit StringLiteralImpl(std::string value) : value_(std::move(value)) {}
   ~StringLiteralImpl() final = default;
 
-  void appendIrisRepresentation(std::string *result) const final;
+  void streamIrisRepresentation(std::ostream &s) const final;
 
 private:
   std::string value_;
@@ -37,7 +37,7 @@ public:
       children_(std::move(children)) {}
   ~StringConcatImpl() final = default;
 
-  void appendIrisRepresentation(std::string *result) const final;
+  void streamIrisRepresentation(std::ostream &s) const final;
 
 private:
   std::vector<std::shared_ptr<StringExpressionImpl>> children_;
@@ -50,18 +50,12 @@ public:
       rhs_(std::move(rhs)) {}
   ~StringComparisonImpl() final = default;
 
-  void appendIrisRepresentation(std::string *result) const final;
+  void streamIrisRepresentation(std::ostream &s) const final;
 
 private:
   std::shared_ptr<StringExpressionImpl> lhs_;
   const char *compareOp_ = nullptr;
   std::shared_ptr<StringExpressionImpl> rhs_;
-};
-
-struct IrisAppender {
-  void operator()(const std::shared_ptr<IrisRepresentableImpl> &item, std::string *result) const {
-    item->appendIrisRepresentation(result);
-  }
 };
 }  // namespace
 
@@ -83,10 +77,10 @@ std::shared_ptr<BooleanExpressionImpl> StringExpressionImpl::createComparison(
 StringExpressionImpl::~StringExpressionImpl() = default;
 
 namespace {
-void StringLiteralImpl::appendIrisRepresentation(std::string *result) const {
-  result->push_back('`');
-  EscapeUtils::appendEscapedJava(value_, result);
-  result->push_back('`');
+void StringLiteralImpl::streamIrisRepresentation(std::ostream &s) const {
+  s << '`';
+  s << EscapeUtils::escapeJava(value_);
+  s << '`';
 }
 
 std::shared_ptr<StringExpressionImpl> StringConcatImpl::create(
@@ -109,18 +103,18 @@ std::shared_ptr<StringExpressionImpl> StringConcatImpl::create(
   return std::make_shared<StringConcatImpl>(std::move(children));
 }
 
-void StringConcatImpl::appendIrisRepresentation(std::string *result) const {
-  appendSeparatedList(children_.begin(), children_.end(), " + ", IrisAppender(), result);
+void StringConcatImpl::streamIrisRepresentation(std::ostream &s) const {
+  s << separatedList(children_.begin(), children_.end(), " + ", &streamIris);
 }
 
-void StringComparisonImpl::appendIrisRepresentation(std::string *result) const {
-  result->push_back('(');
-  lhs_->appendIrisRepresentation(result);
-  result->push_back(' ');
-  result->append(compareOp_);
-  result->push_back(' ');
-  rhs_->appendIrisRepresentation(result);
-  result->push_back(')');
+void StringComparisonImpl::streamIrisRepresentation(std::ostream &s) const {
+  s << '(';
+  lhs_->streamIrisRepresentation(s);
+  s << ' ';
+  s << compareOp_;
+  s << ' ';
+  rhs_->streamIrisRepresentation(s);
+  s << ')';
 }
 }  // namespace
 }  // namespace impl

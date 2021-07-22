@@ -209,7 +209,7 @@ void test2(const QueryTable &table) {
   auto t1 = table.where("ImportDate == `2017-11-01` && Ticker == `AAPL`")
       .select("Ticker", "Close", "Volume")
       .head(2);
-  PrintUtils::printTableData(std::cout,t1);
+  PrintUtils::printTableData(std::cout, t1);
 
   // Symbolically
   auto importDate = table.getStrCol("ImportDate");

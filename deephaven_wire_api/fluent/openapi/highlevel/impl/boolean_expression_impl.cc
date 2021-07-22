@@ -5,7 +5,8 @@
 #include "highlevel/impl/expression_impl.h"
 #include "utility/utility.h"
 
-using deephaven::openAPI::utility::appendSeparatedList;
+using deephaven::openAPI::utility::MyOstringStream;
+using deephaven::openAPI::utility::separatedList;
 
 namespace deephaven {
 namespace openAPI {
@@ -20,7 +21,7 @@ public:
   NotExpressionImpl(Private, std::shared_ptr<BooleanExpressionImpl> &&child);
   ~NotExpressionImpl() final;
 
-  void appendIrisRepresentation(std::string *result) const final;
+  void streamIrisRepresentation(std::ostream &s) const final;
 
 private:
   std::shared_ptr<BooleanExpressionImpl> child_;
@@ -34,7 +35,7 @@ public:
   AndExpressionImpl(Private, std::vector<std::shared_ptr<BooleanExpressionImpl>> &&children);
   ~AndExpressionImpl() final;
 
-  void appendIrisRepresentation(std::string *result) const final;
+  void streamIrisRepresentation(std::ostream &s) const final;
 
 private:
   std::vector<std::shared_ptr<BooleanExpressionImpl>> children_;
@@ -48,7 +49,7 @@ public:
   OrExpressionImpl(Private, std::vector<std::shared_ptr<BooleanExpressionImpl>> &&children);
   ~OrExpressionImpl() final;
 
-  void appendIrisRepresentation(std::string *result) const final;
+  void streamIrisRepresentation(std::ostream &s) const final;
 
 private:
   std::vector<std::shared_ptr<BooleanExpressionImpl>> children_;
@@ -65,19 +66,12 @@ public:
       std::string &&method, std::shared_ptr<ExpressionImpl> &&rhs);
   ~BooleanValuedInstanceMethod() final;
 
-  void appendIrisRepresentation(std::string *result) const final;
+  void streamIrisRepresentation(std::ostream &s) const final;
 
 private:
   std::shared_ptr<ExpressionImpl> lhs_;
   std::string method_;
   std::shared_ptr<ExpressionImpl> rhs_;
-};
-
-
-struct IrisAppender {
-  void operator()(const std::shared_ptr<IrisRepresentableImpl> &item, std::string *result) const {
-    item->appendIrisRepresentation(result);
-  }
 };
 }  // namespace
 
@@ -118,9 +112,9 @@ NotExpressionImpl::NotExpressionImpl(Private, std::shared_ptr<BooleanExpressionI
     child_(std::move(child)) {}
 NotExpressionImpl::~NotExpressionImpl() = default;
 
-void NotExpressionImpl::appendIrisRepresentation(std::string *result) const {
-  result->push_back('!');
-  child_->appendIrisRepresentation(result);
+void NotExpressionImpl::streamIrisRepresentation(std::ostream &s) const {
+  s << '!';
+  child_->streamIrisRepresentation(s);
 }
 
 std::shared_ptr<BooleanExpressionImpl> AndExpressionImpl::create(
@@ -147,10 +141,10 @@ AndExpressionImpl::AndExpressionImpl(Private,
     std::vector<std::shared_ptr<BooleanExpressionImpl>> &&children) : children_(std::move(children)) {}
 AndExpressionImpl::~AndExpressionImpl() = default;
 
-void AndExpressionImpl::appendIrisRepresentation(std::string *result) const {
-  result->push_back('(');
-  appendSeparatedList(children_.begin(), children_.end(), " && ", IrisAppender(), result);
-  result->push_back(')');
+void AndExpressionImpl::streamIrisRepresentation(std::ostream &s) const {
+  s << '(';
+  s << separatedList(children_.begin(), children_.end(), " && ", &streamIris);
+  s << ')';
 }
 
 std::shared_ptr<BooleanExpressionImpl> OrExpressionImpl::create(
@@ -177,10 +171,10 @@ OrExpressionImpl::OrExpressionImpl(Private,
     std::vector<std::shared_ptr<BooleanExpressionImpl>> &&children) : children_(std::move(children)) {}
 OrExpressionImpl::~OrExpressionImpl() = default;
 
-void OrExpressionImpl::appendIrisRepresentation(std::string *result) const {
-  result->push_back('(');
-  appendSeparatedList(children_.begin(), children_.end(), " || ", IrisAppender(), result);
-  result->push_back(')');
+void OrExpressionImpl::streamIrisRepresentation(std::ostream &s) const {
+  s << '(';
+  s << separatedList(children_.begin(), children_.end(), " || ", &streamIris);
+  s << ')';
 }
 
 std::shared_ptr<BooleanExpressionImpl> BooleanValuedInstanceMethod::create(
@@ -195,15 +189,12 @@ BooleanValuedInstanceMethod::BooleanValuedInstanceMethod(Private,
     rhs_(std::move(rhs)) {}
 BooleanValuedInstanceMethod::~BooleanValuedInstanceMethod() = default;
 
-void BooleanValuedInstanceMethod::appendIrisRepresentation(std::string *result) const {
-  result->push_back('(');
-  lhs_->appendIrisRepresentation(result);
-  result->push_back('.');
-  result->append(method_);
-  result->push_back('(');
-  rhs_->appendIrisRepresentation(result);
-  result->push_back(')');
-  result->push_back(')');
+void BooleanValuedInstanceMethod::streamIrisRepresentation(std::ostream &s) const {
+  s << '(';
+  lhs_->streamIrisRepresentation(s);
+  s << '.' << method_ << '(';
+  rhs_->streamIrisRepresentation(s);
+  s << "))";
 }
 }  // namespace
 }  // namespace impl

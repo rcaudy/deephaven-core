@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iostream>
 #include <memory>
 #include <boost/utility/string_view.hpp>
 
@@ -13,10 +14,12 @@ class BooleanExpressionImpl;
 class IrisRepresentableImpl {
 public:
   virtual ~IrisRepresentableImpl();
-  virtual void appendIrisRepresentation(std::string *result) const = 0;
+  virtual void streamIrisRepresentation(std::ostream &s) const = 0;
 
-  std::string toIrisRepresentation() const;
+  // std::string toIrisRepresentation() const;
 };
+
+void streamIris(std::ostream &s, const std::shared_ptr<IrisRepresentableImpl> &o);
 
 class ExpressionImpl : public virtual IrisRepresentableImpl {
 public:
