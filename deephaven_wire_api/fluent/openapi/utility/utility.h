@@ -86,26 +86,48 @@ std::string stringf(const char *fmt, ARGS &&... args) {
   return result;
 }
 
+namespace internal {
 template<typename Iterator, typename Callback>
-void streamSeparatedList(std::ostream &s, Iterator begin, Iterator end,
-    const char *separator, const Callback &cb) {
-  for (auto current = begin; current != end; ++current) {
-    if (current != begin) {
-      s << separator;
+class SeparatedListAdaptor {
+public:
+  SeparatedListAdaptor(Iterator begin, Iterator end, const char *separator, Callback cb) :
+      begin_(begin), end_(end), separator_(separator), cb_(cb) {}
+
+private:
+  Iterator begin_;
+  Iterator end_;
+  const char *separator_;
+  Callback cb_;
+
+  friend std::ostream &operator<<(std::ostream &s, const SeparatedListAdaptor &o);
+};
+
+template<typename Iterator, typename Callback>
+std::ostream &operator<<(std::ostream &s, const SeparatedListAdaptor<Iterator, Callback> &o) {
+  for (auto current = o.begin_; current != o.end_; ++current) {
+    if (current != o.begin_) {
+      s << o.separator_;
     }
-    cb(s, *current);
+    o.cb_(s, *current);
   }
+  return s;
+}
+}  // namespace internal
+
+
+template<typename Iterator, typename Callback>
+internal::SeparatedListAdaptor<Iterator, Callback> separatedList(Iterator begin, Iterator end,
+    const char *separator, Callback cb) {
+  return internal::SeparatedListAdaptor<Iterator, Callback>(begin, end, separator, std::move(cb));
 }
 
 template<typename Iterator, typename Callback>
-void appendSeparatedList(Iterator begin, Iterator end,
-    const char *separator, const Callback &cb, std::string *result) {
-  const char *currentSep = "";
-  for (auto current = begin; current != end; ++current) {
-    result->append(currentSep);
-    cb(*current, result);
-    currentSep = separator;
-  }
+internal::SeparatedListAdaptor<Iterator, Callback> separatedList(Iterator begin, Iterator end,
+    const char *separator) {
+  auto defaultCb = [](std::ostream &s, const decltype(*begin) &o) {
+    return s << o;
+  };
+  return internal::SeparatedListAdaptor<Iterator, Callback>(begin, end, separator, std::move(defaultCb));
 }
 
 template<typename Iterator, typename Callback>
@@ -123,21 +145,6 @@ std::string makeSeparatedList(Iterator begin, Iterator end, const char *separato
   };
   return makeSeparatedList(begin, end, separator, cb);
 }
-
-namespace internal {
-struct EmptyArrayMaker {
-  template<typename T>
-  operator std::shared_ptr<std::vector<T>>() const {
-    return std::make_shared<std::vector<T>>();
-  }
-};
-}  // namespace internal
-
-inline internal::EmptyArrayMaker makeEmptyArray() {
-  return {};
-}
-
-std::shared_ptr<std::vector<std::shared_ptr<std::string>>> stringVecToShared(std::vector<std::string> src);
 }  // namespace utility
 }  // namespace openAPI
 }  // namespace deephaven
