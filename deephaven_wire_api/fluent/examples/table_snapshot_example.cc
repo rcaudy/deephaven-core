@@ -25,7 +25,7 @@ void TableSnapshotExample::run(const QueryScope &scope) {
   auto eodTimestamp = table.getStrCol("EODTimestamp");
 
   auto t2 = table.where(importDate == "2017-11-01").where(ticker == "AAPL" && close <= 120.0);
-  PrintUtils::printTableData(std::cout, t2, {ticker, close});
+  PrintUtils::printTableData(std::cout, t2);
 }
 }  // namespace examples
 }  // namespace openAPI

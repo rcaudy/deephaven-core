@@ -750,10 +750,12 @@ auto WorkerOptions::config() const -> const std::shared_ptr<ConsoleConfig> & {
 }
 
 namespace internal {
-//std::string ConvertToString::toString(
-//    const deephaven::openAPI::highlevel::fluent::SelectColumn &selectColumn) {
-//  return selectColumn.getIrisRepresentableImpl()->toIrisRepresentation();
-//}
+std::string ConvertToString::toString(
+    const deephaven::openAPI::highlevel::fluent::SelectColumn &selectColumn) {
+  MyOstringStream oss;
+  selectColumn.getIrisRepresentableImpl()->streamIrisRepresentation(oss);
+  return std::move(oss.str());
+}
 }  // namespace internal
 }  // namespace highlevel
 }  // namespace openAPI

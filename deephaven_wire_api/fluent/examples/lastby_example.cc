@@ -13,8 +13,6 @@ using deephaven::openAPI::highlevel::QueryScope;
 using deephaven::openAPI::highlevel::QueryTable;
 using deephaven::openAPI::highlevel::util::DemoConstants;
 using deephaven::openAPI::highlevel::util::PrintUtils;
-using deephaven::openAPI::utility::appendSeparatedList;
-using deephaven::openAPI::utility::makeSeparatedList;
 using deephaven::openAPI::utility::streamf;
 using deephaven::openAPI::utility::stringf;
 

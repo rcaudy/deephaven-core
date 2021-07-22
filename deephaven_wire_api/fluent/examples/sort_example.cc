@@ -17,8 +17,6 @@ using deephaven::openAPI::highlevel::data::DoubleColumnData;
 using deephaven::openAPI::highlevel::data::IntColumnData;
 using deephaven::openAPI::highlevel::util::DemoConstants;
 using deephaven::openAPI::highlevel::util::PrintUtils;
-using deephaven::openAPI::utility::appendSeparatedList;
-using deephaven::openAPI::utility::makeSeparatedList;
 using deephaven::openAPI::utility::streamf;
 using deephaven::openAPI::utility::stringf;
 

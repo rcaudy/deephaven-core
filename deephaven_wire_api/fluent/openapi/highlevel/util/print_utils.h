@@ -13,18 +13,17 @@ namespace openAPI {
 namespace highlevel {
 namespace util {
 class PrintUtils {
-  typedef deephaven::openAPI::highlevel::fluent::Column Column;
   typedef deephaven::openAPI::highlevel::data::ColumnData ColumnData;
 
 public:
-  static void printTableData(std::ostream &s, const QueryTable &table, bool wantHeaders);
+  static void printTableData(std::ostream &s, const QueryTable &table, bool wantHeaders = true);
 
-  static void printChunk(std::ostream &s, bool wantHeaders, long rows,
-      const std::vector<std::shared_ptr<ColumnData>> &columnData);
-
-  static void streamTableData(const QueryTable &queryTable,
-      const std::function<void(const TableData &)> &callback,
-      size_t numSimultaneousRequests);
+//  static void printChunk(std::ostream &s, bool wantHeaders, long rows,
+//      const std::vector<std::shared_ptr<ColumnData>> &columnData);
+//
+//  static void streamTableData(const QueryTable &queryTable,
+//      const std::function<void(const TableData &)> &callback,
+//      size_t numSimultaneousRequests);
 
   static void showTableUpdate(const QueryTable &table, const XXXTableUpdate &tableUpdate);
 };

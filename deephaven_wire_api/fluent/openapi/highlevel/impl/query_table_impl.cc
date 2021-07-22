@@ -9,6 +9,7 @@
 #include <arrow/flight/types.h>
 #include <arrow/array.h>
 #include <arrow/array/array_primitive.h>
+#include <arrow/scalar.h>
 #include <arrow/type.h>
 #include <arrow/table.h>
 #include <boost/variant.hpp>
@@ -628,18 +629,31 @@ public:
       streamf(std::cerr, "field %o has type %o\n", f->name(), f->type()->id());
       colDefs[f->name()] = f->type();
     }
-    owner_->colDefsPromise_.setValue(std::move(colDefs));
 
     std::cerr << "READING DATA HERE FOR FUN\n";
     while (true) {
       arrow::flight::FlightStreamChunk chunk;
       auto stat = fsr->Next(&chunk);
-      std::cerr << "GOT A CHUNK\n";
+      std::cerr << "stat is " << stat << "\n";
       if (chunk.data == nullptr) {
         std::cerr << "THE STREAM ENDS\n";
         break;
       }
+      std::cerr << "GOT A CHUNK\n";
+      streamf(std::cerr, "nr %o nc %o\n", chunk.data->num_rows(), chunk.data->num_columns());
+      auto columns = chunk.data->columns();
+      for (int64_t r = 0; r < chunk.data->num_rows(); ++r) {
+        for (const auto &col : columns) {
+          const auto &q = *col;
+          auto rsc = q.GetScalar(r);
+          auto sc = rsc.ValueOrDie();
+          const auto &vsc = *sc;
+          std::cerr << "TPNN " << vsc.ToString() << "\n";
+        }
+      }
     }
+
+    owner_->colDefsPromise_.setValue(std::move(colDefs));
   }
 
   std::shared_ptr<LazyStateOss> owner_;

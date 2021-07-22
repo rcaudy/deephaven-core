@@ -16,8 +16,8 @@ using deephaven::openAPI::highlevel::data::DoubleColumnData;
 using deephaven::openAPI::highlevel::data::IntColumnData;
 using deephaven::openAPI::highlevel::util::DemoConstants;
 using deephaven::openAPI::highlevel::util::PrintUtils;
-using deephaven::openAPI::utility::appendSeparatedList;
-using deephaven::openAPI::utility::makeSeparatedList;
+using deephaven::openAPI::utility::MyOstringStream;
+using deephaven::openAPI::utility::separatedList;
 using deephaven::openAPI::utility::streamf;
 using deephaven::openAPI::utility::stringf;
 
@@ -148,21 +148,24 @@ void testSelectsHelper(boost::string_view what, const QueryTable &table,
     const std::vector<std::vector<std::string>> &badSelects,
     const std::vector<std::vector<std::string>> &goodSelects) {
   for (const auto &bs : badSelects) {
-    auto selection = makeSeparatedList(bs.begin(), bs.end(), ", ");
+    MyOstringStream selection;
+    selection << separatedList(bs.begin(), bs.end());
     try {
       table.select(bs).observe();
     }
     catch (const std::exception &e) {
-      streamf(std::cerr, "%o: %o: Failed as expected with: %o\n", what, selection, e.what());
+      streamf(std::cerr, "%o: %o: Failed as expected with: %o\n", what,
+          separatedList(bs.begin(), bs.end(), " "), selection.str(), e.what());
       continue;
     }
-    throw std::runtime_error(stringf("%o: %o: Expected to fail, but succeeded", what, selection));
+    throw std::runtime_error(stringf("%o: %o: Expected to fail, but succeeded",
+        what, selection.str()));
   }
 
   for (const auto &gs : goodSelects) {
-    auto selection = makeSeparatedList(gs.begin(), gs.end(), ", ");
     table.select(gs).observe();
-    streamf(std::cerr, "%o: %o: Succeeded as expected\n", what, selection);
+    streamf(std::cerr, "%o: %o: Succeeded as expected\n", what,
+        separatedList(gs.begin(), gs.end()));
   }
 }
 
