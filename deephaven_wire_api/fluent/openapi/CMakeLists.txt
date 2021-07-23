@@ -17,7 +17,6 @@ set(SRC_FILES
     core/serializer.h
     core/server.cc
     core/server.h
-        utility/callbacks.h
 
     lowlevel/custom/custom_shared_objects.cc
     lowlevel/custom/custom_shared_objects.h
@@ -105,13 +104,17 @@ set(SRC_FILES
         proto/table.pb.cc
         proto/table.pb.h
 
-    utility/escape_utils.cc
-    utility/escape_utils.h
-    utility/executor.cc
-    utility/executor.h
-    utility/utility.cc
-    utility/utility.h
-        utility/cbfuture.cc utility/cbfuture.h)
+        utility/escape_utils.cc
+        utility/escape_utils.h
+        utility/executor.cc
+        utility/executor.h
+        utility/utility.cc
+        utility/utility.h
+        utility/callbacks.h
+        utility/cbfuture.cc
+        utility/cbfuture.h
+        )
+
 
 add_library(openapi ${SRC_FILES})
 target_link_libraries(openapi arrow_flight_static)
