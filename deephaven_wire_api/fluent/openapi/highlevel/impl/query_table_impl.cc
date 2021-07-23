@@ -554,11 +554,6 @@ void LazyStateOss::waitUntilReady() {
 }
 
 auto LazyStateOss::getColumnDefinitions() -> const columnDefinitions_t * {
-  if (!colDefsFuture_.valid()) {
-    // value or exception
-    return &colDefsFuture_.value();
-  }
-
   // Shortcut if we have column definitions
   if (colDefsFuture_.valid()) {
     // value or exception

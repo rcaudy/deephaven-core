@@ -20,6 +20,7 @@ typedef arrow::flight::protocol::Wicket Ticket;
 using io::deephaven::proto::backplane::grpc::ComboAggregateRequest;
 using io::deephaven::proto::backplane::grpc::HandshakeRequest;
 using io::deephaven::proto::backplane::grpc::HandshakeResponse;
+using deephaven::openAPI::lowlevel::DHWorkerSession;
 using deephaven::openAPI::lowlevel::DHServer;
 using deephaven::openAPI::lowlevel::remoting::generated::java::lang::Void;
 using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::batch::aggregates::AggregateDescriptor;
@@ -253,6 +254,10 @@ void QueryScope::getDatabaseCatalogAsync(bool systemNamespaces, bool userNamespa
 QueryTable QueryScope::catalogTable() const {
   auto qsImpl = impl_->catalogTable();
   return QueryTable(std::move(qsImpl));
+}
+
+const std::shared_ptr<DHWorkerSession> &QueryScope::lowLevelSession() const {
+  return impl_->lowLevelSession();
 }
 
 namespace {

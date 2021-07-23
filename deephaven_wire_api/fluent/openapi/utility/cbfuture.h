@@ -25,7 +25,7 @@ protected:
 template<typename T>
 class PromiseState final : public PromiseStateBase {
 public:
-  // valid means promise fullfilled with either value or error
+  // valid means promise fulfilled with either value or error
 
   const T &value() {
     std::unique_lock<std::mutex> guard(mutex_);

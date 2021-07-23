@@ -88,70 +88,57 @@ std::string stringf(const char *fmt, ARGS &&... args) {
 
 namespace internal {
 // Forward declaration for class
-template<typename Iterator>
+template<typename Iterator, typename Callback>
 class SeparatedListAdaptor;
 
 // Then, forward declaration for operator<<
-template<typename Iterator>
-std::ostream &operator<<(std::ostream &s, const SeparatedListAdaptor<Iterator> &o);
+template<typename Iterator, typename Callback>
+std::ostream &operator<<(std::ostream &s, const SeparatedListAdaptor<Iterator, Callback> &o);
 
 // Finally, the class
-template<typename Iterator>
+template<typename Iterator, typename Callback>
 class SeparatedListAdaptor {
 public:
-  SeparatedListAdaptor(Iterator begin, Iterator end, const char *separator) :
-      begin_(begin), end_(end), separator_(separator) {}
-
-protected:
-  virtual void dumpElement(std::ostream &s, const decltype(*std::declval<Iterator>()) &item) const {
-    s << item;
-  }
+  SeparatedListAdaptor(Iterator begin, Iterator end, const char *separator, Callback callback) :
+      begin_(begin), end_(end), separator_(separator), callback_(std::move(callback)) {}
 
 private:
   Iterator begin_;
   Iterator end_;
   const char *separator_;
+  Callback callback_;
 
   friend std::ostream &operator<<<>(std::ostream &s, const SeparatedListAdaptor &o);
 };
 
 template<typename Iterator, typename Callback>
-class SeparatedListAdaptorWithCallback : public SeparatedListAdaptor<Iterator> {
-public:
-  SeparatedListAdaptorWithCallback(Iterator begin, Iterator end, const char *separator, Callback cb) :
-      SeparatedListAdaptor<Iterator>(begin, end, separator), cb_(std::move(cb)) {}
-
-protected:
-  virtual void dumpElement(std::ostream &s, const decltype(*std::declval<Iterator>()) &item) const {
-    cb_(s, item);
-  }
-
-private:
-  Callback cb_;
-};
-
-template<typename Iterator>
-std::ostream &operator<<(std::ostream &s, const SeparatedListAdaptor<Iterator> &o) {
+std::ostream &operator<<(std::ostream &s, const SeparatedListAdaptor<Iterator, Callback> &o) {
   for (auto current = o.begin_; current != o.end_; ++current) {
     if (current != o.begin_) {
       s << o.separator_;
     }
-    o.dumpElement(s, *current);
+    o.callback_(s, *current);
   }
   return s;
+}
+
+template<typename T>
+void defaultCallback(std::ostream &s, const T &item) {
+  s << item;
 }
 }  // namespace internal
 
 template<typename Iterator>
-internal::SeparatedListAdaptor<Iterator> separatedList(Iterator begin, Iterator end,
+internal::SeparatedListAdaptor<Iterator, void(*)(std::ostream &s, const decltype(*std::declval<Iterator>()) &)> separatedList(Iterator begin, Iterator end,
     const char *separator = ", ") {
-  return internal::SeparatedListAdaptor<Iterator>(begin, end, separator);
+  return internal::SeparatedListAdaptor<Iterator, void(*)(std::ostream &s, const decltype(*std::declval<Iterator>()) &)>(
+      begin, end, separator, &internal::defaultCallback);
 }
 
 template<typename Iterator, typename Callback>
-internal::SeparatedListAdaptorWithCallback<Iterator, Callback> separatedList(Iterator begin, Iterator end,
+internal::SeparatedListAdaptor<Iterator, Callback> separatedList(Iterator begin, Iterator end,
     const char *separator, Callback cb) {
-  return internal::SeparatedListAdaptorWithCallback<Iterator, Callback>(begin, end, separator, std::move(cb));
+  return internal::SeparatedListAdaptor<Iterator, Callback>(begin, end, separator, std::move(cb));
 }
 }  // namespace utility
 }  // namespace openAPI

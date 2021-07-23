@@ -67,9 +67,9 @@ using deephaven::openAPI::examples::ViewExample;
 using deephaven::openAPI::highlevel::OpenApi;
 using deephaven::openAPI::highlevel::QueryScope;
 using deephaven::openAPI::highlevel::WorkerOptions;
-using deephaven::openAPI::lowlevel::remoting::DHServer;
-using deephaven::openAPI::lowlevel::remoting::DHWorker;
-using deephaven::openAPI::lowlevel::remoting::DHWorkerSession;
+using deephaven::openAPI::lowlevel::DHServer;
+using deephaven::openAPI::lowlevel::DHWorker;
+using deephaven::openAPI::lowlevel::DHWorkerSession;
 using deephaven::openAPI::utility::streamf;
 
 namespace {

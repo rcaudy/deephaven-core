@@ -53,7 +53,7 @@ void PrintUtils::printTableData(std::ostream &s, const QueryTable &queryTable, b
     auto streamName = [](std::ostream &s, const Column &c) {
       s << c.name();
     };
-    s << separatedList(cols.begin(), cols.end(), "\t", streamName);
+    s << separatedList(cols.begin(), cols.end(), "\t", streamName) << '\n';
   }
 
   std::cerr << "READING DATA HERE FOR FUN\n";
@@ -72,7 +72,9 @@ void PrintUtils::printTableData(std::ostream &s, const QueryTable &queryTable, b
     std::cerr << "GOT A CHUNK\n";
     const auto *data = chunk.data.get();
     const auto &columns = chunk.data->columns();
+    std::cerr << "THERE MANY ROWS: " << data->num_rows() << "\n";
     for (int64_t rowNum = 0; rowNum < data->num_rows(); ++rowNum) {
+      streamf(s, "This is row %o\n", rowNum);
       auto streamArrayCell = [rowNum](std::ostream &s, const std::shared_ptr<arrow::Array> &a) {
         // This is going to be rather inefficient
         auto rsc = a->GetScalar(rowNum);
