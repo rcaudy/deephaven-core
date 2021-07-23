@@ -560,6 +560,8 @@ auto LazyStateOss::getColumnDefinitions() -> const columnDefinitions_t * {
     return &colDefsFuture_.value();
   }
 
+  zamboni_time();
+
   auto res = SFCallback<const columnDefinitions_t *>::createForFuture();
   getColumnDefinitionsAsync(std::move(res.first));
   return std::get<0>(res.second.get());
@@ -628,29 +630,6 @@ public:
     for (const auto &f : schema->fields()) {
       streamf(std::cerr, "field %o has type %o\n", f->name(), f->type()->id());
       colDefs[f->name()] = f->type();
-    }
-
-    std::cerr << "READING DATA HERE FOR FUN\n";
-    while (true) {
-      arrow::flight::FlightStreamChunk chunk;
-      auto stat = fsr->Next(&chunk);
-      std::cerr << "stat is " << stat << "\n";
-      if (chunk.data == nullptr) {
-        std::cerr << "THE STREAM ENDS\n";
-        break;
-      }
-      std::cerr << "GOT A CHUNK\n";
-      streamf(std::cerr, "nr %o nc %o\n", chunk.data->num_rows(), chunk.data->num_columns());
-      auto columns = chunk.data->columns();
-      for (int64_t r = 0; r < chunk.data->num_rows(); ++r) {
-        for (const auto &col : columns) {
-          const auto &q = *col;
-          auto rsc = q.GetScalar(r);
-          auto sc = rsc.ValueOrDie();
-          const auto &vsc = *sc;
-          std::cerr << "TPNN " << vsc.ToString() << "\n";
-        }
-      }
     }
 
     owner_->colDefsPromise_.setValue(std::move(colDefs));
