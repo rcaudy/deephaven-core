@@ -19,7 +19,6 @@
 namespace deephaven {
 namespace openAPI {
 namespace lowlevel {
-namespace remoting {
 class DHServerAPIListener;
 
 namespace internal {
@@ -112,7 +111,6 @@ auto responseHandler = createResponseHandler(std::move(callback), executor_);
 throw new std::runtime_error("SAD001"); // TODO(kosak)
 // server_->invoke(std::move(request), std::move(responseHandler));
 }
-}  // namespace remoting
 }  // namespace lowlevel
 }  // namespace openAPI
 }  // namespace deephaven

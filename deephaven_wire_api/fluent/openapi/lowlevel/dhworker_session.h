@@ -16,7 +16,6 @@
 namespace deephaven {
 namespace openAPI {
 namespace lowlevel {
-namespace remoting {
 class DHServer;
 
 namespace internal {
@@ -180,7 +179,6 @@ private:
   std::shared_ptr<Executor> executor_;
   std::shared_ptr<Executor> flightExecutor_;
 };
-}  // namespace remoting
 }  // namespace lowlevel
 }  // namespace openAPI
 }  // namespace deephaven

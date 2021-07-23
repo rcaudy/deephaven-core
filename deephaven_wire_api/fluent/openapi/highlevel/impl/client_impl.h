@@ -18,7 +18,7 @@ class WorkerOptionsImpl;
 
 class ClientImpl {
   struct Private {};
-  typedef deephaven::openAPI::lowlevel::remoting::DHServer DHServer;
+  typedef deephaven::openAPI::lowlevel::DHServer DHServer;
   typedef deephaven::openAPI::utility::Executor Executor;
   typedef deephaven::openAPI::utility::FailureCallback FailureCallback;
   typedef deephaven::openAPI::utility::Void Void;

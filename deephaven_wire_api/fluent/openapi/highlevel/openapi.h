@@ -3,6 +3,8 @@
 #include <future>
 #include <memory>
 #include <boost/utility/string_view.hpp>
+#include "lowlevel/dhworker.h"
+#include "lowlevel/dhworker_session.h"
 #include "highlevel/data/column_data.h"
 #include "highlevel/data/column_data_holder.h"
 #include "highlevel/columns.h"
@@ -157,6 +159,7 @@ private:
 
 class QueryScope {
   typedef deephaven::openAPI::highlevel::data::ColumnDataHolder ColumnDataHolder;
+  typedef deephaven::openAPI::lowlevel::DHWorkerSession DHWorkerSession;
 
   template<typename T>
   using SFCallback = deephaven::openAPI::utility::SFCallback<T>;
@@ -184,6 +187,8 @@ public:
       std::shared_ptr<SFCallback<DatabaseCatalog>> callback) const;
 
   QueryTable catalogTable() const;
+
+  const std::shared_ptr<DHWorkerSession> &lowLevelSession() const;
 
 private:
   std::shared_ptr<impl::QueryScopeImpl> impl_;

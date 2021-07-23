@@ -11,9 +11,9 @@
 using io::deephaven::proto::backplane::grpc::HandshakeResponse;
 using io::deephaven::proto::backplane::script::grpc::StartConsoleResponse;
 using deephaven::openAPI::core::remoting::Server;
-using deephaven::openAPI::lowlevel::remoting::DHServer;
-using deephaven::openAPI::lowlevel::remoting::DHWorker;
-using deephaven::openAPI::lowlevel::remoting::DHWorkerSession;
+using deephaven::openAPI::lowlevel::DHServer;
+using deephaven::openAPI::lowlevel::DHWorker;
+using deephaven::openAPI::lowlevel::DHWorkerSession;
 using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::cmd::ConnectionSuccess;
 using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::ConnectToken;
 using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::RefreshToken;

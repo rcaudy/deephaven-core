@@ -29,7 +29,7 @@ private:
 };
 
 class WorkerSessionImpl {
-  typedef deephaven::openAPI::lowlevel::remoting::DHWorkerSession DHWorkerSession;
+  typedef deephaven::openAPI::lowlevel::DHWorkerSession DHWorkerSession;
   typedef deephaven::openAPI::utility::Executor Executor;
   struct Private {};
 public:

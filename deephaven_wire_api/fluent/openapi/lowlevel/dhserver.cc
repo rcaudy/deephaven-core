@@ -49,7 +49,6 @@ using deephaven::openAPI::utility::stringf;
 namespace deephaven {
 namespace openAPI {
 namespace lowlevel {
-namespace remoting {
 namespace {
 // For its internal purposes, the server needs to listen for QueryConfig notifications. So, it
 // becomes the first client of the ServerNotificationHandler.
@@ -154,7 +153,6 @@ void MyQueryConfigListener::onQueryConfigRemoved(const std::shared_ptr<QueryConf
 }
 
 }  // namespace
-}  // namespace remoting
 }  // namespace lowlevel
 }  // namespace openAPI
 }  // namespace deephaven

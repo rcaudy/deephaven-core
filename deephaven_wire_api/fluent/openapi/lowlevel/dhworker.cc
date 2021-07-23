@@ -37,8 +37,6 @@ using deephaven::openAPI::utility::stringf;
 namespace deephaven {
 namespace openAPI {
 namespace lowlevel {
-namespace remoting {
-
 std::shared_ptr<DHWorker> DHWorker::createFromUrl(const boost::string_view url, int32_t clientId,
     std::shared_ptr<Executor> executor) {
   auto urlToUse = stringf("%o?checksum=%o%o", url,
@@ -78,7 +76,6 @@ void DHWorker::addListener(std::shared_ptr<DHWorkerAPIListener> listener) {
 void DHWorker::removeListener(const std::shared_ptr<DHWorkerAPIListener> &listener) {
   // notificationHandler_->removeListener(listener);
 }
-}  // namespace remoting
 }  // namespace lowlevel
 }  // namespace openAPI
 }  // namespace deephaven

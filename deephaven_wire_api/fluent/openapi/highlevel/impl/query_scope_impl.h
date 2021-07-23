@@ -17,7 +17,7 @@ class QueryTableImpl;
 class QueryScopeImpl {
   struct Private {};
   typedef deephaven::openAPI::highlevel::data::ColumnDataHolder ColumnDataHolder;
-  typedef deephaven::openAPI::lowlevel::remoting::DHWorkerSession DHWorkerSession;
+  typedef deephaven::openAPI::lowlevel::DHWorkerSession DHWorkerSession;
   typedef deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::batch::BatchTableRequest BatchTableRequest;
   typedef deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::batch::BatchTableResponse BatchTableResponse;
   typedef deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::InitialTableDefinition InitialTableDefinition;

@@ -102,11 +102,11 @@ public:
       std::unique_ptr<arrow::flight::FlightClient> flightClient);
   ~Server();
 
-  BarrageService::Stub *barrageStub() { return barrageStub_.get(); }
-  ConsoleService::Stub *consoleStub() { return consoleStub_.get(); }
-  SessionService::Stub *sessionStub() { return sessionStub_.get(); }
-  TableService::Stub *tableStub() { return tableStub_.get(); }
-  arrow::flight::FlightClient *flightClient() { return flightClient_.get(); }
+  BarrageService::Stub *barrageStub() const { return barrageStub_.get(); }
+  ConsoleService::Stub *consoleStub() const { return consoleStub_.get(); }
+  SessionService::Stub *sessionStub() const { return sessionStub_.get(); }
+  TableService::Stub *tableStub() const { return tableStub_.get(); }
+  arrow::flight::FlightClient *flightClient() const { return flightClient_.get(); }
 
   Ticket newTicket();
 
@@ -129,7 +129,7 @@ public:
 //    *token = sessionToken_;
 //  }
 
-  std::pair<std::string, std::string> makeBlessing();
+  std::pair<std::string, std::string> makeBlessing() const;
 
 private:
   static void processCompletionQueueForever(const std::shared_ptr<Server> &self);

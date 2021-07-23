@@ -28,7 +28,7 @@ std::atomic<size_t> nextTableId(0);
 void PrintUtils::printTableData(std::ostream &s, const QueryTable &queryTable, bool wantHeaders) {
   std::string var = stringf("result%o", nextTableId++);
 
-  const auto *server = queryTable.scope().session().server().get();
+  const auto *server = queryTable.scope().lowLevelSession()->server().get();
 
   arrow::flight::FlightCallOptions options;
   options.headers.push_back(server->makeBlessing());

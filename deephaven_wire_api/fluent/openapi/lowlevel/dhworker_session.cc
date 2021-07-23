@@ -76,7 +76,6 @@ typedef SFCallback<std::shared_ptr<InitialTableDefinition>> itdCallback_t;
 namespace deephaven {
 namespace openAPI {
 namespace lowlevel {
-namespace remoting {
 namespace internal {
 class TableHandleKey {
 public:
@@ -879,7 +878,6 @@ void moveVectorData(std::vector<std::string> src, google::protobuf::RepeatedPtrF
   }
 }
 }  // namespace
-}  // namespace remoting
 }  // namespace lowlevel
 }  // namespace openAPI
 }  // namespace deephaven

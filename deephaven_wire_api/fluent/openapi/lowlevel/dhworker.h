@@ -11,8 +11,6 @@
 namespace deephaven {
 namespace openAPI {
 namespace lowlevel {
-namespace remoting {
-
 class DHWorkerAPIListener;
 
 namespace internal {
@@ -126,8 +124,6 @@ void DHWorker::invoke(std::shared_ptr<REQUEST> request,
   // TODO(kosak)
   // server_->invoke(std::move(request), std::move(responseHandler));
 }
-
-}  // namespace remoting
 }  // namespace lowlevel
 }  // namespace openAPI
 }  // namespace deephaven
