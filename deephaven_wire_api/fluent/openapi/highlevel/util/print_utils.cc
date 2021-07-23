@@ -73,13 +73,13 @@ void PrintUtils::printTableData(std::ostream &s, const QueryTable &queryTable, b
     const auto *data = chunk.data.get();
     const auto &columns = chunk.data->columns();
     for (int64_t rowNum = 0; rowNum < data->num_rows(); ++rowNum) {
-      auto streamArrayCell = [rowNum](std::ostream &s, const arrow::Array &a) {
+      auto streamArrayCell = [rowNum](std::ostream &s, const std::shared_ptr<arrow::Array> &a) {
         // This is going to be rather inefficient
-        auto rsc = a.GetScalar(rowNum);
+        auto rsc = a->GetScalar(rowNum);
         const auto &vsc = *rsc.ValueOrDie();
         s << vsc.ToString();
       };
-      s << '\n';
+      s << separatedList(columns.begin(), columns.end(), "\t", streamArrayCell) << '\n';
     }
   }
 //  streamf(s, "********* Not printing data. Instead binding to variable %o\n", var);
