@@ -12,11 +12,7 @@ set(SRC_FILES
         core/server.cc
     core/server.h
 
-        lowlevel/dhserver.cc
-    lowlevel/dhserver.h
-    lowlevel/dhworker.cc
-    lowlevel/dhworker.h
-    lowlevel/dhworker_session.cc
+        lowlevel/dhworker_session.cc
     lowlevel/dhworker_session.h
 
     highlevel/data/column_data.cc
