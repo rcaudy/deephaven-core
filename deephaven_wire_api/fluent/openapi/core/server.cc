@@ -123,11 +123,9 @@ bool Server::processNextCompletionQueueItem() {
 
   try {
     // Destruct/deallocate on the way out.
-    auto *cqcb = static_cast<ServerCQCallback *>(tag);
-    std::cerr << "NOT DESTRUCTING\n";
+    std::unique_ptr<ServerCQCallback> cqcb(static_cast<ServerCQCallback *>(tag));
 
     if (!ok) {
-      std::cerr << "the 'not ok' case\n";
       cqcb->failureCallback_->onFailure(
           std::make_exception_ptr(std::runtime_error("Some GRPC network or connection error")));
       return true;
@@ -135,9 +133,7 @@ bool Server::processNextCompletionQueueItem() {
 
     const auto &stat = cqcb->status_;
     if (!stat.ok()) {
-      std::cerr << "the other 'not ok' case\n";
       auto message = stringf("Error %o. Message: %o", stat.error_code(), stat.error_message());
-      streamf(std::cerr, "message is %o\n", message);
       cqcb->failureCallback_->onFailure(std::make_exception_ptr(std::runtime_error(message)));
       return true;
     }

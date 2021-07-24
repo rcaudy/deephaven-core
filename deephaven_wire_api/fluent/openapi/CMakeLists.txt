@@ -18,18 +18,6 @@ set(SRC_FILES
     core/server.cc
     core/server.h
 
-    lowlevel/custom/custom_shared_objects.cc
-    lowlevel/custom/custom_shared_objects.h
-    lowlevel/generated/dhserver_notifications.cc
-    lowlevel/generated/dhserver_notifications.h
-    lowlevel/generated/dhserver_requests.cc
-    lowlevel/generated/dhserver_requests.h
-    lowlevel/generated/dhworker_notifications.cc
-    lowlevel/generated/dhworker_notifications.h
-    lowlevel/generated/dhworker_requests.cc
-    lowlevel/generated/dhworker_requests.h
-    lowlevel/generated/shared_objects.cc
-    lowlevel/generated/shared_objects.h
     lowlevel/util/deserializer_adapter.h
     lowlevel/util/serializer_adapter.h
     lowlevel/util/server_callbacks.h

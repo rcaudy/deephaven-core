@@ -59,7 +59,6 @@ class DHWorkerSession {
 public:
   typedef Callback<const std::shared_ptr<TableHandle> &, const std::shared_ptr<TableSnapshot> &> snapshotCallback_t;
   typedef Callback<const std::shared_ptr<TableHandle> &, const std::shared_ptr<DeltaUpdates> &> updateCallback_t;
-  typedef Callback<const Ticket &, const char *> getDataCallback_t;
 
   static std::shared_ptr<DHWorkerSession> create(Ticket consoleId, std::shared_ptr<Server> server,
       std::shared_ptr<Executor> executor, std::shared_ptr<Executor> flightExecutor);
