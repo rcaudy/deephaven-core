@@ -8,7 +8,6 @@
 #include <boost/utility/string_view.hpp>
 #include "highlevel/data/dbdatetime.h"
 #include "highlevel/data/deephaven_constants.h"
-#include "lowlevel/generated/shared_objects.h"
 
 namespace deephaven {
 namespace openAPI {

@@ -16,10 +16,6 @@
 #include <boost/beast/websocket/ssl.hpp>
 #include <boost/utility/string_view.hpp>
 
-#include "core/protocol_base_classes.h"
-#include "core/deserializer.h"
-#include "core/serializer.h"
-#include "core/protocol_base_classes.h"
 #include "utility/callbacks.h"
 #include "utility/executor.h"
 #include "proto/barrage.pb.h"
@@ -82,7 +78,6 @@ class Server {
   typedef io::deephaven::proto::backplane::script::grpc::ConsoleService ConsoleService;
 
   typedef deephaven::openAPI::utility::Executor Executor;
-  typedef deephaven::openAPI::core::remoting::Request Request;
 
   template<typename T>
   using SFCallback = deephaven::openAPI::utility::SFCallback<T>;

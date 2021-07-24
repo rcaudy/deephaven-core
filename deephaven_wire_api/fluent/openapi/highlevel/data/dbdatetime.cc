@@ -7,7 +7,6 @@
 #include <string>
 #include <ctime>
 #include "highlevel/data/deephaven_constants.h"
-#include "lowlevel/generated/shared_objects.h"
 #include "utility/utility.h"
 
 using deephaven::openAPI::utility::MyOstringStream;
