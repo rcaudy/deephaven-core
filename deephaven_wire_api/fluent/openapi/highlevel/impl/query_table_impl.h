@@ -10,7 +10,6 @@
 #include <boost/optional.hpp>
 #include <boost/utility/string_view.hpp>
 #include "core/server.h"
-#include "lowlevel/generated/shared_objects.h"
 #include "highlevel/openapi.h"
 #include "utility/callbacks.h"
 #include "utility/cbfuture.h"
@@ -40,7 +39,7 @@ class QueryScopeImpl;
 namespace internal {
 class GetColumnDefsCallback;
 
-class LazyStateOss final : public deephaven::openAPI::utility::SFCallback<io::deephaven::proto::backplane::grpc::ExportedTableCreationResponse> {
+class LazyState final : public deephaven::openAPI::utility::SFCallback<io::deephaven::proto::backplane::grpc::ExportedTableCreationResponse> {
   struct Private {};
 
   typedef arrow::flight::protocol::Wicket Ticket;
@@ -59,11 +58,11 @@ class LazyStateOss final : public deephaven::openAPI::utility::SFCallback<io::de
 public:
   typedef std::map<std::string, std::shared_ptr<arrow::DataType>> columnDefinitions_t;
 
-  static std::shared_ptr<LazyStateOss> create(std::shared_ptr<Server> server,
+  static std::shared_ptr<LazyState> create(std::shared_ptr<Server> server,
       std::shared_ptr<Executor> flightExecutor);
 
-  LazyStateOss(Private, std::shared_ptr<Server> &&server, std::shared_ptr<Executor> &&flightExecutor);
-  ~LazyStateOss() final;
+  LazyState(Private, std::shared_ptr<Server> &&server, std::shared_ptr<Executor> &&flightExecutor);
+  ~LazyState() final;
 
   bool ready();
   void waitUntilReady();
@@ -85,7 +84,7 @@ private:
   CBPromise<columnDefinitions_t> colDefsPromise_;
   CBFuture<columnDefinitions_t> colDefsFuture_;
 
-  std::weak_ptr<LazyStateOss> weakSelf_;
+  std::weak_ptr<LazyState> weakSelf_;
 
   friend class GetColumnDefsCallback;
 };
@@ -100,12 +99,6 @@ class QueryTableImpl {
   typedef deephaven::openAPI::highlevel::fluent::impl::NumColImpl NumColImpl;
   typedef deephaven::openAPI::highlevel::fluent::impl::StrColImpl StrColImpl;
   typedef deephaven::openAPI::highlevel::fluent::impl::BooleanExpressionImpl BooleanExpressionImpl;
-  typedef deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::batch::batchTableRequest::SerializedTableOps SerializedTableOps;
-  typedef deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::joinDescriptor::JoinType JoinType;
-  typedef deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::ColumnDefinition ColumnDefinition;
-  typedef deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::InitialTableDefinition InitialTableDefinition;
-  typedef deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::TableHandle TableHandle;
-  typedef deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::TableSnapshot TableSnapshot;
   typedef deephaven::openAPI::utility::Executor Executor;
   typedef deephaven::openAPI::utility::Void Void;
   typedef io::deephaven::proto::backplane::grpc::ComboAggregateRequest ComboAggregateRequest;
@@ -115,12 +108,12 @@ class QueryTableImpl {
   template<typename ...Args>
   using SFCallback = deephaven::openAPI::utility::SFCallback<Args...>;
 public:
-  static std::shared_ptr<internal::LazyStateOss> createEtcCallback(const QueryScopeImpl *scope);
+  static std::shared_ptr<internal::LazyState> createEtcCallback(const QueryScopeImpl *scope);
 
   static std::shared_ptr<QueryTableImpl> createOss(std::shared_ptr<QueryScopeImpl> scope,
-      Ticket ticket, std::shared_ptr<internal::LazyStateOss> etcCallback);
+      Ticket ticket, std::shared_ptr<internal::LazyState> etcCallback);
   QueryTableImpl(Private, std::shared_ptr<QueryScopeImpl> scope,
-      Ticket ticket, std::shared_ptr<internal::LazyStateOss> lazyStateOss);
+      Ticket ticket, std::shared_ptr<internal::LazyState> lazyStateOss);
   ~QueryTableImpl();
 
   std::shared_ptr<QueryTableImpl> freeze();
@@ -161,11 +154,8 @@ public:
   std::shared_ptr<QueryTableImpl> ungroup(bool nullFill, std::vector<std::string> groupByColumns);
   std::shared_ptr<QueryTableImpl> merge(std::string keyColumn, std::vector<Ticket> sourceTickets);
 
-  std::shared_ptr<QueryTableImpl> internalJoin(JoinType joinType, const QueryTableImpl &rightSide,
-      std::vector<std::string> columnsToMatch, std::vector<std::string> columnsToAdd);
-
-  void getTableDataAsync(int64_t first, int64_t last, std::vector<std::string> columns,
-      std::shared_ptr<SFCallback<std::shared_ptr<TableSnapshot>>> callback);
+//  std::shared_ptr<QueryTableImpl> internalJoin(JoinType joinType, const QueryTableImpl &rightSide,
+//      std::vector<std::string> columnsToMatch, std::vector<std::string> columnsToAdd);
 
   void subscribeAllAsync(std::vector<std::string> columns,
       std::shared_ptr<SFCallback<>> callback);
@@ -201,7 +191,7 @@ private:
 
   std::shared_ptr<QueryScopeImpl> scope_;
   Ticket ticket_;
-  std::shared_ptr<internal::LazyStateOss> lazyStateOss_;
+  std::shared_ptr<internal::LazyState> lazyStateOss_;
   std::weak_ptr<QueryTableImpl> weakSelf_;
 };
 }  // namespace impl

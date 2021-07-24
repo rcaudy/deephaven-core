@@ -9,13 +9,7 @@ FIND_PACKAGE(Arrow REQUIRED PATHS /home/kosak/arrowlocal/usr/local/lib/cmake/arr
 FIND_PACKAGE(ArrowFlight REQUIRED PATHS /home/kosak/arrowlocal/usr/local/lib/cmake/arrow)
 
 set(SRC_FILES
-    core/deserializer.cc
-    core/deserializer.h
-    core/protocol_base_classes.cc
-    core/protocol_base_classes.h
-    core/serializer.cc
-    core/serializer.h
-    core/server.cc
+        core/server.cc
     core/server.h
 
     lowlevel/util/deserializer_adapter.h

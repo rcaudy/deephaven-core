@@ -9,7 +9,7 @@
 namespace deephaven {
 namespace openAPI {
 namespace utility {
-struct Void {};
+// struct Void {};
 
 template<typename Dest, typename Src>
 inline Dest bit_cast(const Src &item) {

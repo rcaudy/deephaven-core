@@ -6,7 +6,6 @@
 #include <limits>
 #include <string>
 #include <boost/utility/string_view.hpp>
-#include "lowlevel/generated/shared_objects.h"
 
 namespace deephaven {
 namespace openAPI {

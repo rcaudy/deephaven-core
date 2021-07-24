@@ -83,7 +83,6 @@ class Server {
 
   typedef deephaven::openAPI::utility::Executor Executor;
   typedef deephaven::openAPI::core::remoting::Request Request;
-  typedef deephaven::openAPI::utility::Void Void;
 
   template<typename T>
   using SFCallback = deephaven::openAPI::utility::SFCallback<T>;
