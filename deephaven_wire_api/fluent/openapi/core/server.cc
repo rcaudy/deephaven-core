@@ -8,7 +8,6 @@
 #include <arrow/array.h>
 #include <arrow/array/array_primitive.h>
 
-#include "core/protocol_base_classes.h"
 #include "utility/utility.h"
 #include "proto/session.pb.h"
 #include "proto/session.grpc.pb.h"
@@ -23,7 +22,6 @@ typedef Wicket Ticket;
 using deephaven::openAPI::utility::bit_cast;
 using deephaven::openAPI::utility::streamf;
 using deephaven::openAPI::utility::stringf;
-using deephaven::openAPI::core::remoting::Constants;
 
 namespace deephaven {
 namespace openAPI {

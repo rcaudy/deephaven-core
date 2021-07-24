@@ -3,7 +3,6 @@
 #include <future>
 #include <memory>
 #include "core/server.h"
-#include "lowlevel/generated/shared_objects.h"
 #include "lowlevel/util/server_callbacks.h"
 #include "utility/callbacks.h"
 #include "utility/executor.h"

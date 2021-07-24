@@ -4,7 +4,6 @@
 #include <future>
 #include <memory>
 #include "core/server.h"
-#include "lowlevel/generated/shared_objects.h"
 #include "lowlevel/dhworker.h"
 #include "utility/callbacks.h"
 #include "utility/executor.h"
@@ -150,8 +149,6 @@ public:
       std::shared_ptr<SFCallback<BindTableToVariableResponse>> callback);
 
   Ticket fetchTableAsync(std::string tableName, std::shared_ptr<EtcCallback> callback);
-
-  void getDataAsync(const Ticket &ticket, std::shared_ptr<getDataCallback_t> handler) const;
 
   void addTableSnapshotHandler(const std::shared_ptr<TableHandle> &tableHandle,
       const std::shared_ptr<snapshotCallback_t> &handler);

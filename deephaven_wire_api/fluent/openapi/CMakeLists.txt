@@ -12,10 +12,7 @@ set(SRC_FILES
         core/server.cc
     core/server.h
 
-    lowlevel/util/deserializer_adapter.h
-    lowlevel/util/serializer_adapter.h
-    lowlevel/util/server_callbacks.h
-    lowlevel/dhserver.cc
+        lowlevel/dhserver.cc
     lowlevel/dhserver.h
     lowlevel/dhworker.cc
     lowlevel/dhworker.h
