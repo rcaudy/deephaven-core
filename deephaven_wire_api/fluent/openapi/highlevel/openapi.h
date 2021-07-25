@@ -38,8 +38,6 @@ public:
 };
 
 class Client {
-  typedef deephaven::openAPI::utility::Void Void;
-
   template<typename... Args>
   using SFCallback = deephaven::openAPI::utility::SFCallback<Args...>;
 
@@ -75,70 +73,6 @@ private:
   std::shared_ptr<impl::WorkerSessionImpl> impl_;
 };
 
-class RowRangeSet {
-  typedef deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::RangeSet RangeSet;
-public:
-  explicit RowRangeSet(std::shared_ptr<RangeSet> rs);
-
-  const std::shared_ptr<RangeSet> &rs() const { return rs_; }
-  int64_t count() const { return count_; }
-
-private:
-  std::shared_ptr<RangeSet> rs_;
-  int64_t count_ = 0;
-};
-
-class TableData {
-  typedef deephaven::openAPI::highlevel::data::ColumnData ColumnData;
-  typedef deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::ColumnDefinition ColumnDefinition;
-  typedef deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::TableSnapshot TableSnapshot;
-
-public:
-  static TableData create(const std::vector<std::shared_ptr<ColumnDefinition>> &colDefs,
-      const TableSnapshot &snapshot);
-  TableData(const TableData &other) = delete;
-  TableData &operator=(const TableData &other) = delete;
-  TableData(TableData &&other) noexcept;
-  TableData &operator=(TableData &&other) noexcept;
-  ~TableData();
-
-  const std::vector<std::shared_ptr<ColumnData>> &columnData() const { return columnData_; }
-  int64_t tableSize() const { return tableSize_; }
-  const RowRangeSet &includedRows() const { return includedRows_; }
-
-private:
-  TableData(std::vector<std::shared_ptr<ColumnData>> &&columnData, int64_t tableSize,
-      RowRangeSet &&includedRows);
-
-  std::vector<std::shared_ptr<ColumnData>> columnData_;
-  int64_t tableSize_ = 0;
-  RowRangeSet includedRows_;
-};
-
-class DatabaseCatalogTable {
-public:
-  explicit DatabaseCatalogTable(std::shared_ptr<impl::DatabaseCatalogTableImpl> impl);
-  ~DatabaseCatalogTable();
-
-  const std::string &nameSpaceSet() const;
-  const std::string &nameSpace() const;
-  const std::string &tableName() const;
-
-private:
-  std::shared_ptr<impl::DatabaseCatalogTableImpl> impl_;
-};
-
-class DatabaseCatalog {
-public:
-  explicit DatabaseCatalog(std::vector<DatabaseCatalogTable> tables);
-  ~DatabaseCatalog();
-
-  const std::vector<DatabaseCatalogTable> &tables() const { return tables_; }
-
-private:
-  std::vector<DatabaseCatalogTable> tables_;
-};
-
 class NullableString {
 public:
   NullableString() = default;
@@ -157,7 +91,6 @@ private:
 };
 
 class QueryScope {
-  typedef deephaven::openAPI::highlevel::data::ColumnDataHolder ColumnDataHolder;
   typedef deephaven::openAPI::lowlevel::DHWorkerSession DHWorkerSession;
 
   template<typename T>
@@ -173,17 +106,10 @@ public:
       std::vector<std::string> columnTypes) const;
   QueryTable fetchTable(std::string tableName) const;
   QueryTable historicalTable(std::string nameSpace, std::string tableName) const;
-  QueryTable tempTable(const std::vector<ColumnDataHolder> &columnDataHolders) const;
+  // QueryTable tempTable(const std::vector<ColumnDataHolder> &columnDataHolders) const;
   QueryTable timeTable(int64_t startTimeNanos, int64_t periodNanos) const;
   QueryTable timeTable(std::chrono::system_clock::time_point startTime,
       std::chrono::system_clock::duration period) const;
-
-  DatabaseCatalog getDatabaseCatalog(bool systemNamespaces, bool userNamespaces,
-      NullableString namespaceRegex, NullableString tableRegex) const;
-
-  void getDatabaseCatalogAsync(bool systemNamespaces, bool userNamespaces,
-      NullableString namespaceRegex, NullableString tableRegex,
-      std::shared_ptr<SFCallback<DatabaseCatalog>> callback) const;
 
   QueryTable catalogTable() const;
 
@@ -384,7 +310,6 @@ class QueryTable {
   typedef deephaven::openAPI::highlevel::fluent::SelectColumn SelectColumn;
   typedef deephaven::openAPI::highlevel::fluent::SortPair SortPair;
   typedef deephaven::openAPI::highlevel::fluent::StrCol StrCol;
-  typedef deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::joinDescriptor::JoinType JoinType;
 
   template<typename... Args>
   using Callback = deephaven::openAPI::utility::Callback<Args...>;
@@ -531,65 +456,38 @@ public:
     return merge("", std::move(sources));
   }
 
-  QueryTable internalJoin(JoinType joinType, const QueryTable &rightSide,
-      std::vector<std::string> columnsToMatch, std::vector<std::string> columnsToAdd) const;
-  QueryTable internalJoin(JoinType joinType, const QueryTable &rightSide,
-      std::vector<MatchWithColumn> columnsToMatch, std::vector<SelectColumn> columnsToAdd) const;
-
-  QueryTable naturalJoin(const QueryTable &rightSide, std::vector<std::string> columnsToMatch,
-      std::vector<std::string> columnsToAdd) const;
-  QueryTable naturalJoin(const QueryTable &rightSide, std::vector<MatchWithColumn> columnsToMatch,
-      std::vector<SelectColumn> columnsToAdd) const;
-
-  QueryTable exactJoin(const QueryTable &rightSide, std::vector<std::string> columnsToMatch,
-      std::vector<std::string> columnsToAdd) const;
-  QueryTable exactJoin(const QueryTable &rightSide, std::vector<MatchWithColumn> columnsToMatch,
-      std::vector<SelectColumn> columnsToAdd) const;
-
-  QueryTable leftJoin(const QueryTable &rightSide, std::vector<std::string> columnsToMatch,
-      std::vector<std::string> columnsToAdd) const;
-  QueryTable leftJoin(const QueryTable &rightSide, std::vector<MatchWithColumn> columnsToMatch,
-      std::vector<SelectColumn> columnsToAdd) const;
-
-  QueryTable asOfJoin(const QueryTable &rightSide, std::vector<std::string> columnsToMatch,
-      std::vector<std::string> columnsToAdd) const;
-  QueryTable asOfJoin(const QueryTable &rightSide, std::vector<MatchWithColumn> columnsToMatch,
-      std::vector<SelectColumn> columnsToAdd) const;
-
-  QueryTable reverseAsOfJoin(const QueryTable &rightSide, std::vector<std::string> columnsToMatch,
-      std::vector<std::string> columnsToAdd) const;
-  QueryTable reverseAsOfJoin(const QueryTable &rightSide, std::vector<MatchWithColumn> columnsToMatch,
-      std::vector<SelectColumn> columnsToAdd) const;
+//  QueryTable internalJoin(JoinType joinType, const QueryTable &rightSide,
+//      std::vector<std::string> columnsToMatch, std::vector<std::string> columnsToAdd) const;
+//  QueryTable internalJoin(JoinType joinType, const QueryTable &rightSide,
+//      std::vector<MatchWithColumn> columnsToMatch, std::vector<SelectColumn> columnsToAdd) const;
+//
+//  QueryTable naturalJoin(const QueryTable &rightSide, std::vector<std::string> columnsToMatch,
+//      std::vector<std::string> columnsToAdd) const;
+//  QueryTable naturalJoin(const QueryTable &rightSide, std::vector<MatchWithColumn> columnsToMatch,
+//      std::vector<SelectColumn> columnsToAdd) const;
+//
+//  QueryTable exactJoin(const QueryTable &rightSide, std::vector<std::string> columnsToMatch,
+//      std::vector<std::string> columnsToAdd) const;
+//  QueryTable exactJoin(const QueryTable &rightSide, std::vector<MatchWithColumn> columnsToMatch,
+//      std::vector<SelectColumn> columnsToAdd) const;
+//
+//  QueryTable leftJoin(const QueryTable &rightSide, std::vector<std::string> columnsToMatch,
+//      std::vector<std::string> columnsToAdd) const;
+//  QueryTable leftJoin(const QueryTable &rightSide, std::vector<MatchWithColumn> columnsToMatch,
+//      std::vector<SelectColumn> columnsToAdd) const;
+//
+//  QueryTable asOfJoin(const QueryTable &rightSide, std::vector<std::string> columnsToMatch,
+//      std::vector<std::string> columnsToAdd) const;
+//  QueryTable asOfJoin(const QueryTable &rightSide, std::vector<MatchWithColumn> columnsToMatch,
+//      std::vector<SelectColumn> columnsToAdd) const;
+//
+//  QueryTable reverseAsOfJoin(const QueryTable &rightSide, std::vector<std::string> columnsToMatch,
+//      std::vector<std::string> columnsToAdd) const;
+//  QueryTable reverseAsOfJoin(const QueryTable &rightSide, std::vector<MatchWithColumn> columnsToMatch,
+//      std::vector<SelectColumn> columnsToAdd) const;
 
   void bindToVariable(std::string variable) const;
   void bindToVariableAsync(std::string variable, std::shared_ptr<SFCallback<>> callback) const;
-
-  TableData getTableData() const {
-    return getTableData(0, std::numeric_limits<int64_t>::max(), {});
-  }
-  TableData getTableData(const std::vector<std::string> &columns) const {
-    return getTableData(0, std::numeric_limits<int64_t>::max(), columns);
-  }
-  TableData getTableData(long first, long last) const {
-    return getTableData(first, last, {});
-  }
-  TableData getTableData(long first, long last, std::vector<std::string> columns) const;
-  void getTableDataAsync(long first, long last, std::vector<std::string> columns,
-      std::shared_ptr<SFCallback<TableData>> callback) const;
-
-  void subscribeAll(std::vector<std::string> columnSpecs) const;
-  template<typename ...Args>
-  void subscribeAll(Args &&... args) const;
-
-  void subscribeAllAsync(std::vector<std::string> columnSpecs,
-      std::shared_ptr<SFCallback<>> callback) const;
-  template<typename ...Args>
-  void subscribeAllAsync(std::shared_ptr<SFCallback<>> callback, Args &&... args) const;
-
-  void unsubscribe() const;
-  void unsubscribeAsync(std::shared_ptr<SFCallback<>> callback) const;
-
-  void getData(std::shared_ptr<getDataCallback_t> handler) const;
 
   std::vector<Column> getColumns() const;
 
@@ -611,7 +509,6 @@ private:
 };
 
 class WorkerOptions {
-  typedef deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::ide::ConsoleConfig ConsoleConfig;
 public:
   static WorkerOptions create(std::string profile);
 
@@ -619,10 +516,6 @@ public:
   WorkerOptions(WorkerOptions &&other) noexcept;
   WorkerOptions &operator=(WorkerOptions &&other) noexcept;
   ~WorkerOptions();
-
-  void addJvmArg(std::string arg);
-
-  const std::shared_ptr<ConsoleConfig> &config() const;
 
   const std::shared_ptr<impl::WorkerOptionsImpl> &impl() const { return impl_; }
 
@@ -952,24 +845,6 @@ QueryTable QueryTable::ungroup(bool nullFill, Args &&... args) const {
   };
   return ungroup(nullFill, std::move(groupByColumns));
 }
-
-template<typename ...Args>
-void QueryTable::subscribeAll(Args &&... args) const {
-  auto res = SFCallback<>::createForFuture();
-  subscribeAllAsync(std::move(res.first), std::forward<Args>(args)...);
-  (void)res.second.get();
-}
-
-template<typename ...Args>
-void QueryTable::subscribeAllAsync(std::shared_ptr<SFCallback<>> callback,
-    Args &&... args) const {
-  std::vector<std::string> columnSpecs = {
-      internal::ConvertToString::toString(std::forward<Args>(args))...
-  };
-  return subscribeAllAsync(std::move(columnSpecs), std::move(callback));
-}
-
-
 }  // namespace highlevel
 }  // namespace openAPI
 }  // namespace deephaven

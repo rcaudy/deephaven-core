@@ -22,6 +22,8 @@ typedef Wicket Ticket;
 using deephaven::openAPI::utility::bit_cast;
 using deephaven::openAPI::utility::streamf;
 using deephaven::openAPI::utility::stringf;
+using io::deephaven::proto::backplane::grpc::HandshakeRequest;
+using io::deephaven::proto::backplane::script::grpc::StartConsoleRequest;
 
 namespace deephaven {
 namespace openAPI {
@@ -93,6 +95,22 @@ void Server::setAuthentication(std::string metadataHeader, std::string sessionTo
   haveAuth_ = true;
   metadataHeader_ = std::move(metadataHeader);
   sessionToken_ = std::move(sessionToken);
+}
+
+void Server::newSessionAsync(std::shared_ptr<SFCallback<HandshakeResponse>> callback) {
+  HandshakeRequest req;
+  req.set_auth_protocol(1);
+  sendRpc(req, std::move(callback), sessionStub_.get(), &SessionService::Stub::AsyncNewSession,
+      false);
+}
+
+void Server::startConsoleAsync(std::shared_ptr<SFCallback<StartConsoleResponse>> callback) {
+  auto ticket = newTicket();
+  StartConsoleRequest req;
+  *req.mutable_result_id() = std::move(ticket);
+  req.set_session_type("groovy");
+  sendRpc(req, std::move(callback), consoleStub_.get(), &ConsoleService::Stub::AsyncStartConsole,
+      true);
 }
 
 std::pair<std::string, std::string> Server::makeBlessing() const {

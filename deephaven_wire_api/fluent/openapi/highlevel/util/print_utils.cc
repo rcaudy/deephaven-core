@@ -14,7 +14,6 @@ using deephaven::openAPI::utility::separatedList;
 using deephaven::openAPI::utility::SFCallback;
 using deephaven::openAPI::utility::streamf;
 using deephaven::openAPI::utility::stringf;
-using deephaven::openAPI::highlevel::data::ColumnData;
 using deephaven::openAPI::highlevel::fluent::Column;
 
 namespace deephaven {

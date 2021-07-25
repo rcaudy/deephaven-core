@@ -72,7 +72,9 @@ public:
 class Server {
   typedef arrow::flight::protocol::Wicket Ticket;
   typedef io::deephaven::proto::backplane::grpc::BarrageService BarrageService;
+  typedef io::deephaven::proto::backplane::grpc::HandshakeResponse HandshakeResponse;
   typedef io::deephaven::proto::backplane::grpc::SessionService SessionService;
+  typedef io::deephaven::proto::backplane::script::grpc::StartConsoleResponse StartConsoleResponse;
   typedef io::deephaven::proto::backplane::grpc::TableService TableService;
   typedef io::deephaven::proto::backplane::script::grpc::ConsoleService ConsoleService;
 
@@ -104,6 +106,9 @@ public:
   Ticket newTicket();
 
   void setAuthentication(std::string metadataHeader, std::string sessionToken);
+
+  void newSessionAsync(std::shared_ptr<SFCallback<HandshakeResponse>> callback);
+  void startConsoleAsync(std::shared_ptr<SFCallback<StartConsoleResponse>> callback);
 
   template<typename TReq, typename TResp, typename TStub, typename TPtrToMember>
   void sendRpc(const TReq &req, std::shared_ptr<SFCallback<TResp>> responseCallback,

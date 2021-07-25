@@ -13,8 +13,6 @@ namespace openAPI {
 namespace highlevel {
 namespace util {
 class PrintUtils {
-  typedef deephaven::openAPI::highlevel::data::ColumnData ColumnData;
-
 public:
   static void printTableData(std::ostream &s, const QueryTable &table, bool wantHeaders = true);
 

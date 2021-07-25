@@ -1,11 +1,7 @@
 #include "highlevel/impl/query_scope_impl.h"
 
 #include "highlevel/impl/query_table_impl.h"
-#include "lowlevel/generated/shared_objects.h"
 #include "utility/utility.h"
-
-using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::ColumnHolder;
-using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::TableHandle;
 
 namespace deephaven {
 namespace openAPI {
@@ -30,13 +26,13 @@ std::shared_ptr<QueryTableImpl> QueryScopeImpl::emptyTable(int64_t size,
   auto cb = QueryTableImpl::createEtcCallback(this);
   auto resultTicket = lowlevelSession_->emptyTableAsync(size, std::move(columnNames),
       std::move(columnTypes), cb);
-  return QueryTableImpl::createOss(self_.lock(), std::move(resultTicket), std::move(cb));
+  return QueryTableImpl::create(self_.lock(), std::move(resultTicket), std::move(cb));
 }
 
 std::shared_ptr<QueryTableImpl> QueryScopeImpl::fetchTable(std::string tableName) {
   auto cb = QueryTableImpl::createEtcCallback(this);
   auto resultTicket = lowlevelSession_->fetchTableAsync(std::move(tableName), cb);
-  return QueryTableImpl::createOss(self_.lock(), std::move(resultTicket), std::move(cb));
+  return QueryTableImpl::create(self_.lock(), std::move(resultTicket), std::move(cb));
 }
 
 std::shared_ptr<QueryTableImpl> QueryScopeImpl::historicalTable(std::string nameSpace,
@@ -50,45 +46,29 @@ std::shared_ptr<QueryTableImpl> QueryScopeImpl::historicalTable(std::string name
 //  return QueryTableImpl::create(self_.lock(), std::move(resultHandle), std::move(itdCallback));
 }
 
-std::shared_ptr<QueryTableImpl> QueryScopeImpl::tempTable(
-    const std::vector<ColumnDataHolder> &columnDataHolders) {
-  auto columnHolders = std::make_shared<std::vector<std::shared_ptr<ColumnHolder>>>();
-  columnHolders->reserve(columnDataHolders.size());
-  for (const auto &cdh : columnDataHolders) {
-    auto spName = std::make_shared<std::string>(cdh.name());
-    auto spType = std::make_shared<std::string>(cdh.columnData()->internal().getColumnType());
-    auto ch = ColumnHolder::create(std::move(spName), std::move(spType),
-        cdh.columnData()->internal().getLowLevelColumnData(), cdh.grouped());
-    columnHolders->push_back(std::move(ch));
-  }
-  throw std::runtime_error("SAD100");
-//  auto itdCallback = QueryTableImpl::createItdCallback(lowlevelSession_->executor());
-//  auto resultHandle = lowlevelSession_->tempTableAsync(std::move(columnHolders), itdCallback);
-//  return QueryTableImpl::create(self_.lock(), std::move(resultHandle), std::move(itdCallback));
-}
+//std::shared_ptr<QueryTableImpl> QueryScopeImpl::tempTable(
+//    const std::vector<ColumnDataHolder> &columnDataHolders) {
+//  auto columnHolders = std::make_shared<std::vector<std::shared_ptr<ColumnHolder>>>();
+//  columnHolders->reserve(columnDataHolders.size());
+//  for (const auto &cdh : columnDataHolders) {
+//    auto spName = std::make_shared<std::string>(cdh.name());
+//    auto spType = std::make_shared<std::string>(cdh.columnData()->internal().getColumnType());
+//    auto ch = ColumnHolder::create(std::move(spName), std::move(spType),
+//        cdh.columnData()->internal().getLowLevelColumnData(), cdh.grouped());
+//    columnHolders->push_back(std::move(ch));
+//  }
+//  throw std::runtime_error("SAD100");
+////  auto itdCallback = QueryTableImpl::createItdCallback(lowlevelSession_->executor());
+////  auto resultHandle = lowlevelSession_->tempTableAsync(std::move(columnHolders), itdCallback);
+////  return QueryTableImpl::create(self_.lock(), std::move(resultHandle), std::move(itdCallback));
+//}
 
 std::shared_ptr<QueryTableImpl> QueryScopeImpl::timeTable(int64_t startTimeNanos,
     int64_t periodNanos) {
   auto cb = QueryTableImpl::createEtcCallback(this);
   auto resultTicket = lowlevelSession_->timeTableAsync(startTimeNanos, periodNanos, cb);
-  return QueryTableImpl::createOss(self_.lock(), std::move(resultTicket), std::move(cb));
+  return QueryTableImpl::create(self_.lock(), std::move(resultTicket), std::move(cb));
 }
-
-std::shared_ptr<QueryTableImpl> QueryScopeImpl::catalogTable() {
-  throw std::runtime_error("SAD101");
-//  auto itdCallback = QueryTableImpl::createItdCallback(lowlevelSession_->executor());
-//  auto resultHandle = lowlevelSession_->catalogTableAsync(itdCallback);
-//  return QueryTableImpl::create(self_.lock(), std::move(resultHandle), std::move(itdCallback));
-}
-
-std::shared_ptr<DatabaseCatalogTableImpl> DatabaseCatalogTableImpl::create(
-    std::shared_ptr<catalogTable_t> catalog) {
-  return std::make_shared<DatabaseCatalogTableImpl>(Private(), std::move(catalog));
-}
-
-DatabaseCatalogTableImpl::DatabaseCatalogTableImpl(Private,
-    std::shared_ptr<catalogTable_t> catalog) : catalog_(std::move(catalog)) {}
-DatabaseCatalogTableImpl::~DatabaseCatalogTableImpl() = default;
 }  // namespace impl
 }  // namespace highlevel
 }  // namespace openAPI

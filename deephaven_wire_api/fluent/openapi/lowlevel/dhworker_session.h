@@ -14,12 +14,6 @@
 namespace deephaven {
 namespace openAPI {
 namespace lowlevel {
-class DHServer;
-
-namespace internal {
-class SnapshotAndDeltaUpdateHandler;
-}  // namespace internal
-
 class DHWorkerSession {
   struct Private {};
   typedef arrow::flight::protocol::Wicket Ticket;

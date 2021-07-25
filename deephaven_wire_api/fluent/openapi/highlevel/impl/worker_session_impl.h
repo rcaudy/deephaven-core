@@ -12,20 +12,12 @@ namespace highlevel {
 namespace impl {
 class QueryScopeImpl;
 class WorkerOptionsImpl {
-  typedef deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::ide::ConsoleConfig ConsoleConfig;
   struct Private {
   };
 public:
   static std::shared_ptr<WorkerOptionsImpl> create(std::string profile);
-  WorkerOptionsImpl(Private, std::shared_ptr<ConsoleConfig> &&config);
+  WorkerOptionsImpl(Private);
   ~WorkerOptionsImpl();
-
-  void addJvmArg(std::string arg);
-
-  const std::shared_ptr<ConsoleConfig> &config() const { return config_; }
-
-private:
-  std::shared_ptr<ConsoleConfig> config_;
 };
 
 class WorkerSessionImpl {

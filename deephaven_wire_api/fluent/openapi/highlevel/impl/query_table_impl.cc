@@ -14,9 +14,7 @@
 #include <arrow/table.h>
 #include <boost/variant.hpp>
 #include "utility/callbacks.h"
-#include "lowlevel/generated/shared_objects.h"
 #include "lowlevel/dhworker_session.h"
-#include "lowlevel/util/protocol_container_classes.h"
 #include "highlevel/impl/boolean_expression_impl.h"
 #include "highlevel/impl/columns_impl.h"
 #include "highlevel/impl/query_scope_impl.h"
@@ -30,34 +28,7 @@ using io::deephaven::proto::backplane::grpc::ComboAggregateRequest;
 using io::deephaven::proto::backplane::grpc::SortDescriptor;
 using io::deephaven::proto::backplane::grpc::TableReference;
 using io::deephaven::proto::backplane::script::grpc::BindTableToVariableResponse;
-using deephaven::openAPI::lowlevel::DHWorker;
-using deephaven::openAPI::lowlevel::DHWorkerAPIListenerDefault;
 using deephaven::openAPI::lowlevel::DHWorkerSession;
-using deephaven::openAPI::lowlevel::remoting::generated::java::util::BitSet;
-using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::batch::aggregates::ComboAggregateDescriptor;
-using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::batch::aggregates::PercentileDescriptor;
-using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::ColumnDefinition;
-using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::CustomColumnDescriptor;
-using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::DeltaUpdates;
-using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::HandleMapping;
-using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::HeadOrTailDescriptor;
-using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::InitialTableDefinition;
-using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::JoinDescriptor;
-using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::Range;
-using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::RangeSet;
-using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::TableHandle;
-using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::TableSnapshot;
-using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::worker::Batch;
-using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::worker::ComboAggregate;
-using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::worker::ConstructSnapshotQuery;
-using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::worker::HeadBy;
-using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::worker::Join;
-using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::worker::Select;
-using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::worker::Subscribe;
-using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::worker::TailBy;
-using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::worker::Snapshot;
-using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::worker::Unsubscribe;
-using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::worker::Update;
 using deephaven::openAPI::highlevel::impl::ApplyAggregatesOperation;
 using deephaven::openAPI::highlevel::fluent::SortDirection;
 using deephaven::openAPI::highlevel::fluent::impl::ColumnImpl;
@@ -71,25 +42,19 @@ using deephaven::openAPI::utility::separatedList;
 using deephaven::openAPI::utility::SFCallback;
 using deephaven::openAPI::utility::streamf;
 using deephaven::openAPI::utility::stringf;
-using deephaven::openAPI::utility::Void;
 
 namespace deephaven {
 namespace openAPI {
 namespace highlevel {
 namespace impl {
 
-namespace {
-std::shared_ptr<BitSet> getColumnsBitSet(const std::vector<std::string> &desiredColumns,
-    const InitialTableDefinition &itd);
-}  // namespace
-
-std::shared_ptr<internal::LazyStateOss> QueryTableImpl::createEtcCallback(const QueryScopeImpl *scope) {
+std::shared_ptr<internal::LazyState> QueryTableImpl::createEtcCallback(const QueryScopeImpl *scope) {
   const auto *lls = scope->lowLevelSession().get();
-  return internal::LazyStateOss::create(lls->server(), lls->flightExecutor());
+  return internal::LazyState::create(lls->server(), lls->flightExecutor());
 }
 
-std::shared_ptr<QueryTableImpl> QueryTableImpl::createOss(std::shared_ptr<QueryScopeImpl> scope,
-    Ticket ticket, std::shared_ptr<internal::LazyStateOss> etcCallback) {
+std::shared_ptr<QueryTableImpl> QueryTableImpl::create(std::shared_ptr<QueryScopeImpl> scope,
+    Ticket ticket, std::shared_ptr<internal::LazyState> etcCallback) {
   auto result = std::make_shared<QueryTableImpl>(Private(), std::move(scope), std::move(ticket),
       std::move(etcCallback));
   result->weakSelf_ = result;
@@ -97,7 +62,7 @@ std::shared_ptr<QueryTableImpl> QueryTableImpl::createOss(std::shared_ptr<QueryS
 }
 
 QueryTableImpl::QueryTableImpl(Private, std::shared_ptr<QueryScopeImpl> scope,
-    Ticket ticket, std::shared_ptr<internal::LazyStateOss> lazyStateOss) :
+    Ticket ticket, std::shared_ptr<internal::LazyState> lazyStateOss) :
     scope_(std::move(scope)), ticket_(std::move(ticket)), lazyStateOss_(std::move(lazyStateOss)) {
 }
 
@@ -126,37 +91,37 @@ std::shared_ptr<QueryTableImpl> QueryTableImpl::snapshot(
 std::shared_ptr<QueryTableImpl> QueryTableImpl::select(std::vector<std::string> columnSpecs) {
   auto cb = QueryTableImpl::createEtcCallback(scope_.get());
   auto resultTicket = scope_->lowLevelSession()->selectAsync(ticket_, std::move(columnSpecs), cb);
-  return QueryTableImpl::createOss(scope_, std::move(resultTicket), std::move(cb));
+  return QueryTableImpl::create(scope_, std::move(resultTicket), std::move(cb));
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::update(std::vector<std::string> columnSpecs) {
   auto cb = QueryTableImpl::createEtcCallback(scope_.get());
   auto resultTicket = scope_->lowLevelSession()->updateAsync(ticket_, std::move(columnSpecs), cb);
-  return QueryTableImpl::createOss(scope_, std::move(resultTicket), std::move(cb));
+  return QueryTableImpl::create(scope_, std::move(resultTicket), std::move(cb));
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::view(std::vector<std::string> columnSpecs) {
   auto cb = QueryTableImpl::createEtcCallback(scope_.get());
   auto resultTicket = scope_->lowLevelSession()->viewAsync(ticket_, std::move(columnSpecs), cb);
-  return QueryTableImpl::createOss(scope_, std::move(resultTicket), std::move(cb));
+  return QueryTableImpl::create(scope_, std::move(resultTicket), std::move(cb));
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::dropColumns(std::vector<std::string> columnSpecs) {
   auto cb = QueryTableImpl::createEtcCallback(scope_.get());
   auto resultTicket = scope_->lowLevelSession()->dropColumnsAsync(ticket_, std::move(columnSpecs), cb);
-  return QueryTableImpl::createOss(scope_, std::move(resultTicket), std::move(cb));
+  return QueryTableImpl::create(scope_, std::move(resultTicket), std::move(cb));
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::updateView(std::vector<std::string> columnSpecs) {
   auto cb = QueryTableImpl::createEtcCallback(scope_.get());
   auto resultTicket = scope_->lowLevelSession()->updateViewAsync(ticket_, std::move(columnSpecs), cb);
-  return QueryTableImpl::createOss(scope_, std::move(resultTicket), std::move(cb));
+  return QueryTableImpl::create(scope_, std::move(resultTicket), std::move(cb));
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::where(std::string condition) {
   auto cb = QueryTableImpl::createEtcCallback(scope_.get());
   auto resultTicket = scope_->lowLevelSession()->whereAsync(ticket_, std::move(condition), cb);
-  return QueryTableImpl::createOss(scope_, std::move(resultTicket), std::move(cb));
+  return QueryTableImpl::create(scope_, std::move(resultTicket), std::move(cb));
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::sort(std::vector<SortPair> sortPairs) {
@@ -174,7 +139,7 @@ std::shared_ptr<QueryTableImpl> QueryTableImpl::sort(std::vector<SortPair> sortP
     sortDescriptors.push_back(std::move(sd));
   }
   auto resultTicket = scope_->lowLevelSession()->sortAsync(ticket_, std::move(sortDescriptors), cb);
-  return QueryTableImpl::createOss(scope_, std::move(resultTicket), std::move(cb));
+  return QueryTableImpl::create(scope_, std::move(resultTicket), std::move(cb));
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::preemptive(int32_t sampleIntervalMs) {
@@ -194,7 +159,7 @@ std::shared_ptr<QueryTableImpl> QueryTableImpl::defaultAggregateByDescriptor(
   auto cb = QueryTableImpl::createEtcCallback(scope_.get());
   auto resultTicket = scope_->lowLevelSession()->comboAggregateDescriptorAsync(ticket_,
       std::move(descriptors), std::move(columnSpecs), false, cb);
-  return QueryTableImpl::createOss(scope_, std::move(resultTicket), std::move(cb));
+  return QueryTableImpl::create(scope_, std::move(resultTicket), std::move(cb));
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::defaultAggregateByType(
@@ -214,7 +179,7 @@ std::shared_ptr<QueryTableImpl> QueryTableImpl::by(
   auto cb = QueryTableImpl::createEtcCallback(scope_.get());
   auto resultTicket = scope_->lowLevelSession()->comboAggregateDescriptorAsync(ticket_,
       std::move(descriptors), std::move(groupByColumns), false, cb);
-  return QueryTableImpl::createOss(scope_, std::move(resultTicket), std::move(cb));
+  return QueryTableImpl::create(scope_, std::move(resultTicket), std::move(cb));
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::minBy(std::vector<std::string> columnSpecs) {
@@ -302,7 +267,7 @@ std::shared_ptr<QueryTableImpl> QueryTableImpl::headOrTailByHelper(int64_t n, bo
   auto cb = QueryTableImpl::createEtcCallback(scope_.get());
   auto resultTicket = scope_->lowLevelSession()->headOrTailByAsync(ticket_, head, n,
       std::move(columnSpecs), cb);
-  return QueryTableImpl::createOss(scope_, std::move(resultTicket), std::move(cb));
+  return QueryTableImpl::create(scope_, std::move(resultTicket), std::move(cb));
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::tail(int64_t n) {
@@ -316,7 +281,7 @@ std::shared_ptr<QueryTableImpl> QueryTableImpl::head(int64_t n) {
 std::shared_ptr<QueryTableImpl> QueryTableImpl::headOrTailHelper(bool head, int64_t n) {
   auto cb = QueryTableImpl::createEtcCallback(scope_.get());
   auto resultTicket = scope_->lowLevelSession()->headOrTailAsync(ticket_, head, n, cb);
-  return QueryTableImpl::createOss(scope_, std::move(resultTicket), std::move(cb));
+  return QueryTableImpl::create(scope_, std::move(resultTicket), std::move(cb));
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::ungroup(bool nullFill,
@@ -324,7 +289,7 @@ std::shared_ptr<QueryTableImpl> QueryTableImpl::ungroup(bool nullFill,
   auto cb = QueryTableImpl::createEtcCallback(scope_.get());
   auto resultTicket = scope_->lowLevelSession()->ungroupAsync(ticket_, nullFill, std::move(groupByColumns),
       cb);
-  return QueryTableImpl::createOss(scope_, std::move(resultTicket), std::move(cb));
+  return QueryTableImpl::create(scope_, std::move(resultTicket), std::move(cb));
 }
 
 std::shared_ptr<QueryTableImpl> QueryTableImpl::merge(std::string keyColumn,
@@ -332,113 +297,19 @@ std::shared_ptr<QueryTableImpl> QueryTableImpl::merge(std::string keyColumn,
   auto cb = QueryTableImpl::createEtcCallback(scope_.get());
   auto resultTicket = scope_->lowLevelSession()->mergeAsync(std::move(sourceTickets),
       std::move(keyColumn), cb);
-  return QueryTableImpl::createOss(scope_, std::move(resultTicket), std::move(cb));
+  return QueryTableImpl::create(scope_, std::move(resultTicket), std::move(cb));
 }
 
-std::shared_ptr<QueryTableImpl> QueryTableImpl::internalJoin(JoinType joinType,
-    const QueryTableImpl &rightSide, std::vector<std::string> columnsToMatch,
-    std::vector<std::string> columnsToAdd) {
-  std::cerr << "TODO(kosak): why am I calling this method `InternalJoin`\n";
-  auto cb = QueryTableImpl::createEtcCallback(scope_.get());
-  auto resultTicket = scope_->lowLevelSession()->internalJoinAsync(joinType, ticket_,
-      rightSide.ticket(), std::move(columnsToMatch), std::move(columnsToAdd), cb);
-  return QueryTableImpl::createOss(scope_, std::move(resultTicket), std::move(cb));
-}
+//std::shared_ptr<QueryTableImpl> QueryTableImpl::internalJoin(JoinType joinType,
+//    const QueryTableImpl &rightSide, std::vector<std::string> columnsToMatch,
+//    std::vector<std::string> columnsToAdd) {
+//  std::cerr << "TODO(kosak): why am I calling this method `InternalJoin`\n";
+//  auto cb = QueryTableImpl::createEtcCallback(scope_.get());
+//  auto resultTicket = scope_->lowLevelSession()->internalJoinAsync(joinType, ticket_,
+//      rightSide.ticket(), std::move(columnsToMatch), std::move(columnsToAdd), cb);
+//  return QueryTableImpl::createOss(scope_, std::move(resultTicket), std::move(cb));
+//}
 
-void QueryTableImpl::getTableDataAsync(int64_t first, int64_t last,
-    std::vector<std::string> columns,
-    std::shared_ptr<SFCallback<std::shared_ptr<TableSnapshot>>> callback) {
-  throw std::runtime_error("SAD211");
-//  auto self = weakSelf_.lock();
-//
-//  auto rangeVec = std::make_shared<std::vector<std::shared_ptr<Range>>>();
-//  rangeVec->reserve(1);
-//  rangeVec->push_back(Range::create(first, last));
-//  auto rows = RangeSet::create(std::move(rangeVec));
-//
-//  auto colSet = std::set<std::string>(std::make_move_iterator(columns.begin()),
-//      std::make_move_iterator(columns.end()));
-//
-//  struct adapter_t final : public SFCallback<std::shared_ptr<InitialTableDefinition>> {
-//    adapter_t(std::shared_ptr<QueryTableImpl> &&outer, std::shared_ptr<RangeSet> &&rows,
-//        std::set<std::string> &&colSet, std::shared_ptr<SFCallback<std::shared_ptr<TableSnapshot>>> &&callback) :
-//        outer_(std::move(outer)), rows_(std::move(rows)), colSet_(std::move(colSet)), callback_(std::move(callback)) {}
-//
-//    void onSuccess(std::shared_ptr<InitialTableDefinition> item) final {
-//      const auto &itd = *item;
-//
-//      std::vector<int32_t> indices;
-//      const auto &cds = *itd.definition()->columns();
-//      for (size_t i = 0; i < cds.size(); ++i) {
-//        if (colSet_.find(*cds[i]->name()) != colSet_.end()) {
-//          indices.push_back(i);
-//        }
-//      }
-//      auto cols = BitSet::create(std::move(indices));
-//      outer_->scope_->lowLevelSession()->getTableDataAsync(outer_->tableHandle_, std::move(rows_),
-//          std::move(cols), std::move(callback_));
-//    }
-//
-//    void onFailure(std::exception_ptr ep) final {
-//      callback_->onFailure(std::move(ep));
-//    }
-//
-//    std::shared_ptr<QueryTableImpl> outer_;
-//    std::shared_ptr<RangeSet> rows_;
-//    std::set<std::string> colSet_;
-//    std::shared_ptr<SFCallback<std::shared_ptr<TableSnapshot>>> callback_;
-//  };
-//
-//  auto adapter = std::make_shared<adapter_t>(weakSelf_.lock(), std::move(rows), std::move(colSet),
-//      std::move(callback));
-//  lazyState_->invoke(std::move(adapter));
-}
-
-void QueryTableImpl::subscribeAllAsync(std::vector<std::string> columns,
-    std::shared_ptr<SFCallback<>> callback) {
-  auto self = weakSelf_.lock();
-  auto spColumns = std::make_shared<std::vector<std::string>>(std::move(columns));
-
-  auto outer = [self, spColumns, callback](
-      boost::variant<std::shared_ptr<InitialTableDefinition>, std::exception_ptr> v) mutable {
-    auto *ep = boost::get<std::exception_ptr>(&v);
-    if (ep != nullptr) {
-      callback->onFailure(std::move(*ep));
-      return;
-    }
-    const auto &itd = *boost::get<std::shared_ptr<InitialTableDefinition>>(v);
-
-    if (!itd.isPreemptive()) {
-      callback->onFailure(std::make_exception_ptr(std::runtime_error(
-          "Cannot subscribe to non-preemptive table (call .preemptive() first).")));
-      return;
-    }
-
-    auto colBitset = getColumnsBitSet(*spColumns, itd);
-//    streamf(std::cerr, "Sending server a subscribe nubbin of %o %o\n",
-//        self->tableHandle_->custom().serverId(), self->tableHandle_->custom().clientId());
-//    self->scope_->lowLevelSession()->subscribeAllAsync(self->tableHandle_, std::move(colBitset),
-//        false, std::move(callback));
-  };
-
-  // lazyState_->invokeCallable(std::move(outer));
-}
-
-void QueryTableImpl::unsubscribeAsync(std::shared_ptr<SFCallback<>> callback) {
-//  scope_->lowLevelSession()->unsubscribeAsync(tableHandle_, std::move(callback));
-}
-
-void QueryTableImpl::getData(std::shared_ptr<QueryTable::getDataCallback_t> handler) const {
-  struct ZamboniHandler final : public Callback<const Ticket &, const char *> {
-    ~ZamboniHandler() final = default;
-
-    void invoke(const Ticket &, const char *args) final {
-      std::cerr << "IT'S THE ZAMBONIHANDLER\n";
-    }
-  };
-  auto zamboniHandler = std::make_shared<ZamboniHandler>();
-  scope_->lowLevelSession()->getDataAsync(ticket_, std::move(zamboniHandler));
-}
 
 std::vector<std::shared_ptr<ColumnImpl>> QueryTableImpl::getColumnImpls() {
   const auto *colDefs = lazyStateOss_->getColumnDefinitions();

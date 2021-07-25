@@ -44,9 +44,8 @@ class LazyState final : public deephaven::openAPI::utility::SFCallback<io::deeph
 
   typedef arrow::flight::protocol::Wicket Ticket;
   typedef io::deephaven::proto::backplane::grpc::ExportedTableCreationResponse ExportedTableCreationResponse;
-  typedef deephaven::openAPI::core::remoting::Server Server;
+  typedef deephaven::openAPI::core::Server Server;
   typedef deephaven::openAPI::utility::Executor Executor;
-  typedef deephaven::openAPI::utility::Void Void;
 
   template<typename T>
   using SFCallback = deephaven::openAPI::utility::SFCallback<T>;
@@ -100,17 +99,14 @@ class QueryTableImpl {
   typedef deephaven::openAPI::highlevel::fluent::impl::StrColImpl StrColImpl;
   typedef deephaven::openAPI::highlevel::fluent::impl::BooleanExpressionImpl BooleanExpressionImpl;
   typedef deephaven::openAPI::utility::Executor Executor;
-  typedef deephaven::openAPI::utility::Void Void;
   typedef io::deephaven::proto::backplane::grpc::ComboAggregateRequest ComboAggregateRequest;
 
-  template<typename... Args>
-  using Callback = deephaven::openAPI::utility::Callback<Args...>;
   template<typename ...Args>
   using SFCallback = deephaven::openAPI::utility::SFCallback<Args...>;
 public:
   static std::shared_ptr<internal::LazyState> createEtcCallback(const QueryScopeImpl *scope);
 
-  static std::shared_ptr<QueryTableImpl> createOss(std::shared_ptr<QueryScopeImpl> scope,
+  static std::shared_ptr<QueryTableImpl> create(std::shared_ptr<QueryScopeImpl> scope,
       Ticket ticket, std::shared_ptr<internal::LazyState> etcCallback);
   QueryTableImpl(Private, std::shared_ptr<QueryScopeImpl> scope,
       Ticket ticket, std::shared_ptr<internal::LazyState> lazyStateOss);

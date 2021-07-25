@@ -4,20 +4,12 @@
 #include "utility/utility.h"
 #include "utility/callbacks.h"
 #include "highlevel/impl/worker_session_impl.h"
-#include "lowlevel/dhserver.h"
-#include "lowlevel/dhworker.h"
 #include "lowlevel/dhworker_session.h"
 
 using io::deephaven::proto::backplane::grpc::HandshakeResponse;
 using io::deephaven::proto::backplane::script::grpc::StartConsoleResponse;
-using deephaven::openAPI::core::remoting::Server;
-using deephaven::openAPI::lowlevel::DHServer;
-using deephaven::openAPI::lowlevel::DHWorker;
+using deephaven::openAPI::core::Server;
 using deephaven::openAPI::lowlevel::DHWorkerSession;
-using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::cmd::ConnectionSuccess;
-using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::ConnectToken;
-using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::RefreshToken;
-using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::ide::ConsoleAddress;
 using deephaven::openAPI::utility::Executor;
 using deephaven::openAPI::utility::SFCallback;
 using deephaven::openAPI::utility::stringf;
@@ -31,7 +23,7 @@ namespace {
 // const char remoteQueryProcessorName[] = "RemoteQueryProcessor";
 }  // namespace
 
-std::shared_ptr<ClientImpl> ClientImpl::create(std::shared_ptr<DHServer> server,
+std::shared_ptr<ClientImpl> ClientImpl::create(std::shared_ptr<Server> server,
     std::shared_ptr<Executor> executor, std::shared_ptr<Executor> flightExecutor) {
   auto result = std::make_shared<ClientImpl>(Private(), std::move(server), std::move(executor),
       std::move(flightExecutor));
@@ -39,9 +31,9 @@ std::shared_ptr<ClientImpl> ClientImpl::create(std::shared_ptr<DHServer> server,
   return result;
 }
 
-ClientImpl::ClientImpl(Private, std::shared_ptr<DHServer> &&dhServer,
+ClientImpl::ClientImpl(Private, std::shared_ptr<Server> &&server,
     std::shared_ptr<Executor> &&executor, std::shared_ptr<Executor> &&flightExecutor) :
-    dhServer_(std::move(dhServer)), executor_(std::move(executor)),
+    server_(std::move(server)), executor_(std::move(executor)),
     flightExecutor_(std::move(flightExecutor)), loginState_(LoginState::NotLoggedIn) {}
 ClientImpl::~ClientImpl() = default;
 
@@ -61,10 +53,10 @@ class Everything final : public SFCallback<HandshakeResponse>, public SFCallback
 
 public:
   static std::shared_ptr<Everything> create(std::shared_ptr<SFCallback<std::shared_ptr<WorkerSessionImpl>>> outerCb,
-      std::shared_ptr<DHServer> dhServer, std::shared_ptr<Executor> executor,
+      std::shared_ptr<Server> server, std::shared_ptr<Executor> executor,
       std::shared_ptr<Executor> flightExecutor);
   Everything(Private, std::shared_ptr<SFCallback<std::shared_ptr<WorkerSessionImpl>>> &&outerCb,
-      std::shared_ptr<DHServer> &&dhServer, std::shared_ptr<Executor> &&executor,
+      std::shared_ptr<Server> &&server, std::shared_ptr<Executor> &&executor,
       std::shared_ptr<Executor> &&flightExecutor);
   ~Everything() final;
   void onSuccess(HandshakeResponse item) final;
@@ -73,7 +65,7 @@ public:
 
 private:
   std::shared_ptr<SFCallback<std::shared_ptr<WorkerSessionImpl>>> outerCb_;
-  std::shared_ptr<DHServer> dhServer_;
+  std::shared_ptr<Server> server_;
   std::shared_ptr<Executor> executor_;
   std::shared_ptr<Executor> flightExecutor_;
   std::weak_ptr<Everything> weakSelf_;
@@ -86,8 +78,8 @@ void ClientImpl::startWorkerAsync(const std::shared_ptr<WorkerOptionsImpl> &opti
     return;
   }
 
-  auto cb = Everything::create(std::move(callback), dhServer_, executor_, flightExecutor_);
-  dhServer_->newSessionAsync(std::move(cb));
+  auto cb = Everything::create(std::move(callback), server_, executor_, flightExecutor_);
+  server_->newSessionAsync(std::move(cb));
 }
 
 bool ClientImpl::assertLoggedInState(LoginState expected, FailureCallback *onFailure) {
@@ -104,9 +96,9 @@ bool ClientImpl::assertLoggedInState(LoginState expected, FailureCallback *onFai
 namespace {
 std::shared_ptr<Everything> Everything::create(
     std::shared_ptr<SFCallback<std::shared_ptr<WorkerSessionImpl>>> outerCb,
-    std::shared_ptr<DHServer> dhServer, std::shared_ptr<Executor> executor,
+    std::shared_ptr<Server> server, std::shared_ptr<Executor> executor,
     std::shared_ptr<Executor> flightExecutor) {
-  auto result = std::make_shared<Everything>(Private(), std::move(outerCb), std::move(dhServer),
+  auto result = std::make_shared<Everything>(Private(), std::move(outerCb), std::move(server),
       std::move(executor), std::move(flightExecutor));
   result->weakSelf_ = result;
   return result;
@@ -114,10 +106,10 @@ std::shared_ptr<Everything> Everything::create(
 
 Everything::Everything(Private,
     std::shared_ptr<SFCallback<std::shared_ptr<WorkerSessionImpl>>> &&outerCb,
-    std::shared_ptr<DHServer> &&dhServer,
+    std::shared_ptr<Server> &&server,
     std::shared_ptr<Executor> &&executor,
     std::shared_ptr<Executor> &&flightExecutor) :
-    outerCb_(std::move(outerCb)), dhServer_(std::move(dhServer)), executor_(std::move(executor)),
+    outerCb_(std::move(outerCb)), server_(std::move(server)), executor_(std::move(executor)),
     flightExecutor_(std::move(flightExecutor)) {}
 
 Everything::~Everything() = default;
@@ -127,14 +119,14 @@ void Everything::onSuccess(HandshakeResponse item) {
   std::string st = std::move(*item.mutable_session_token());
   std::transform(mh.begin(), mh.end(), mh.begin(), ::tolower);
 
-  dhServer_->server()->setAuthentication(std::move(mh), std::move(st));
-  dhServer_->startConsoleAsync(weakSelf_.lock());
+  server_->setAuthentication(std::move(mh), std::move(st));
+  server_->startConsoleAsync(weakSelf_.lock());
 }
 
 void Everything::onSuccess(StartConsoleResponse item) {
   streamf(std::cerr, "WE HAVE A CONSOLE\n");
   auto lls = DHWorkerSession::create(std::move(*item.mutable_result_id()),
-      dhServer_->server(), executor_, flightExecutor_);
+      server_, executor_, flightExecutor_);
   auto ws = WorkerSessionImpl::create(std::move(lls), std::move(executor_));
   outerCb_->onSuccess(std::move(ws));
 }

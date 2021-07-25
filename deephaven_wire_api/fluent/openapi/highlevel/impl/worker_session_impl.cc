@@ -13,37 +13,12 @@ std::shared_ptr<WorkerOptionsImpl> WorkerOptionsImpl::create(std::string profile
   if (profile != "Default") {
     throw std::runtime_error(stringf(R"(Profile "%o" unrecognized)", profile));
   }
-
-  auto spEmpty = std::make_shared<std::string>();
-  auto spProfile = std::make_shared<std::string>(std::move(profile));
-  // TODO(kosak)
-  auto spDesc = std::make_shared<std::string>("Query Description Here");
-
-  auto consoleConfig = ConsoleConfig::create(
-      spEmpty,
-      0,
-      std::move(spProfile),
-      nullptr,
-      2048,
-      std::move(spDesc),
-      false,
-      false,
-      false,
-      nullptr,
-      nullptr
-  );
-  return std::make_shared<WorkerOptionsImpl>(Private(), std::move(consoleConfig));
+  return std::make_shared<WorkerOptionsImpl>(Private());
 }
 
-WorkerOptionsImpl::WorkerOptionsImpl(Private, std::shared_ptr<ConsoleConfig> &&config) :
-    config_(std::move(config)) {
+WorkerOptionsImpl::WorkerOptionsImpl(Private) {
 }
 WorkerOptionsImpl::~WorkerOptionsImpl() = default;
-
-void WorkerOptionsImpl::addJvmArg(std::string arg) {
-  auto spArg = std::make_shared<std::string>(std::move(arg));
-  config_->jvmArgs()->push_back(std::move(spArg));
-}
 
 std::shared_ptr<WorkerSessionImpl> WorkerSessionImpl::create(
     std::shared_ptr<DHWorkerSession> lowlevelSession, std::shared_ptr<Executor> executor) {

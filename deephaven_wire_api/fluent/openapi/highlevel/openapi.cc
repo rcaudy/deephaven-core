@@ -9,8 +9,6 @@
 #include "highlevel/impl/query_table_impl.h"
 #include "highlevel/impl/worker_session_impl.h"
 #include "highlevel/columns.h"
-#include "lowlevel/generated/shared_objects.h"
-#include "lowlevel/dhserver.h"
 #include "utility/utility.h"
 
 using grpc::Channel;
@@ -20,15 +18,8 @@ typedef arrow::flight::protocol::Wicket Ticket;
 using io::deephaven::proto::backplane::grpc::ComboAggregateRequest;
 using io::deephaven::proto::backplane::grpc::HandshakeRequest;
 using io::deephaven::proto::backplane::grpc::HandshakeResponse;
+using deephaven::openAPI::core::Server;
 using deephaven::openAPI::lowlevel::DHWorkerSession;
-using deephaven::openAPI::lowlevel::DHServer;
-using deephaven::openAPI::lowlevel::remoting::generated::java::lang::Void;
-using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::batch::aggregates::AggregateDescriptor;
-using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::batch::aggregates::PercentileDescriptor;
-using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::Catalog;
-using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::InitialTableDefinition;
-using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::TableHandle;
-using deephaven::openAPI::lowlevel::remoting::generated::com::illumon::iris::web::shared::data::TableSnapshot;
 using deephaven::openAPI::highlevel::fluent::Column;
 using deephaven::openAPI::highlevel::fluent::DateTimeCol;
 using deephaven::openAPI::highlevel::fluent::NumCol;
@@ -49,7 +40,7 @@ namespace highlevel {
 Client OpenApi::connectOss(const std::string &target) {
   auto executor = Executor::create();
   auto flightExecutor = Executor::create();
-  auto server = DHServer::createFromTarget(target, executor);
+  auto server = Server::createFromTarget(target);
   auto impl = ClientImpl::create(std::move(server), executor, flightExecutor);
   return Client(std::move(impl));
 }
@@ -113,53 +104,6 @@ QueryScope WorkerSession::queryScope() {
   return QueryScope(std::move(qsImpl));
 }
 
-RowRangeSet::RowRangeSet(std::shared_ptr<RangeSet> rs) : rs_(std::move(rs)) {
-  count_ = 0;
-  for (const auto &r : *rs_->sortedRanges()) {
-    count_ += r->last() - r->first() + 1;
-  }
-}
-
-TableData TableData::create(const std::vector<std::shared_ptr<ColumnDefinition>> &colDefs,
-    const TableSnapshot &snapshot) {
-  RowRangeSet rrs(snapshot.includedRows());
-
-  const auto &dataCols = *snapshot.dataColumns();
-  std::vector<std::shared_ptr<ColumnData>> columnData;
-  columnData.reserve(dataCols.size());
-  for (size_t i = 0; i < dataCols.size(); ++i) {
-    const auto *dc = dataCols[i].get();
-    columnData.push_back(dc == nullptr ? nullptr : ColumnData::createFromColdef(*colDefs[i], *dc));
-  }
-  return TableData(std::move(columnData), snapshot.tableSize(), std::move(rrs));
-}
-
-TableData::TableData(std::vector<std::shared_ptr<ColumnData>> &&columnData, int64_t tableSize,
-    RowRangeSet &&includedRows) : columnData_(std::move(columnData)), tableSize_(tableSize),
-    includedRows_(std::move(includedRows)) {}
-TableData::TableData(TableData &&other) noexcept = default;
-TableData &TableData::operator=(TableData &&other) noexcept = default;
-TableData::~TableData() = default;
-
-DatabaseCatalogTable::DatabaseCatalogTable(std::shared_ptr<impl::DatabaseCatalogTableImpl> impl) :
-    impl_(std::move(impl)) {}
-DatabaseCatalogTable::~DatabaseCatalogTable() = default;
-
-const std::string &DatabaseCatalogTable::nameSpaceSet() const {
-  return *impl_->catalog()->namespaceSet();
-}
-
-const std::string &DatabaseCatalogTable::nameSpace() const {
-  return *impl_->catalog()->nameSpace();
-}
-
-const std::string & DatabaseCatalogTable::tableName() const {
-  return *impl_->catalog()->tableName();
-}
-
-DatabaseCatalog::DatabaseCatalog(std::vector<DatabaseCatalogTable> tables) : tables_(std::move(tables)) {}
-DatabaseCatalog::~DatabaseCatalog() = default;
-
 NullableString::NullableString(const char *s) {
   if (s != nullptr) {
     value_ = std::make_shared<std::string>(s);
@@ -197,11 +141,6 @@ QueryTable QueryScope::historicalTable(std::string nameSpace, std::string tableN
   return QueryTable(std::move(qsImpl));
 }
 
-QueryTable QueryScope::tempTable(const std::vector<ColumnDataHolder> &columnDataHolders) const {
-  auto qsImpl = impl_->tempTable(columnDataHolders);
-  return QueryTable(std::move(qsImpl));
-}
-
 QueryTable QueryScope::timeTable(int64_t startTimeNanos, int64_t periodNanos) const {
   auto qsImpl = impl_->timeTable(startTimeNanos, periodNanos);
   return QueryTable(std::move(qsImpl));
@@ -212,43 +151,6 @@ QueryTable QueryScope::timeTable(std::chrono::system_clock::time_point startTime
   auto stNanos = std::chrono::duration_cast<std::chrono::nanoseconds>(startTime.time_since_epoch()).count();
   auto dNanos = std::chrono::duration_cast<std::chrono::nanoseconds>(period).count();
   return timeTable(stNanos, dNanos);
-}
-
-DatabaseCatalog QueryScope::getDatabaseCatalog(bool systemNamespaces, bool userNamespaces,
-    NullableString namespaceRegex, NullableString tableRegex) const {
-  auto res = SFCallback<DatabaseCatalog>::createForFuture();
-  getDatabaseCatalogAsync(systemNamespaces, userNamespaces, std::move(namespaceRegex),
-      std::move(tableRegex), std::move(res.first));
-  return std::get<0>(res.second.get());
-}
-
-void QueryScope::getDatabaseCatalogAsync(bool systemNamespaces, bool userNamespaces,
-    NullableString namespaceRegex, NullableString tableRegex,
-    std::shared_ptr<SFCallback<DatabaseCatalog>> callback) const {
-  struct inner_t final : public SFCallback<std::shared_ptr<Catalog>> {
-    explicit inner_t(std::shared_ptr<SFCallback<DatabaseCatalog>> outer) : outer_(std::move(outer)) {}
-
-    void onSuccess(std::shared_ptr<Catalog> item) final {
-      std::vector<DatabaseCatalogTable> tables;
-      tables.reserve(item->tables()->size());
-
-      for (const auto &innerTable : *item->tables()) {
-        auto impl = impl::DatabaseCatalogTableImpl::create(innerTable);
-        tables.emplace_back(std::move(impl));
-      }
-      outer_->onSuccess(DatabaseCatalog(std::move(tables)));
-    }
-
-    void onFailure(std::exception_ptr ep) final {
-      outer_->onFailure(std::move(ep));
-    }
-
-    std::shared_ptr<SFCallback<DatabaseCatalog>> outer_;
-  };
-
-  auto innerCallback = std::make_shared<inner_t>(std::move(callback));
-  impl_->lowLevelSession()->getDatabaseCatalogAsync(systemNamespaces, userNamespaces,
-      namespaceRegex.release(), tableRegex.release(), std::move(innerCallback));
 }
 
 QueryTable QueryScope::catalogTable() const {
@@ -434,42 +336,6 @@ QueryTable QueryTable::preemptive(int sampleIntervalMs) {
   return QueryTable(impl_);
 }
 
-TableData QueryTable::getTableData(long first, long last, std::vector<std::string> columns) const {
-  auto res = SFCallback<TableData>::createForFuture();
-  getTableDataAsync(first, last, std::move(columns), std::move(res.first));
-  return std::get<0>(res.second.get());
-}
-
-void QueryTable::getTableDataAsync(long first, long last,
-    std::vector<std::string> columns, std::shared_ptr<SFCallback<TableData>> callback) const {
-  throw std::runtime_error("kosak(TODO): SAD: QueryTable::getTableDataAsync");
-}
-
-void QueryTable::subscribeAll(std::vector<std::string> columnSpecs) const {
-  auto res = SFCallback<>::createForFuture();
-  subscribeAllAsync(std::move(columnSpecs), std::move(res.first));
-  (void)res.second.get();
-}
-
-void QueryTable::subscribeAllAsync(std::vector<std::string> columnSpecs,
-    std::shared_ptr<SFCallback<>> callback) const {
-  impl_->subscribeAllAsync(std::move(columnSpecs), std::move(callback));
-}
-
-void QueryTable::unsubscribe() const {
-  auto res = SFCallback<>::createForFuture();
-  unsubscribeAsync(std::move(res.first));
-  (void)res.second.get();
-}
-
-void QueryTable::unsubscribeAsync(std::shared_ptr<SFCallback<>> callback) const {
-  impl_->unsubscribeAsync(std::move(callback));
-}
-
-void QueryTable::getData(std::shared_ptr<getDataCallback_t> handler) const {
-  impl_->getData(std::move(handler));
-}
-
 std::vector<Column> QueryTable::getColumns() const {
   auto columnImpls = impl_->getColumnImpls();
   std::vector<Column> result;
@@ -641,81 +507,81 @@ QueryTable QueryTable::merge(std::string keyColumn, std::vector<QueryTable> sour
   return QueryTable(std::move(qtImpl));
 }
 
-QueryTable QueryTable::internalJoin(JoinType joinType, const QueryTable &rightSide,
-    std::vector<std::string> columnsToMatch, std::vector<std::string> columnsToAdd) const {
-  auto qtImpl = impl_->internalJoin(joinType, *rightSide.impl_, std::move(columnsToMatch),
-      std::move(columnsToAdd));
-  return QueryTable(std::move(qtImpl));
-}
+//QueryTable QueryTable::internalJoin(JoinType joinType, const QueryTable &rightSide,
+//    std::vector<std::string> columnsToMatch, std::vector<std::string> columnsToAdd) const {
+//  auto qtImpl = impl_->internalJoin(joinType, *rightSide.impl_, std::move(columnsToMatch),
+//      std::move(columnsToAdd));
+//  return QueryTable(std::move(qtImpl));
+//}
+//
+//QueryTable QueryTable::internalJoin(JoinType joinType, const QueryTable &rightSide,
+//    std::vector<MatchWithColumn> columnsToMatch, std::vector<SelectColumn> columnsToAdd) const {
+//  std::vector<std::string> ctmStrings;
+//  std::vector<std::string> ctaStrings;
+//  ctmStrings.reserve(columnsToMatch.size());
+//  ctaStrings.reserve(columnsToAdd.size());
+//  for (const auto &ctm : columnsToMatch) {
+//    MyOstringStream oss;
+//    ctm.getIrisRepresentableImpl()->streamIrisRepresentation(oss);
+//    ctmStrings.push_back(std::move(oss.str()));
+//  }
+//  for (const auto &cta : columnsToAdd) {
+//    MyOstringStream oss;
+//    cta.getIrisRepresentableImpl()->streamIrisRepresentation(oss);
+//    ctaStrings.push_back(std::move(oss.str()));
+//  }
+//  return internalJoin(joinType, rightSide, std::move(ctmStrings), std::move(ctaStrings));
+//}
 
-QueryTable QueryTable::internalJoin(JoinType joinType, const QueryTable &rightSide,
-    std::vector<MatchWithColumn> columnsToMatch, std::vector<SelectColumn> columnsToAdd) const {
-  std::vector<std::string> ctmStrings;
-  std::vector<std::string> ctaStrings;
-  ctmStrings.reserve(columnsToMatch.size());
-  ctaStrings.reserve(columnsToAdd.size());
-  for (const auto &ctm : columnsToMatch) {
-    MyOstringStream oss;
-    ctm.getIrisRepresentableImpl()->streamIrisRepresentation(oss);
-    ctmStrings.push_back(std::move(oss.str()));
-  }
-  for (const auto &cta : columnsToAdd) {
-    MyOstringStream oss;
-    cta.getIrisRepresentableImpl()->streamIrisRepresentation(oss);
-    ctaStrings.push_back(std::move(oss.str()));
-  }
-  return internalJoin(joinType, rightSide, std::move(ctmStrings), std::move(ctaStrings));
-}
-
-QueryTable QueryTable::naturalJoin(const QueryTable &rightSide,
-    std::vector<std::string> columnsToMatch, std::vector<std::string> columnsToAdd) const {
-  return internalJoin(JoinType::Natural, rightSide, std::move(columnsToMatch), std::move(columnsToAdd));
-}
-
-QueryTable QueryTable::naturalJoin(const QueryTable &rightSide,
-    std::vector<MatchWithColumn> columnsToMatch, std::vector<SelectColumn> columnsToAdd) const {
-  return internalJoin(JoinType::Natural, rightSide, std::move(columnsToMatch), std::move(columnsToAdd));
-}
-
-QueryTable QueryTable::exactJoin(const QueryTable &rightSide,
-    std::vector<std::string> columnsToMatch, std::vector<std::string> columnsToAdd) const {
-  return internalJoin(JoinType::ExactJoin, rightSide, std::move(columnsToMatch), std::move(columnsToAdd));
-}
-
-QueryTable QueryTable::exactJoin(const QueryTable &rightSide,
-    std::vector<MatchWithColumn> columnsToMatch, std::vector<SelectColumn> columnsToAdd) const {
-  return internalJoin(JoinType::ExactJoin, rightSide, std::move(columnsToMatch), std::move(columnsToAdd));
-}
-
-QueryTable QueryTable::leftJoin(const QueryTable &rightSide,
-    std::vector<std::string> columnsToMatch, std::vector<std::string> columnsToAdd) const {
-  return internalJoin(JoinType::LeftJoin, rightSide, std::move(columnsToMatch), std::move(columnsToAdd));
-}
-
-QueryTable QueryTable::leftJoin(const QueryTable &rightSide,
-    std::vector<MatchWithColumn> columnsToMatch, std::vector<SelectColumn> columnsToAdd) const {
-  return internalJoin(JoinType::LeftJoin, rightSide, std::move(columnsToMatch), std::move(columnsToAdd));
-}
-
-QueryTable QueryTable::asOfJoin(const QueryTable &rightSide,
-    std::vector<std::string> columnsToMatch, std::vector<std::string> columnsToAdd) const {
-  return internalJoin(JoinType::AJ, rightSide, std::move(columnsToMatch), std::move(columnsToAdd));
-}
-
-QueryTable QueryTable::asOfJoin(const QueryTable &rightSide,
-    std::vector<MatchWithColumn> columnsToMatch, std::vector<SelectColumn> columnsToAdd) const {
-  return internalJoin(JoinType::AJ, rightSide, std::move(columnsToMatch), std::move(columnsToAdd));
-}
-
-QueryTable QueryTable::reverseAsOfJoin(const QueryTable &rightSide,
-    std::vector<std::string> columnsToMatch, std::vector<std::string> columnsToAdd) const {
-  return internalJoin(JoinType::ReverseAJ, rightSide, std::move(columnsToMatch), std::move(columnsToAdd));
-}
-
-QueryTable QueryTable::reverseAsOfJoin(const QueryTable &rightSide,
-    std::vector<MatchWithColumn> columnsToMatch, std::vector<SelectColumn> columnsToAdd) const {
-  return internalJoin(JoinType::ReverseAJ, rightSide, std::move(columnsToMatch), std::move(columnsToAdd));
-}
+//QueryTable QueryTable::naturalJoin(const QueryTable &rightSide,
+//    std::vector<std::string> columnsToMatch, std::vector<std::string> columnsToAdd) const {
+//  return internalJoin(JoinType::Natural, rightSide, std::move(columnsToMatch), std::move(columnsToAdd));
+//}
+//
+//QueryTable QueryTable::naturalJoin(const QueryTable &rightSide,
+//    std::vector<MatchWithColumn> columnsToMatch, std::vector<SelectColumn> columnsToAdd) const {
+//  return internalJoin(JoinType::Natural, rightSide, std::move(columnsToMatch), std::move(columnsToAdd));
+//}
+//
+//QueryTable QueryTable::exactJoin(const QueryTable &rightSide,
+//    std::vector<std::string> columnsToMatch, std::vector<std::string> columnsToAdd) const {
+//  return internalJoin(JoinType::ExactJoin, rightSide, std::move(columnsToMatch), std::move(columnsToAdd));
+//}
+//
+//QueryTable QueryTable::exactJoin(const QueryTable &rightSide,
+//    std::vector<MatchWithColumn> columnsToMatch, std::vector<SelectColumn> columnsToAdd) const {
+//  return internalJoin(JoinType::ExactJoin, rightSide, std::move(columnsToMatch), std::move(columnsToAdd));
+//}
+//
+//QueryTable QueryTable::leftJoin(const QueryTable &rightSide,
+//    std::vector<std::string> columnsToMatch, std::vector<std::string> columnsToAdd) const {
+//  return internalJoin(JoinType::LeftJoin, rightSide, std::move(columnsToMatch), std::move(columnsToAdd));
+//}
+//
+//QueryTable QueryTable::leftJoin(const QueryTable &rightSide,
+//    std::vector<MatchWithColumn> columnsToMatch, std::vector<SelectColumn> columnsToAdd) const {
+//  return internalJoin(JoinType::LeftJoin, rightSide, std::move(columnsToMatch), std::move(columnsToAdd));
+//}
+//
+//QueryTable QueryTable::asOfJoin(const QueryTable &rightSide,
+//    std::vector<std::string> columnsToMatch, std::vector<std::string> columnsToAdd) const {
+//  return internalJoin(JoinType::AJ, rightSide, std::move(columnsToMatch), std::move(columnsToAdd));
+//}
+//
+//QueryTable QueryTable::asOfJoin(const QueryTable &rightSide,
+//    std::vector<MatchWithColumn> columnsToMatch, std::vector<SelectColumn> columnsToAdd) const {
+//  return internalJoin(JoinType::AJ, rightSide, std::move(columnsToMatch), std::move(columnsToAdd));
+//}
+//
+//QueryTable QueryTable::reverseAsOfJoin(const QueryTable &rightSide,
+//    std::vector<std::string> columnsToMatch, std::vector<std::string> columnsToAdd) const {
+//  return internalJoin(JoinType::ReverseAJ, rightSide, std::move(columnsToMatch), std::move(columnsToAdd));
+//}
+//
+//QueryTable QueryTable::reverseAsOfJoin(const QueryTable &rightSide,
+//    std::vector<MatchWithColumn> columnsToMatch, std::vector<SelectColumn> columnsToAdd) const {
+//  return internalJoin(JoinType::ReverseAJ, rightSide, std::move(columnsToMatch), std::move(columnsToAdd));
+//}
 
 void QueryTable::bindToVariable(std::string variable) const {
   auto res = SFCallback<>::createForFuture();
@@ -745,14 +611,6 @@ WorkerOptions::WorkerOptions(std::shared_ptr<impl::WorkerOptionsImpl> impl) : im
 WorkerOptions::WorkerOptions(WorkerOptions &&other) noexcept = default;
 WorkerOptions &WorkerOptions::operator=(WorkerOptions &&other) noexcept = default;
 WorkerOptions::~WorkerOptions() = default;
-
-void WorkerOptions::addJvmArg(std::string arg) {
-  impl_->addJvmArg(std::move(arg));
-}
-
-auto WorkerOptions::config() const -> const std::shared_ptr<ConsoleConfig> & {
-  return impl_->config();
-}
 
 namespace internal {
 std::string ConvertToString::toString(
