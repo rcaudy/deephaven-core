@@ -4,8 +4,8 @@
 #pragma once
 
 #include <memory>
+#include "core/server.h"
 #include "utility/callbacks.h"
-#include "lowlevel/dhserver.h"
 #include "utility/executor.h"
 #include "utility/utility.h"
 
@@ -17,11 +17,10 @@ class WorkerSessionImpl;
 class WorkerOptionsImpl;
 
 class ClientImpl {
+  typedef deephaven::openAPI::core::Server Server;
   struct Private {};
-  typedef deephaven::openAPI::lowlevel::DHServer DHServer;
   typedef deephaven::openAPI::utility::Executor Executor;
   typedef deephaven::openAPI::utility::FailureCallback FailureCallback;
-  typedef deephaven::openAPI::utility::Void Void;
 
   template<typename... Args>
   using SFCallback = deephaven::openAPI::utility::SFCallback<Args...>;
@@ -29,10 +28,10 @@ class ClientImpl {
   enum class LoginState { NotLoggedIn, Pending, LoggedIn };
 
 public:
-  static std::shared_ptr<ClientImpl> create(std::shared_ptr<DHServer> dhServer,
+  static std::shared_ptr<ClientImpl> create(std::shared_ptr<Server> server,
       std::shared_ptr<Executor> executor, std::shared_ptr<Executor> flightExecutor);
 
-  ClientImpl(Private, std::shared_ptr<DHServer> &&dhServer, std::shared_ptr<Executor> &&executor,
+  ClientImpl(Private, std::shared_ptr<Server> &&server, std::shared_ptr<Executor> &&executor,
       std::shared_ptr<Executor> &&flightExecutor);
   ~ClientImpl();
 
@@ -45,7 +44,7 @@ public:
 private:
   bool assertLoggedInState(LoginState expected, FailureCallback *onFailure);
 
-  std::shared_ptr<DHServer> dhServer_;
+  std::shared_ptr<Server> server_;
   std::shared_ptr<Executor> executor_;
   std::shared_ptr<Executor> flightExecutor_;
   std::atomic<LoginState> loginState_;

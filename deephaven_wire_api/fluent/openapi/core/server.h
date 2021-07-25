@@ -32,7 +32,6 @@
 namespace deephaven {
 namespace openAPI {
 namespace core {
-namespace remoting {
 class ServerCQCallback {
   typedef deephaven::openAPI::utility::FailureCallback FailureCallback;
 
@@ -148,7 +147,6 @@ void Server::sendRpc(const TReq &req, std::shared_ptr<SFCallback<TResp>> respons
   auto rpc = (stub->*pm)(&response->ctx_, req, &completionQueue_);
   rpc->Finish(&response->resp_, &response->status_, response);
 }
-}  // namespace remoting
 }  // namespace core
 }  // namespace openAPI
 }  // namespace deephaven

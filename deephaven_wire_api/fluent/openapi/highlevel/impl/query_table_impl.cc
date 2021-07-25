@@ -14,7 +14,6 @@
 #include <arrow/table.h>
 #include <boost/variant.hpp>
 #include "utility/callbacks.h"
-#include "lowlevel/generated/dhworker_requests.h"
 #include "lowlevel/generated/shared_objects.h"
 #include "lowlevel/dhworker_session.h"
 #include "lowlevel/util/protocol_container_classes.h"
@@ -522,20 +521,20 @@ void QueryTableImpl::observe() {
 }
 
 namespace internal {
-std::shared_ptr<LazyStateOss> LazyStateOss::create(std::shared_ptr<Server> server,
+std::shared_ptr<LazyState> LazyState::create(std::shared_ptr<Server> server,
     std::shared_ptr<Executor> executor) {
-  auto result = std::make_shared<LazyStateOss>(Private(), std::move(server), std::move(executor));
+  auto result = std::make_shared<LazyState>(Private(), std::move(server), std::move(executor));
   result->weakSelf_ = result;
   return result;
 }
 
-LazyStateOss::LazyStateOss(Private, std::shared_ptr<Server> &&server,
+LazyState::LazyState(Private, std::shared_ptr<Server> &&server,
     std::shared_ptr<Executor> &&flightExecutor) : server_(std::move(server)),
     flightExecutor_(std::move(flightExecutor)), ticketFuture_(ticketPromise_.makeFuture()),
     colDefsFuture_(colDefsPromise_.makeFuture()) {}
-  LazyStateOss::~LazyStateOss() = default;
+LazyState::~LazyState() = default;
 
-void LazyStateOss::onSuccess(ExportedTableCreationResponse item) {
+void LazyState::onSuccess(ExportedTableCreationResponse item) {
   if (!item.result_id().has_ticket()) {
     auto ep = std::make_exception_ptr(std::runtime_error(
         "ExportedTableCreationResponse did not contain a ticket"));
@@ -545,15 +544,15 @@ void LazyStateOss::onSuccess(ExportedTableCreationResponse item) {
   ticketPromise_.setValue(item.result_id().ticket());
 }
 
-void LazyStateOss::onFailure(std::exception_ptr error) {
+void LazyState::onFailure(std::exception_ptr error) {
   ticketPromise_.setError(std::move(error));
 }
 
-void LazyStateOss::waitUntilReady() {
+void LazyState::waitUntilReady() {
   (void)ticketFuture_.value();
 }
 
-auto LazyStateOss::getColumnDefinitions() -> const columnDefinitions_t * {
+auto LazyState::getColumnDefinitions() -> const columnDefinitions_t * {
   // Shortcut if we have column definitions
   if (colDefsFuture_.valid()) {
     // value or exception
@@ -569,19 +568,19 @@ auto LazyStateOss::getColumnDefinitions() -> const columnDefinitions_t * {
 
 class GetColumnDefsCallback final :
     public SFCallback<const Ticket &>,
-    public SFCallback<const LazyStateOss::columnDefinitions_t &>,
+    public SFCallback<const LazyState::columnDefinitions_t &>,
     public Callback<> {
   struct Private {};
 public:
-  static std::shared_ptr<GetColumnDefsCallback> create(std::shared_ptr<LazyStateOss> owner,
-      std::shared_ptr<SFCallback<const LazyStateOss::columnDefinitions_t *>> cb) {
+  static std::shared_ptr<GetColumnDefsCallback> create(std::shared_ptr<LazyState> owner,
+      std::shared_ptr<SFCallback<const LazyState::columnDefinitions_t *>> cb) {
     auto result = std::make_shared<GetColumnDefsCallback>(Private(), std::move(owner), std::move(cb));
     result->weakSelf_ = result;
     return result;
   }
 
-  GetColumnDefsCallback(Private, std::shared_ptr<LazyStateOss> &&owner,
-      std::shared_ptr<SFCallback<const LazyStateOss::columnDefinitions_t *>> &&cb) : owner_(std::move(owner)),
+  GetColumnDefsCallback(Private, std::shared_ptr<LazyState> &&owner,
+      std::shared_ptr<SFCallback<const LazyState::columnDefinitions_t *>> &&cb) : owner_(std::move(owner)),
       outer_(std::move(cb)) {}
   ~GetColumnDefsCallback() final = default;
 
@@ -598,7 +597,7 @@ public:
     owner_->flightExecutor_->invoke(weakSelf_.lock());
   }
 
-  void onSuccess(const LazyStateOss::columnDefinitions_t &colDefs) final {
+  void onSuccess(const LazyState::columnDefinitions_t &colDefs) final {
     outer_->onSuccess(&colDefs);
   }
 
@@ -626,7 +625,7 @@ public:
     }
 
     auto &schema = schemaHolder.ValueOrDie();
-    LazyStateOss::columnDefinitions_t colDefs;
+    LazyState::columnDefinitions_t colDefs;
     for (const auto &f : schema->fields()) {
       streamf(std::cerr, "field %o has type %o\n", f->name(), f->type()->id());
       colDefs[f->name()] = f->type();
@@ -635,48 +634,19 @@ public:
     owner_->colDefsPromise_.setValue(std::move(colDefs));
   }
 
-  std::shared_ptr<LazyStateOss> owner_;
-  std::shared_ptr<SFCallback<const LazyStateOss::columnDefinitions_t *>> outer_;
+  std::shared_ptr<LazyState> owner_;
+  std::shared_ptr<SFCallback<const LazyState::columnDefinitions_t *>> outer_;
   std::weak_ptr<GetColumnDefsCallback> weakSelf_;
   Ticket ticket_;
 };
 
-void LazyStateOss::getColumnDefinitionsAsync(
+void LazyState::getColumnDefinitionsAsync(
     std::shared_ptr<SFCallback<const columnDefinitions_t *>> cb) {
   auto innerCb = GetColumnDefsCallback::create(weakSelf_.lock(), std::move(cb));
   ticketFuture_.invoke(std::move(innerCb));
 }
 }  // namespace internal
 
-namespace {
-std::shared_ptr<BitSet> getColumnsBitSet(const std::vector<std::string> &desiredColumns,
-    const InitialTableDefinition &itd) {
-  std::vector<int32_t> items;
-
-  const auto &tableColumns = *itd.definition()->columns();
-  // create the columns bit set
-  if (desiredColumns.empty()) {
-    // empty vector means "all".
-    items.reserve(tableColumns.size());
-    for (size_t i = 0; i < tableColumns.size(); ++i) {
-      items.push_back(static_cast<int32_t>(i));
-    }
-  } else {
-    std::vector<boost::string_view> lookup;
-    lookup.reserve(desiredColumns.size());
-    for (const auto &s : desiredColumns) {
-      lookup.emplace_back(s);
-    }
-    std::sort(lookup.begin(), lookup.end());
-    for (size_t i = 0; i < tableColumns.size(); ++i) {
-      if (std::binary_search(lookup.begin(), lookup.end(), *tableColumns[i]->name())) {
-        items.push_back(static_cast<int32_t>(i));
-      }
-    }
-  }
-  return BitSet::create(std::move(items));
-}
-}  // namespace
 }  // namespace impl
 }  // namespace highlevel
 }  // namespace openAPI

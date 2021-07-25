@@ -26,7 +26,6 @@ using deephaven::openAPI::utility::stringf;
 namespace deephaven {
 namespace openAPI {
 namespace core {
-namespace remoting {
 std::shared_ptr<Server> Server::createFromTarget(const std::string &target) {
   auto channel = grpc::CreateChannel(target, grpc::InsecureChannelCredentials());
   auto bs = BarrageService::NewStub(channel);
@@ -150,7 +149,6 @@ bool Server::processNextCompletionQueueItem() {
 ServerCQCallback::ServerCQCallback(std::shared_ptr<FailureCallback> failureCallback) :
     failureCallback_(std::move(failureCallback)) {}
 ServerCQCallback::~ServerCQCallback() = default;
-}  // namespace remoting
 }  // namespace core
 }  // namespace openAPI
 }  // namespace deephaven

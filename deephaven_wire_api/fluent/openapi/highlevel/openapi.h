@@ -3,7 +3,6 @@
 #include <future>
 #include <memory>
 #include <boost/utility/string_view.hpp>
-#include "lowlevel/dhworker.h"
 #include "lowlevel/dhworker_session.h"
 #include "highlevel/data/column_data.h"
 #include "highlevel/data/column_data_holder.h"
