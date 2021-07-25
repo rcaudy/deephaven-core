@@ -131,7 +131,7 @@ bool Server::processNextCompletionQueueItem() {
   void *tag;
   bool ok;
   auto gotEvent = completionQueue_.Next(&tag, &ok);
-  streamf(std::cerr, "gotEvent is %o, tag is %o, ok is %o\n", gotEvent, tag, ok);
+  // streamf(std::cerr, "gotEvent is %o, tag is %o, ok is %o\n", gotEvent, tag, ok);
   if (!gotEvent) {
     return false;
   }

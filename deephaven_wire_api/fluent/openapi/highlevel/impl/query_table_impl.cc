@@ -312,7 +312,7 @@ std::shared_ptr<QueryTableImpl> QueryTableImpl::merge(std::string keyColumn,
 
 
 std::vector<std::shared_ptr<ColumnImpl>> QueryTableImpl::getColumnImpls() {
-  const auto *colDefs = lazyStateOss_->getColumnDefinitions();
+  auto colDefs = lazyStateOss_->getColumnDefinitions();
   std::vector<std::shared_ptr<ColumnImpl>> result;
   result.reserve(colDefs->size());
   for (const auto &cd : *colDefs) {
@@ -350,7 +350,7 @@ std::shared_ptr<DateTimeColImpl> QueryTableImpl::getDateTimeColImpl(std::string 
 
 void QueryTableImpl::lookupHelper(const std::string &columnName,
     std::initializer_list<arrow::Type::type> validTypes) {
-  const auto *colDefs = lazyStateOss_->getColumnDefinitions();
+  auto colDefs = lazyStateOss_->getColumnDefinitions();
   auto ip = colDefs->find(columnName);
   if (ip == colDefs->end()) {
     throw std::runtime_error(stringf(R"(Column name "%o" is not in the table)", columnName));
@@ -423,36 +423,34 @@ void LazyState::waitUntilReady() {
   (void)ticketFuture_.value();
 }
 
-auto LazyState::getColumnDefinitions() -> const columnDefinitions_t * {
+auto LazyState::getColumnDefinitions() -> std::shared_ptr<columnDefinitions_t> {
   // Shortcut if we have column definitions
   if (colDefsFuture_.valid()) {
     // value or exception
-    return &colDefsFuture_.value();
+    return colDefsFuture_.value();
   }
 
-  std::cerr << "Consider doing this differently\n";
-
-  auto res = SFCallback<const columnDefinitions_t *>::createForFuture();
+  auto res = SFCallback<std::shared_ptr<columnDefinitions_t>>::createForFuture();
   getColumnDefinitionsAsync(std::move(res.first));
   return std::get<0>(res.second.get());
 }
 
 class GetColumnDefsCallback final :
     public SFCallback<const Ticket &>,
-    public SFCallback<const LazyState::columnDefinitions_t &>,
+    public SFCallback<std::shared_ptr<LazyState::columnDefinitions_t>>,
     public Callback<> {
   struct Private {};
 public:
   static std::shared_ptr<GetColumnDefsCallback> create(std::shared_ptr<LazyState> owner,
-      std::shared_ptr<SFCallback<const LazyState::columnDefinitions_t *>> cb) {
+      std::shared_ptr<SFCallback<std::shared_ptr<LazyState::columnDefinitions_t>>> cb) {
     auto result = std::make_shared<GetColumnDefsCallback>(Private(), std::move(owner), std::move(cb));
     result->weakSelf_ = result;
     return result;
   }
 
   GetColumnDefsCallback(Private, std::shared_ptr<LazyState> &&owner,
-      std::shared_ptr<SFCallback<const LazyState::columnDefinitions_t *>> &&cb) : owner_(std::move(owner)),
-      outer_(std::move(cb)) {}
+      std::shared_ptr<SFCallback<std::shared_ptr<LazyState::columnDefinitions_t>>> &&cb) :
+      owner_(std::move(owner)), outer_(std::move(cb)) {}
   ~GetColumnDefsCallback() final = default;
 
   void onFailure(std::exception_ptr ep) final {
@@ -468,8 +466,8 @@ public:
     owner_->flightExecutor_->invoke(weakSelf_.lock());
   }
 
-  void onSuccess(const LazyState::columnDefinitions_t &colDefs) final {
-    outer_->onSuccess(&colDefs);
+  void onSuccess(std::shared_ptr<LazyState::columnDefinitions_t> colDefs) final {
+    outer_->onSuccess(std::move(colDefs));
   }
 
   void invoke() final {
@@ -496,23 +494,21 @@ public:
     }
 
     auto &schema = schemaHolder.ValueOrDie();
-    LazyState::columnDefinitions_t colDefs;
+    std::shared_ptr<LazyState::columnDefinitions_t> colDefs(new LazyState::columnDefinitions_t());
     for (const auto &f : schema->fields()) {
-      streamf(std::cerr, "field %o has type %o\n", f->name(), f->type()->id());
-      colDefs[f->name()] = f->type();
+      (*colDefs)[f->name()] = f->type();
     }
-
     owner_->colDefsPromise_.setValue(std::move(colDefs));
   }
 
   std::shared_ptr<LazyState> owner_;
-  std::shared_ptr<SFCallback<const LazyState::columnDefinitions_t *>> outer_;
+  std::shared_ptr<SFCallback<std::shared_ptr<LazyState::columnDefinitions_t>>> outer_;
   std::weak_ptr<GetColumnDefsCallback> weakSelf_;
   Ticket ticket_;
 };
 
 void LazyState::getColumnDefinitionsAsync(
-    std::shared_ptr<SFCallback<const columnDefinitions_t *>> cb) {
+    std::shared_ptr<SFCallback<std::shared_ptr<columnDefinitions_t>>> cb) {
   auto innerCb = GetColumnDefsCallback::create(weakSelf_.lock(), std::move(cb));
   ticketFuture_.invoke(std::move(innerCb));
 }

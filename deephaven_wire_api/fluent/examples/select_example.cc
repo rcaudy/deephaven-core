@@ -47,11 +47,10 @@ void SelectExample::run(const QueryScope &scope) {
   // test0(scope);
   test1(table);
   test2(table);
-//  test2a_err(table);
-//
-//  test3(table);
-//  test4(table);
-//  test5(table);
+  test2a_err(table);
+  test3(table);
+  test4(table);
+  test5(table);
   (void)&test0;
   (void)&test2;
   (void)&test2a_err;
@@ -75,21 +74,6 @@ void test0(const QueryScope &scope) {
 //  auto q2 = t3.getNumCol("Q2");
 //  auto t4 = t3.update((q2 + 100).as("Q4"));
 //  PrintUtils::printTableData(std::cout,t4);
-}
-
-namespace {
-struct MyAuthHandler : public arrow::flight::ClientAuthHandler {
-  arrow::Status Authenticate(arrow::flight::ClientAuthSender *outgoing,
-      arrow::flight::ClientAuthReader *incoming) override {
-    std::cerr << "I choose to do nothing\n";
-    return arrow::Status::OK();
-  }
-
-  arrow::Status GetToken(std::string *token) override {
-    std::cerr << "I also choose to do nothing\n";
-    return arrow::Status::OK();
-  }
-};
 }
 
 // Simple Where

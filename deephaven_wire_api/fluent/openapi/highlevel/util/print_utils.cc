@@ -55,25 +55,19 @@ void PrintUtils::printTableData(std::ostream &s, const QueryTable &queryTable, b
     s << separatedList(cols.begin(), cols.end(), "\t", streamName) << '\n';
   }
 
-  std::cerr << "READING DATA HERE FOR FUN\n";
   while (true) {
     arrow::flight::FlightStreamChunk chunk;
     auto stat = fsr->Next(&chunk);
-    std::cerr << "stat is " << stat << "\n";
     if (!stat.ok()) {
       auto message = stringf("FlightStreamReader::Next() failed, status %o", stat.ToString());
       throw std::runtime_error(message);
     }
     if (chunk.data == nullptr) {
-      std::cerr << "THE STREAM ENDS\n";
       break;
     }
-    std::cerr << "GOT A CHUNK\n";
     const auto *data = chunk.data.get();
     const auto &columns = chunk.data->columns();
-    std::cerr << "THERE MANY ROWS: " << data->num_rows() << "\n";
     for (int64_t rowNum = 0; rowNum < data->num_rows(); ++rowNum) {
-      streamf(s, "This is row %o\n", rowNum);
       auto streamArrayCell = [rowNum](std::ostream &s, const std::shared_ptr<arrow::Array> &a) {
         // This is going to be rather inefficient
         auto rsc = a->GetScalar(rowNum);

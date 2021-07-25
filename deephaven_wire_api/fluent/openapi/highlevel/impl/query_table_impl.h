@@ -69,8 +69,8 @@ public:
   void onSuccess(ExportedTableCreationResponse item) final;
   void onFailure(std::exception_ptr ep) final;
 
-  const columnDefinitions_t *getColumnDefinitions();
-  void getColumnDefinitionsAsync(std::shared_ptr<SFCallback<const columnDefinitions_t *>> cb);
+  std::shared_ptr<columnDefinitions_t> getColumnDefinitions();
+  void getColumnDefinitionsAsync(std::shared_ptr<SFCallback<std::shared_ptr<columnDefinitions_t>>> cb);
 
 private:
   bool readyLocked(std::unique_lock<std::mutex> */*lock*/);
@@ -80,8 +80,8 @@ private:
 
   CBPromise<Ticket> ticketPromise_;
   CBFuture<Ticket> ticketFuture_;
-  CBPromise<columnDefinitions_t> colDefsPromise_;
-  CBFuture<columnDefinitions_t> colDefsFuture_;
+  CBPromise<std::shared_ptr<columnDefinitions_t>> colDefsPromise_;
+  CBFuture<std::shared_ptr<columnDefinitions_t>> colDefsFuture_;
 
   std::weak_ptr<LazyState> weakSelf_;
 

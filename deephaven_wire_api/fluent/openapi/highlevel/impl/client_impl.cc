@@ -124,7 +124,6 @@ void Everything::onSuccess(HandshakeResponse item) {
 }
 
 void Everything::onSuccess(StartConsoleResponse item) {
-  streamf(std::cerr, "WE HAVE A CONSOLE\n");
   auto lls = DHWorkerSession::create(std::move(*item.mutable_result_id()),
       server_, executor_, flightExecutor_);
   auto ws = WorkerSessionImpl::create(std::move(lls), std::move(executor_));
