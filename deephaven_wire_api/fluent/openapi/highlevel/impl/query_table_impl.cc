@@ -437,7 +437,7 @@ auto LazyState::getColumnDefinitions() -> std::shared_ptr<columnDefinitions_t> {
 
 class GetColumnDefsCallback final :
     public SFCallback<const Ticket &>,
-    public SFCallback<std::shared_ptr<LazyState::columnDefinitions_t>>,
+    public SFCallback<const std::shared_ptr<LazyState::columnDefinitions_t> &>,
     public Callback<> {
   struct Private {};
 public:
@@ -466,7 +466,7 @@ public:
     owner_->flightExecutor_->invoke(weakSelf_.lock());
   }
 
-  void onSuccess(std::shared_ptr<LazyState::columnDefinitions_t> colDefs) final {
+  void onSuccess(const std::shared_ptr<LazyState::columnDefinitions_t> &colDefs) final {
     outer_->onSuccess(std::move(colDefs));
   }
 

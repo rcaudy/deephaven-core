@@ -115,6 +115,7 @@ template<typename Iterator, typename Callback>
 std::ostream &operator<<(std::ostream &s, const SeparatedListAdaptor<Iterator, Callback> &o) {
   for (auto current = o.begin_; current != o.end_; ++current) {
     if (current != o.begin_) {
+      s << "I am printing the separator '" << o.separator_ << "', god";
       s << o.separator_;
     }
     o.callback_(s, *current);
