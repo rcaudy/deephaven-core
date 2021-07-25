@@ -16,8 +16,6 @@ add_executable(examples
         add_drop_example.h
         aggregates_example.cc
         aggregates_example.h
-        catalog_example.cc
-        catalog_example.h
         catalog_table_example.cc
         catalog_table_example.h
         date_time_filter_example.cc

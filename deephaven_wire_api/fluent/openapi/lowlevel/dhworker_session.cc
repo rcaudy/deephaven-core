@@ -14,6 +14,7 @@ using io::deephaven::proto::backplane::grpc::DropColumnsRequest;
 using io::deephaven::proto::backplane::grpc::EmptyTableRequest;
 using io::deephaven::proto::backplane::grpc::HeadOrTailRequest;
 using io::deephaven::proto::backplane::grpc::HeadOrTailByRequest;
+
 using io::deephaven::proto::backplane::grpc::ExportedTableCreationResponse;
 using io::deephaven::proto::backplane::grpc::JoinTablesRequest;
 using io::deephaven::proto::backplane::grpc::MergeTablesRequest;
@@ -39,6 +40,9 @@ namespace deephaven {
 namespace openAPI {
 namespace lowlevel {
 
+namespace {
+void moveVectorData(std::vector<std::string> src, google::protobuf::RepeatedPtrField<std::string> *dest);
+}  // namespace
 std::shared_ptr<DHWorkerSession> DHWorkerSession::create(Ticket consoleId,
     std::shared_ptr<Server> server, std::shared_ptr<Executor> executor,
     std::shared_ptr<Executor> flightExecutor) {
@@ -437,6 +441,15 @@ void DHWorkerSession::bindToVariableAsync(const Ticket &tableId, std::string var
   server_->sendRpc(req, std::move(callback), server_->consoleStub(),
       &ConsoleService::Stub::AsyncBindTableToVariable, true);
 }
+
+namespace {
+void moveVectorData(std::vector<std::string> src,
+    google::protobuf::RepeatedPtrField<std::string> *dest) {
+  for (auto &s : src) {
+    dest->Add(std::move(s));
+  }
+}
+}  // namespace
 }  // namespace lowlevel
 }  // namespace openAPI
 }  // namespace deephaven
