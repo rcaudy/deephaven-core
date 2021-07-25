@@ -9,8 +9,6 @@
 
 #include "examples/add_drop_example.h"
 #include "examples/aggregates_example.h"
-#include "examples/catalog_example.h"
-#include "examples/catalog_table_example.h"
 #include "examples/date_time_filter_example.h"
 #include "examples/drop_columns_example.h"
 #include "examples/get_data_example.h"
@@ -33,18 +31,11 @@
 #include "highlevel/openapi.h"
 #include "highlevel/columns.h"
 #include "highlevel/util/print_utils.h"
-#include "lowlevel/dhserver.h"
-#include "lowlevel/dhworker.h"
 #include "lowlevel/dhworker_session.h"
-#include "lowlevel/generated/shared_objects.h"
-#include "lowlevel/generated/dhserver_requests.h"
-#include "lowlevel/generated/dhworker_requests.h"
 #include "utility/utility.h"
 
 using deephaven::openAPI::examples::AddDropExample;
 using deephaven::openAPI::examples::AggregatesExample;
-using deephaven::openAPI::examples::CatalogExample;
-using deephaven::openAPI::examples::CatalogTableExample;
 using deephaven::openAPI::examples::DateTimeFilterExample;
 using deephaven::openAPI::examples::DropColumnsExample;
 using deephaven::openAPI::examples::FilterExample;
@@ -67,8 +58,6 @@ using deephaven::openAPI::examples::ViewExample;
 using deephaven::openAPI::highlevel::OpenApi;
 using deephaven::openAPI::highlevel::QueryScope;
 using deephaven::openAPI::highlevel::WorkerOptions;
-using deephaven::openAPI::lowlevel::DHServer;
-using deephaven::openAPI::lowlevel::DHWorker;
 using deephaven::openAPI::lowlevel::DHWorkerSession;
 using deephaven::openAPI::utility::streamf;
 
@@ -131,8 +120,6 @@ Program::Program(std::string host) : host_(std::move(host)) {
       { "ungroup", UngroupExample::run },
       { "merge", MergeTablesExample::run },
       { "drop", DropColumnsExample::run },
-      { "catalog", CatalogExample::run },
-      { "cattable", CatalogTableExample::run },
       { "strfilter", StringFilterExample::run },
       { "dtfilter", DateTimeFilterExample::run },
       { "getdata", GetDataExample::run },

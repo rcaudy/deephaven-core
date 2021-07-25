@@ -19,30 +19,11 @@ using deephaven::openAPI::utility::Callback;
 namespace deephaven {
 namespace openAPI {
 namespace examples {
-namespace {
-class NubbyCallback final : public Callback<const QueryTable&, const XXXTableData&> {
-public:
-  ~NubbyCallback() final = default;
-  void invoke(const QueryTable &qt, const XXXTableData &td) final;
-};
-}  // namespace
-
 void GetDataExample::run(const QueryScope &scope) {
   auto table = scope.fetchTable("demo");
   table.observe();
-
-  auto cb = std::make_shared<NubbyCallback>();
-  table.getData(std::move(cb));
-  std::cerr << "wait here a bit\n";
-  std::this_thread::sleep_for(std::chrono::seconds(25));
+  // Nothing to do here
 }
-
-namespace {
-void NubbyCallback::invoke(const QueryTable &qt, const XXXTableData &td) {
-  std::cerr << "hi it is party time\n";
-}
-}  // namespace
-
 }  // namespace examples
 }  // namespace openAPI
 }  // namespace deephaven

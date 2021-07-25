@@ -153,11 +153,6 @@ QueryTable QueryScope::timeTable(std::chrono::system_clock::time_point startTime
   return timeTable(stNanos, dNanos);
 }
 
-QueryTable QueryScope::catalogTable() const {
-  auto qsImpl = impl_->catalogTable();
-  return QueryTable(std::move(qsImpl));
-}
-
 const std::shared_ptr<DHWorkerSession> &QueryScope::lowLevelSession() const {
   return impl_->lowLevelSession();
 }

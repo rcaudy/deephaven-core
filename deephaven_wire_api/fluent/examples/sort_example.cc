@@ -12,9 +12,6 @@
 using deephaven::openAPI::highlevel::QueryScope;
 using deephaven::openAPI::highlevel::QueryTable;
 using deephaven::openAPI::highlevel::fluent::SortPair;
-using deephaven::openAPI::highlevel::data::ColumnDataHolder;
-using deephaven::openAPI::highlevel::data::DoubleColumnData;
-using deephaven::openAPI::highlevel::data::IntColumnData;
 using deephaven::openAPI::highlevel::util::DemoConstants;
 using deephaven::openAPI::highlevel::util::PrintUtils;
 using deephaven::openAPI::utility::streamf;
@@ -46,27 +43,26 @@ void SortExample::run(const QueryScope &scope) {
   PrintUtils::printTableData(std::cout, table6);
 
   std::cerr << "TODO(kosak): not doing the column data stuff\n";
-  return;
 
-  std::vector<int32_t> intData0{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13, 14, 15, 16};
-  std::vector<int32_t> intData1{0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7};
-  std::vector<int32_t> intData2{0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3};
-  std::vector<int32_t> intData3{0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1};
-
-  std::vector<ColumnDataHolder> columnDataHolders;
-  columnDataHolders.emplace_back("IntValue0", false, IntColumnData::create(std::move(intData0)));
-  columnDataHolders.emplace_back("IntValue1", false, IntColumnData::create(std::move(intData1)));
-  columnDataHolders.emplace_back("IntValue2", false, IntColumnData::create(std::move(intData2)));
-  columnDataHolders.emplace_back("IntValue3", false, IntColumnData::create(std::move(intData3)));
-
-  auto tempTable = scope.tempTable(columnDataHolders);
-
-  auto iv0 = tempTable.getNumCol("IntValue0");
-  auto iv1 = tempTable.getNumCol("IntValue1");
-  auto iv2 = tempTable.getNumCol("IntValue2");
-  auto iv3 = tempTable.getNumCol("IntValue3");
-  auto test = tempTable.sort({iv3.descending(), iv2.ascending()});
-  PrintUtils::printTableData(std::cout, test);
+//  std::vector<int32_t> intData0{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13, 14, 15, 16};
+//  std::vector<int32_t> intData1{0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7};
+//  std::vector<int32_t> intData2{0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3};
+//  std::vector<int32_t> intData3{0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1};
+//
+//  std::vector<ColumnDataHolder> columnDataHolders;
+//  columnDataHolders.emplace_back("IntValue0", false, IntColumnData::create(std::move(intData0)));
+//  columnDataHolders.emplace_back("IntValue1", false, IntColumnData::create(std::move(intData1)));
+//  columnDataHolders.emplace_back("IntValue2", false, IntColumnData::create(std::move(intData2)));
+//  columnDataHolders.emplace_back("IntValue3", false, IntColumnData::create(std::move(intData3)));
+//
+//  auto tempTable = scope.tempTable(columnDataHolders);
+//
+//  auto iv0 = tempTable.getNumCol("IntValue0");
+//  auto iv1 = tempTable.getNumCol("IntValue1");
+//  auto iv2 = tempTable.getNumCol("IntValue2");
+//  auto iv3 = tempTable.getNumCol("IntValue3");
+//  auto test = tempTable.sort({iv3.descending(), iv2.ascending()});
+//  PrintUtils::printTableData(std::cout, test);
 }
 }  // namespace examples
 }  // namespace openAPI

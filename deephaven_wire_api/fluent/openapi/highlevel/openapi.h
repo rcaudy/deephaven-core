@@ -111,8 +111,6 @@ public:
   QueryTable timeTable(std::chrono::system_clock::time_point startTime,
       std::chrono::system_clock::duration period) const;
 
-  QueryTable catalogTable() const;
-
   const std::shared_ptr<DHWorkerSession> &lowLevelSession() const;
 
 private:

@@ -35,7 +35,6 @@ public:
   std::shared_ptr<QueryTableImpl> historicalTable(std::string nameSpace, std::string tableName);
 //  std::shared_ptr<QueryTableImpl> tempTable(const std::vector<ColumnDataHolder> &columnDataHolders);
   std::shared_ptr<QueryTableImpl> timeTable(int64_t startTimeNanos, int64_t periodNanos);
-  std::shared_ptr<QueryTableImpl> catalogTable();
 
   const std::shared_ptr<DHWorkerSession> &lowLevelSession() const {
     return lowlevelSession_;

@@ -26,10 +26,10 @@ void JoinExample::run(const QueryScope &scope) {
   auto adv = table.view(ticker, volume).avgBy(ticker);
 
   // do a join on a resolved RHS
-  auto joined = lastClose.naturalJoin(adv,
-      { ticker },
-      { volume.as("ADV") });
-  PrintUtils::printTableData(std::cout, joined);
+//  auto joined = lastClose.naturalJoin(adv,
+//      { ticker },
+//      { volume.as("ADV") });
+//  PrintUtils::printTableData(std::cout, joined);
 }
 
 }  // namespace examples

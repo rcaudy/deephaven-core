@@ -198,17 +198,17 @@ namespace {
 ////  return resultHandle;
 //}
 
-//Ticket DHWorkerSession::timeTableAsync(int64_t startTimeNanos, int64_t periodNanos,
-//    std::shared_ptr<EtcCallback> callback) {
-//  auto result = server_->newTicket();
-//  TimeTableRequest req;
-//  *req.mutable_result_id() = result;
-//  req.set_start_time_nanos(startTimeNanos);
-//  req.set_period_nanos(periodNanos);
-//  server_->sendRpc(req, std::move(callback), server_->tableStub(),
-//      &TableService::Stub::AsyncTimeTable, true);
-//  return result;
-//}
+Ticket DHWorkerSession::timeTableAsync(int64_t startTimeNanos, int64_t periodNanos,
+    std::shared_ptr<EtcCallback> callback) {
+  auto result = server_->newTicket();
+  TimeTableRequest req;
+  *req.mutable_result_id() = result;
+  req.set_start_time_nanos(startTimeNanos);
+  req.set_period_nanos(periodNanos);
+  server_->sendRpc(req, std::move(callback), server_->tableStub(),
+      &TableService::Stub::AsyncTimeTable, true);
+  return result;
+}
 
 //std::shared_ptr<TableHandle> DHWorkerSession::snapshotAsync(std::shared_ptr<TableHandle> leftTableHandle,
 //    std::shared_ptr<TableHandle> rightTableHandle, bool doInitialSnapshot,

@@ -11,9 +11,6 @@
 
 using deephaven::openAPI::highlevel::QueryScope;
 using deephaven::openAPI::highlevel::QueryTable;
-using deephaven::openAPI::highlevel::data::ColumnDataHolder;
-using deephaven::openAPI::highlevel::data::DoubleColumnData;
-using deephaven::openAPI::highlevel::data::IntColumnData;
 using deephaven::openAPI::highlevel::util::DemoConstants;
 using deephaven::openAPI::highlevel::util::PrintUtils;
 using deephaven::openAPI::utility::MyOstringStream;

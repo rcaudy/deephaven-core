@@ -22,9 +22,6 @@
 
 using deephaven::openAPI::highlevel::QueryScope;
 using deephaven::openAPI::highlevel::QueryTable;
-using deephaven::openAPI::highlevel::data::ColumnDataHolder;
-using deephaven::openAPI::highlevel::data::DoubleColumnData;
-using deephaven::openAPI::highlevel::data::IntColumnData;
 using deephaven::openAPI::highlevel::util::DemoConstants;
 using deephaven::openAPI::highlevel::util::PrintUtils;
 using deephaven::openAPI::utility::streamf;
@@ -65,19 +62,19 @@ void SelectExample::run(const QueryScope &scope) {
 
 namespace {
 void test0(const QueryScope &scope) {
-  std::vector<int> intData = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-  std::vector<double> doubleData = {0.0, 1.1, 2.2, 3.3, 4.4, 5.5, 6.6, 7.7, 8.8, 9.9};
-  std::vector<ColumnDataHolder> columnDataHolders;
-  columnDataHolders.emplace_back("IntValue", false, IntColumnData::create(std::move(intData)));
-  columnDataHolders.emplace_back("DoubleValue", false, DoubleColumnData::create(std::move(doubleData)));
-  auto t = scope.tempTable(columnDataHolders);
-  auto t2 = t.update("Q2 = IntValue * 100");
-  PrintUtils::printTableData(std::cout, t2);
-  auto t3 = t2.update("Q3 = Q2 + 10");
-  PrintUtils::printTableData(std::cout,t3);
-  auto q2 = t3.getNumCol("Q2");
-  auto t4 = t3.update((q2 + 100).as("Q4"));
-  PrintUtils::printTableData(std::cout,t4);
+//  std::vector<int> intData = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+//  std::vector<double> doubleData = {0.0, 1.1, 2.2, 3.3, 4.4, 5.5, 6.6, 7.7, 8.8, 9.9};
+//  std::vector<ColumnDataHolder> columnDataHolders;
+//  columnDataHolders.emplace_back("IntValue", false, IntColumnData::create(std::move(intData)));
+//  columnDataHolders.emplace_back("DoubleValue", false, DoubleColumnData::create(std::move(doubleData)));
+//  auto t = scope.tempTable(columnDataHolders);
+//  auto t2 = t.update("Q2 = IntValue * 100");
+//  PrintUtils::printTableData(std::cout, t2);
+//  auto t3 = t2.update("Q3 = Q2 + 10");
+//  PrintUtils::printTableData(std::cout,t3);
+//  auto q2 = t3.getNumCol("Q2");
+//  auto t4 = t3.update((q2 + 100).as("Q4"));
+//  PrintUtils::printTableData(std::cout,t4);
 }
 
 namespace {
