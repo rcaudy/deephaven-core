@@ -41,14 +41,11 @@ import io.deephaven.internal.log.LoggerFactory;
 import io.deephaven.io.logger.Logger;
 import io.deephaven.server.util.Scheduler;
 import io.deephaven.time.DateTime;
-import io.deephaven.time.DateTimeUtils;
 import io.deephaven.util.SafeCloseable;
 import io.deephaven.util.SafeCloseableArray;
 import io.deephaven.util.datastructures.LongSizedDataStructure;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
-import org.apache.commons.lang3.mutable.MutableInt;
-import org.apache.commons.lang3.mutable.MutableLong;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.HdrHistogram.Histogram;
@@ -284,7 +281,7 @@ public class BarrageMessageProducer<MessageView> extends LivenessArtifact
     private final Scheduler scheduler;
     private final StreamGenerator.Factory<MessageView> streamGeneratorFactory;
 
-    private final BaseTable parent;
+    private final BaseTable<?> parent;
     private final long updateIntervalMs;
     private volatile long lastUpdateTime = 0;
     private volatile long lastScheduledUpdateTime = 0;
