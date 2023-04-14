@@ -30,6 +30,7 @@ import io.deephaven.proto.backplane.grpc.LeftJoinTablesRequest;
 import io.deephaven.proto.backplane.grpc.MergeTablesRequest;
 import io.deephaven.proto.backplane.grpc.MetaTableRequest;
 import io.deephaven.proto.backplane.grpc.NaturalJoinTablesRequest;
+import io.deephaven.proto.backplane.grpc.RangeJoinTablesRequest;
 import io.deephaven.proto.backplane.grpc.RunChartDownsampleRequest;
 import io.deephaven.proto.backplane.grpc.SeekRowRequest;
 import io.deephaven.proto.backplane.grpc.SelectDistinctRequest;
@@ -347,6 +348,17 @@ public interface TableServiceContextualAuthWiring {
             List<Table> sourceTables);
 
     /**
+     * Authorize a request to RangeJoinTables.
+     *
+     * @param authContext the authentication context of the request
+     * @param request the request to authorize
+     * @param sourceTables the operation's source tables
+     * @throws io.grpc.StatusRuntimeException if the user is not authorized to invoke RangeJoinTables
+     */
+    void checkPermissionRangeJoinTables(AuthContext authContext, RangeJoinTablesRequest request,
+            List<Table> sourceTables);
+
+    /**
      * Authorize a request to ComboAggregate.
      *
      * @param authContext the authentication context of the request
@@ -560,6 +572,10 @@ public interface TableServiceContextualAuthWiring {
         public void checkPermissionAsOfJoinTables(AuthContext authContext,
                 AsOfJoinTablesRequest request, List<Table> sourceTables) {}
 
+        @Override
+        public void checkPermissionRangeJoinTables(AuthContext authContext,
+                RangeJoinTablesRequest request, List<Table> sourceTables) {}
+
         public void checkPermissionComboAggregate(AuthContext authContext,
                 ComboAggregateRequest request, List<Table> sourceTables) {}
 
@@ -730,6 +746,12 @@ public interface TableServiceContextualAuthWiring {
 
         public void checkPermissionAsOfJoinTables(AuthContext authContext,
                 AsOfJoinTablesRequest request, List<Table> sourceTables) {
+            ServiceAuthWiring.operationNotAllowed();
+        }
+
+        @Override
+        public void checkPermissionRangeJoinTables(AuthContext authContext, RangeJoinTablesRequest request,
+                List<Table> sourceTables) {
             ServiceAuthWiring.operationNotAllowed();
         }
 
@@ -983,6 +1005,14 @@ public interface TableServiceContextualAuthWiring {
                 AsOfJoinTablesRequest request, List<Table> sourceTables) {
             if (delegate != null) {
                 delegate.checkPermissionAsOfJoinTables(authContext, request, sourceTables);
+            }
+        }
+
+        @Override
+        public void checkPermissionRangeJoinTables(AuthContext authContext, RangeJoinTablesRequest request,
+                List<Table> sourceTables) {
+            if (delegate != null) {
+                delegate.checkPermissionRangeJoinTables(authContext, request, sourceTables);
             }
         }
 
