@@ -12,6 +12,7 @@ import io.deephaven.parquet.base.ColumnChunkReader;
 import io.deephaven.parquet.base.ColumnPageReader;
 import io.deephaven.parquet.base.DataWithOffsets;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.lang.reflect.Array;
@@ -65,7 +66,7 @@ public class ToPageWithDictionary<DATA_TYPE, ATTR extends Any>
 
     @Override
     @NotNull
-    public final DATA_TYPE[] convertResult(@NotNull final Object result) {
+    public final DATA_TYPE[] convertResultArray(@NotNull final Object result) {
         if (!(result instanceof int[])) {
             return convertResultFallbackFun.apply(result);
         }
@@ -79,6 +80,12 @@ public class ToPageWithDictionary<DATA_TYPE, ATTR extends Any>
         }
 
         return to;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public Integer convertSingleResult(@Nullable final Object result) {
+        return result == null ? Integer.valueOf(NULL_INT) : (Integer) chunkDictionary.get((int) result);
     }
 
     @Override
@@ -121,7 +128,7 @@ public class ToPageWithDictionary<DATA_TYPE, ATTR extends Any>
             }
 
             @Override
-            public long[] convertResult(@NotNull final Object result) {
+            public long[] convertResultArray(@NotNull final Object result) {
                 final int[] from = (int[]) result;
                 final long[] to = new long[from.length];
 

@@ -53,7 +53,7 @@ public class ToBooleanAsBytePage<ATTR extends Any> implements ToPage<ATTR, byte[
 
     @Override
     @NotNull
-    public ObjectVector<Boolean> makeVector(byte[] result) {
+    public ObjectVector<Boolean> makeVector(@NotNull byte[] result) {
         Boolean[] to = new Boolean[result.length];
 
         for (int i = 0; i < result.length; ++i) {

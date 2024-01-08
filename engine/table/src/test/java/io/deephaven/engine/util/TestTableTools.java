@@ -7,6 +7,7 @@ import io.deephaven.chunk.IntChunk;
 import io.deephaven.chunk.attributes.Values;
 import io.deephaven.datastructures.util.CollectionUtil;
 import io.deephaven.engine.context.*;
+import io.deephaven.engine.exceptions.IncompatibleTableDefinitionException;
 import io.deephaven.engine.rowset.RowSet;
 import io.deephaven.engine.rowset.RowSetFactory;
 import io.deephaven.engine.rowset.RowSetShiftData;
@@ -99,31 +100,31 @@ public class TestTableTools {
         try {
             TableTools.merge(table1, table2);
             TestCase.fail("Expected exception");
-        } catch (TableDefinition.IncompatibleTableDefinitionException expected) {
+        } catch (IncompatibleTableDefinitionException expected) {
         }
 
         try {
             TableTools.merge(table2, table1);
             TestCase.fail("Expected exception");
-        } catch (TableDefinition.IncompatibleTableDefinitionException expected) {
+        } catch (IncompatibleTableDefinitionException expected) {
         }
 
         try {
             TableTools.merge(table2, emptyTable);
             TestCase.fail("Expected exception");
-        } catch (TableDefinition.IncompatibleTableDefinitionException expected) {
+        } catch (IncompatibleTableDefinitionException expected) {
         }
 
         try {
             TableTools.merge(table2, table2.updateView("S2=StringKeys1"));
             TestCase.fail("Expected exception");
-        } catch (TableDefinition.IncompatibleTableDefinitionException expected) {
+        } catch (IncompatibleTableDefinitionException expected) {
         }
 
         try {
             TableTools.merge(table2, table2.dropColumns("StringKeys1"));
             TestCase.fail("Expected exception");
-        } catch (TableDefinition.IncompatibleTableDefinitionException expected) {
+        } catch (IncompatibleTableDefinitionException expected) {
         }
     }
 

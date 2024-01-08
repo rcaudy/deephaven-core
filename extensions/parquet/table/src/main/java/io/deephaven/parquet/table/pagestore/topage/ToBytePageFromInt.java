@@ -51,7 +51,7 @@ public class ToBytePageFromInt<ATTR extends Any> implements ToPage<ATTR, byte[]>
 
     @Override
     @NotNull
-    public final byte[] convertResult(Object result) {
+    public final byte[] convertResultArray(@NotNull final Object result) {
         int [] from = (int []) result;
         byte [] to = new byte [from.length];
 

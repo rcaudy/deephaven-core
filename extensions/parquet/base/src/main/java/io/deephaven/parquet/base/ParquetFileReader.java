@@ -8,6 +8,8 @@ import io.deephaven.parquet.base.util.SeekableChannelsProvider;
 import org.apache.parquet.format.*;
 import org.apache.parquet.format.ColumnOrder;
 import org.apache.parquet.format.Type;
+import org.apache.parquet.format.converter.ParquetMetadataConverter;
+import org.apache.parquet.hadoop.metadata.ParquetMetadata;
 import org.apache.parquet.schema.*;
 
 import java.io.ByteArrayInputStream;
@@ -28,14 +30,22 @@ public class ParquetFileReader {
     private static final String MAGIC_STR = "PAR1";
     static final byte[] MAGIC = MAGIC_STR.getBytes(StandardCharsets.US_ASCII);
 
-    public final FileMetaData fileMetaData;
+    private final FileMetaData fileMetaData;
     private final SeekableChannelsProvider channelsProvider;
     private final Path rootPath;
     private final MessageType type;
+    private final ParquetMetadata parquetMetadata;
 
     public ParquetFileReader(final String filePath, final SeekableChannelsProvider channelsProvider)
             throws IOException {
         this.channelsProvider = channelsProvider;
+
+        // TODO (AB): This whole method is scary. It has a bunch of code stolen from Apache's ParquetFileReader
+        // but is returning a parquet.format.FileMetaData instead of a ParquetMetaData, which itself
+        // has a DIFFERENT FileMetaData (org.apache.parquet.hadoop.FileMetaData) Which has different fields
+        // I am leaving it for now, but I'm concerned that we are not reading this properly (even though
+        // we are reading the correct data)
+
         // Root path should be this file if a single file, else the parent directory for a metadata
         // file
         rootPath =
@@ -71,6 +81,7 @@ public class ParquetFileReader {
             Helpers.readBytes(readChannel, footer);
         }
         fileMetaData = Util.readFileMetaData(new ByteArrayInputStream(footer));
+        parquetMetadata = new ParquetMetadataConverter().fromParquetMetadata(fileMetaData);
         type = fromParquetSchema(fileMetaData.schema, fileMetaData.column_orders);
     }
 
@@ -180,12 +191,21 @@ public class ParquetFileReader {
      */
     public RowGroupReader getRowGroup(final int groupNumber, final String version) {
         return new RowGroupReaderImpl(
+                parquetMetadata.getBlocks().get(groupNumber),
                 fileMetaData.getRow_groups().get(groupNumber),
                 channelsProvider,
                 rootPath,
                 type,
                 getSchema(),
                 version);
+    }
+
+    public ParquetMetadata getParquetMetadata() {
+        return parquetMetadata;
+    }
+
+    public FileMetaData getFileMetaData() {
+        return fileMetaData;
     }
 
     private static MessageType fromParquetSchema(List<SchemaElement> schema, List<ColumnOrder> columnOrders)

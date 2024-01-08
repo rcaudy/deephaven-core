@@ -4,6 +4,7 @@
 package io.deephaven.engine.util.input;
 
 import io.deephaven.engine.exceptions.ArgumentException;
+import io.deephaven.engine.exceptions.IncompatibleTableDefinitionException;
 import io.deephaven.engine.table.ColumnDefinition;
 import io.deephaven.engine.table.Table;
 import io.deephaven.engine.table.TableDefinition;
@@ -51,7 +52,7 @@ public interface InputTableUpdater {
      * Helper to check if a table is compatible with this table, so that it could be added as contents.
      *
      * @param tableToApply the table to check if it can used to add or modify this input table
-     * @throws TableDefinition.IncompatibleTableDefinitionException if the definitions are not compatible
+     * @throws IncompatibleTableDefinitionException if the definitions are not compatible
      */
     default void validateAddOrModify(final Table tableToApply) {
         getTableDefinition().checkMutualCompatibility(tableToApply.getDefinition());

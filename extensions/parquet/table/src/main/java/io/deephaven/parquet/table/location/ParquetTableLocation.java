@@ -3,12 +3,15 @@
  */
 package io.deephaven.parquet.table.location;
 
+import io.deephaven.api.SortColumn;
+import io.deephaven.engine.table.Table;
 import io.deephaven.engine.table.impl.locations.TableKey;
 import io.deephaven.engine.table.impl.locations.impl.AbstractTableLocation;
 import io.deephaven.parquet.table.ParquetInstructions;
 import io.deephaven.parquet.table.ParquetSchemaReader;
 import io.deephaven.parquet.table.metadata.ColumnTypeInfo;
 import io.deephaven.parquet.table.metadata.GroupingColumnInfo;
+import io.deephaven.parquet.table.metadata.SortColumnInfo;
 import io.deephaven.parquet.table.metadata.TableInfo;
 import io.deephaven.chunk.attributes.Values;
 import io.deephaven.engine.table.impl.sources.regioned.RegionedColumnSource;
@@ -24,9 +27,11 @@ import org.apache.parquet.column.ColumnDescriptor;
 import org.apache.parquet.format.RowGroup;
 import org.apache.parquet.hadoop.metadata.ParquetMetadata;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class ParquetTableLocation extends AbstractTableLocation {
@@ -42,6 +47,8 @@ public class ParquetTableLocation extends AbstractTableLocation {
     private final Map<String, String[]> parquetColumnNameToPath;
     private final Map<String, GroupingColumnInfo> groupingColumns;
     private final Map<String, ColumnTypeInfo> columnTypes;
+    private final List<SortColumn> sortingColumns;
+    private final TableInfo tableInfo;
     private final String version;
 
     private volatile RowGroupReader[] rowGroupReaders;
@@ -61,7 +68,7 @@ public class ParquetTableLocation extends AbstractTableLocation {
 
         final int rowGroupCount = rowGroupIndices.length;
         rowGroups = IntStream.of(rowGroupIndices)
-                .mapToObj(rgi -> parquetFileReader.fileMetaData.getRow_groups().get(rgi))
+                .mapToObj(rgi -> parquetFileReader.getFileMetaData().getRow_groups().get(rgi))
                 .sorted(Comparator.comparingInt(RowGroup::getOrdinal))
                 .toArray(RowGroup[]::new);
         final long maxRowCount = Arrays.stream(rowGroups).mapToLong(RowGroup::getNum_rows).max().orElse(0L);
@@ -81,11 +88,14 @@ public class ParquetTableLocation extends AbstractTableLocation {
         // in order to read *this* file's metadata, rather than inheriting file metadata from the _metadata file.
         // Obvious issues included grouping table paths, codecs, etc.
         // Presumably, we could store per-file instances of the metadata in the _metadata file's map.
-        final Optional<TableInfo> tableInfo =
-                ParquetSchemaReader.parseMetadata(parquetMetadata.getFileMetaData().getKeyValueMetaData());
-        groupingColumns = tableInfo.map(TableInfo::groupingColumnMap).orElse(Collections.emptyMap());
-        columnTypes = tableInfo.map(TableInfo::columnTypeMap).orElse(Collections.emptyMap());
-        version = tableInfo.map(TableInfo::version).orElse(null);
+        tableInfo = ParquetSchemaReader.parseMetadata(parquetMetadata.getFileMetaData().getKeyValueMetaData())
+                .orElse(TableInfo.builder().build());
+        groupingColumns = tableInfo.groupingColumnMap();
+        columnTypes = tableInfo.columnTypeMap();
+        version = tableInfo.version();
+        sortingColumns = tableInfo.sortingColumns().stream()
+                .map(SortColumnInfo::toSortColumn)
+                .collect(Collectors.toList());
 
         handleUpdate(computeIndex(), tableLocationKey.getFile().lastModified());
     }
@@ -115,11 +125,11 @@ public class ParquetTableLocation extends AbstractTableLocation {
     }
 
     public Map<String, GroupingColumnInfo> getGroupingColumns() {
-        return groupingColumns;
+        return tableInfo.groupingColumnMap();
     }
 
     public Map<String, ColumnTypeInfo> getColumnTypes() {
-        return columnTypes;
+        return tableInfo.columnTypeMap();
     }
 
     private RowGroupReader[] getRowGroupReaders() {
@@ -140,6 +150,12 @@ public class ParquetTableLocation extends AbstractTableLocation {
 
     @NotNull
     @Override
+    public List<SortColumn> getSortedColumns() {
+        return sortingColumns;
+    }
+
+    @NotNull
+    @Override
     protected ParquetColumnLocation<Values> makeColumnLocation(@NotNull final String columnName) {
         final String parquetColumnName = readInstructions.getParquetColumnNameFromColumnNameOrDefault(columnName);
         final String[] columnPath = parquetColumnNameToPath.get(parquetColumnName);
@@ -148,9 +164,9 @@ public class ParquetTableLocation extends AbstractTableLocation {
         final ColumnChunkReader[] columnChunkReaders = Arrays.stream(getRowGroupReaders())
                 .map(rgr -> rgr.getColumnChunk(nameList)).toArray(ColumnChunkReader[]::new);
         final boolean exists = Arrays.stream(columnChunkReaders).anyMatch(ccr -> ccr != null && ccr.numRows() > 0);
+        // TODO NATE NOCOMMIT?
         return new ParquetColumnLocation<>(this, columnName, parquetColumnName,
-                exists ? columnChunkReaders : null,
-                exists && groupingColumns.containsKey(parquetColumnName));
+                exists ? columnChunkReaders : null, false);
     }
 
     private RowSet computeIndex() {
@@ -163,5 +179,16 @@ public class ParquetTableLocation extends AbstractTableLocation {
             sequentialBuilder.appendRange(subRegionFirstKey, subRegionLastKey);
         }
         return sequentialBuilder.build();
+    }
+
+    @Override
+    public boolean hasDataIndexFor(@NotNull String... columns) {
+        return false;
+    }
+
+    @Override
+    protected @Nullable Table getDataIndexImpl(@NotNull final String... columns) {
+        // TODO NATE NOCOMMIT
+        return null; // ParquetTools.readDataIndexTable(getParquetFile(), tableInfo, columns);
     }
 }

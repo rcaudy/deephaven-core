@@ -51,7 +51,7 @@ public class ToShortPageFromInt<ATTR extends Any> implements ToPage<ATTR, short[
 
     @Override
     @NotNull
-    public final short[] convertResult(Object result) {
+    public final short[] convertResultArray(@NotNull final Object result) {
         int [] from = (int []) result;
         short [] to = new short [from.length];
 

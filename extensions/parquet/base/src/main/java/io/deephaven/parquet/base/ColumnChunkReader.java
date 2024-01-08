@@ -5,6 +5,7 @@ package io.deephaven.parquet.base;
 
 import org.apache.parquet.column.Dictionary;
 import org.apache.parquet.internal.column.columnindex.OffsetIndex;
+import org.apache.parquet.column.statistics.Statistics;
 import org.apache.parquet.schema.PrimitiveType;
 import org.jetbrains.annotations.Nullable;
 
@@ -62,6 +63,10 @@ public interface ColumnChunkReader {
      * @apiNote The result will never return {@code null}. It will instead supply {@link #NULL_DICTIONARY}.
      */
     Supplier<Dictionary> getDictionarySupplier();
+
+    boolean hasStatistics();
+
+    <T extends Comparable<T>, S extends Statistics<T>> S getStatistics();
 
     Dictionary NULL_DICTIONARY = new NullDictionary();
 

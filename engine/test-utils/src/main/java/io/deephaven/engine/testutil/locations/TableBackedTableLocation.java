@@ -1,5 +1,7 @@
 package io.deephaven.engine.testutil.locations;
 
+import io.deephaven.api.SortColumn;
+import io.deephaven.engine.table.Table;
 import io.deephaven.engine.table.impl.QueryTable;
 import io.deephaven.engine.table.impl.locations.ColumnLocation;
 import io.deephaven.engine.table.impl.locations.TableDataException;
@@ -7,6 +9,9 @@ import io.deephaven.engine.table.impl.locations.impl.AbstractTableLocation;
 import io.deephaven.engine.table.impl.locations.impl.StandaloneTableKey;
 import io.deephaven.engine.updategraph.UpdateSourceRegistrar;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.List;
 
 public final class TableBackedTableLocation extends AbstractTableLocation {
 
@@ -59,5 +64,21 @@ public final class TableBackedTableLocation extends AbstractTableLocation {
     @Override
     protected @NotNull ColumnLocation makeColumnLocation(@NotNull final String name) {
         return new TableBackedColumnLocation(this, name);
+    }
+
+    @Override
+    public @NotNull List<SortColumn> getSortedColumns() {
+        // TODO NATE NOCOMMIT
+        return List.of();
+    }
+
+    @Override
+    public boolean hasDataIndexFor(@NotNull String... columns) {
+        return false;
+    }
+
+    @Override
+    protected @Nullable Table getDataIndexImpl(@NotNull String... columns) {
+        return null;
     }
 }

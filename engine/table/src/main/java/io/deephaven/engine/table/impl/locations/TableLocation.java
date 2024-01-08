@@ -3,12 +3,17 @@
  */
 package io.deephaven.engine.table.impl.locations;
 
+import io.deephaven.api.SortColumn;
 import io.deephaven.base.log.LogOutput;
 import io.deephaven.base.log.LogOutputAppendable;
+import io.deephaven.engine.table.Table;
 import io.deephaven.io.log.impl.LogOutputStringImpl;
 import io.deephaven.util.annotations.FinalDefault;
 import io.deephaven.util.type.NamedImplementation;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.List;
 
 /**
  * Building block for Deephaven "source" tables, with helper methods for discovering locations and their sizes. A
@@ -35,6 +40,12 @@ public interface TableLocation extends NamedImplementation, LogOutputAppendable,
      */
     @NotNull
     ImmutableTableKey getTableKey();
+
+    // TODO: NATE NOCOMMIT IF UNUSED ELSE MAKE CAST
+    default <T extends TableLocation> T as(Class<T> otherType) {
+        // noinspection unchecked
+        return (T) this;
+    }
 
     /**
      * @return An {@link ImmutableTableLocationKey} instance for this location
@@ -76,6 +87,31 @@ public interface TableLocation extends NamedImplementation, LogOutputAppendable,
      * Initialize or run state information.
      */
     void refresh();
+
+    /**
+     * Get an ordered list of columns this location is sorted by.
+     *
+     * @return a non-null ordered list of {@link SortColumn}s
+     */
+    @NotNull
+    List<SortColumn> getSortedColumns();
+
+    /**
+     * Check if this location has a data index for the specified columns.
+     *
+     * @param columns the set of columns to check for.
+     * @return true if the table has a Data Index for the specified columns
+     */
+    boolean hasDataIndexFor(@NotNull String... columns);
+
+    /**
+     * Get the data index table for the specified set of columns. Note that the order of columns does not matter here.
+     *
+     * @param columns the key columns for the index
+     * @return the index table or null if one does not exist.
+     */
+    @Nullable
+    Table getDataIndex(@NotNull String... columns);
 
     /**
      * @param name The column name

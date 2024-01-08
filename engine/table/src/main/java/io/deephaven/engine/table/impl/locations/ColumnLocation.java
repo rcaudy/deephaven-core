@@ -42,6 +42,16 @@ public interface ColumnLocation extends StringUtils.StringKeyedObject, NamedImpl
     boolean exists();
 
     /**
+     * Get this column location cast to the specified type
+     *
+     * @return {@code this}, with the appropriate cast applied
+     */
+    default <CL extends ColumnLocation> CL cast() {
+        // noinspection unchecked
+        return (CL) this;
+    }
+
+    /**
      * <p>
      * Get the metadata object stored with this column, or null if no such data exists.
      * <p>

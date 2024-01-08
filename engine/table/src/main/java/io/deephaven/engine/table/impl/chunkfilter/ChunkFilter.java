@@ -7,10 +7,12 @@ import io.deephaven.configuration.Configuration;
 import io.deephaven.engine.exceptions.CancellationException;
 import io.deephaven.engine.rowset.*;
 import io.deephaven.engine.rowset.RowSetFactory;
+import io.deephaven.engine.table.ChunkSource;
 import io.deephaven.engine.table.ColumnSource;
 import io.deephaven.chunk.*;
 import io.deephaven.engine.rowset.chunkattributes.OrderedRowKeys;
 import io.deephaven.chunk.attributes.Values;
+import org.jetbrains.annotations.NotNull;
 
 public interface ChunkFilter {
     /**
@@ -138,14 +140,17 @@ public interface ChunkFilter {
      * filter.
      *
      * @param selection the RowSet to filter
-     * @param columnSource the column source to filter
+     * @param chunkSource the chunk source to filter
      * @param usePrev should we use previous values from the column source?
      * @param chunkFilter the chunk filter to apply
      *
      * @return A new WritableRowSet representing the filtered values, owned by the caller
      */
-    static WritableRowSet applyChunkFilter(RowSet selection, ColumnSource<?> columnSource, boolean usePrev,
-            ChunkFilter chunkFilter) {
+    static WritableRowSet applyChunkFilter(
+            @NotNull final RowSet selection,
+            @NotNull final ChunkSource<? extends Values> chunkSource,
+            final boolean usePrev,
+            @NotNull final ChunkFilter chunkFilter) {
         final RowSetBuilderSequential builder = RowSetFactory.builderSequential();
 
         final int contextSize = (int) Math.min(FILTER_CHUNK_SIZE, selection.size());
@@ -153,7 +158,7 @@ public interface ChunkFilter {
         long filteredChunks = 0;
         long lastInterruptCheck = System.currentTimeMillis();
 
-        try (final ColumnSource.GetContext getContext = columnSource.makeGetContext(contextSize);
+        try (final ColumnSource.GetContext getContext = chunkSource.makeGetContext(contextSize);
                 final WritableLongChunk<OrderedRowKeys> longChunk = WritableLongChunk.makeWritableChunk(contextSize);
                 final RowSequence.Iterator rsIt = selection.getRowSequenceIterator()) {
             while (rsIt.hasMore()) {
@@ -176,9 +181,11 @@ public interface ChunkFilter {
 
                 final Chunk<? extends Values> dataChunk;
                 if (usePrev) {
-                    dataChunk = columnSource.getPrevChunk(getContext, okChunk);
+                    // noinspection unchecked
+                    dataChunk = ((ChunkSource.WithPrev<? extends Values>) chunkSource)
+                            .getPrevChunk(getContext, okChunk);
                 } else {
-                    dataChunk = columnSource.getChunk(getContext, okChunk);
+                    dataChunk = chunkSource.getChunk(getContext, okChunk);
                 }
                 chunkFilter.filter(dataChunk, keyChunk, longChunk);
 

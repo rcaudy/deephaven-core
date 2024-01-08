@@ -45,15 +45,15 @@ public class ToDatePageFromInt<ATTR extends Any> implements ToPage<ATTR, LocalDa
         return NULL_INT_BOXED;
     }
 
-    @Override
-    @NotNull
-    public final LocalDate[] convertResult(final Object result) {
-        final int[] from = (int[]) result;
-        final LocalDate[] to = new LocalDate[from.length];
-
-        for (int i = 0; i < from.length; ++i) {
-            to[i] = DateTimeUtils.epochDaysAsIntToLocalDate(from[i]);
-        }
-        return to;
-    }
+//    @Override
+//    @NotNull
+//    public final LocalDate[] convertResult(final Object result) {
+//        final int[] from = (int[]) result;
+//        final LocalDate[] to = new LocalDate[from.length];
+//
+//        for (int i = 0; i < from.length; ++i) {
+//            to[i] = DateTimeUtils.epochDaysAsIntToLocalDate(from[i]);
+//        }
+//        return to;
+//    }
 }

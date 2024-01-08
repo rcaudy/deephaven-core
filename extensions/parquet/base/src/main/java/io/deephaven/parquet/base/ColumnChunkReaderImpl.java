@@ -13,13 +13,15 @@ import org.apache.parquet.column.ColumnDescriptor;
 import org.apache.parquet.column.Dictionary;
 import org.apache.parquet.column.Encoding;
 import org.apache.parquet.column.page.DictionaryPage;
+import org.apache.parquet.column.statistics.Statistics;
 import org.apache.parquet.format.*;
+import org.apache.parquet.hadoop.metadata.ColumnChunkMetaData;
 import org.apache.parquet.internal.column.columnindex.OffsetIndex;
-import org.apache.parquet.io.ParquetDecodingException;
 import org.apache.parquet.schema.MessageType;
 import org.apache.parquet.schema.PrimitiveType;
 import org.apache.parquet.schema.Type;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,6 +41,7 @@ import static org.apache.parquet.format.Encoding.RLE_DICTIONARY;
 public class ColumnChunkReaderImpl implements ColumnChunkReader {
 
     private final ColumnChunk columnChunk;
+    private final ColumnChunkMetaData columnChunkMetaData;
     private final SeekableChannelsProvider channelsProvider;
     private final Path rootPath;
     private final CompressorAdapter decompressor;
@@ -58,14 +61,21 @@ public class ColumnChunkReaderImpl implements ColumnChunkReader {
      */
     private final String version;
 
-    ColumnChunkReaderImpl(ColumnChunk columnChunk, SeekableChannelsProvider channelsProvider, Path rootPath,
-            MessageType type, OffsetIndex offsetIndex, List<Type> fieldTypes, final long numRows,
-            final String version) {
-        this.channelsProvider = channelsProvider;
+    ColumnChunkReaderImpl(
+            @NotNull final ColumnChunk columnChunk,
+            @NotNull final ColumnChunkMetaData columnChunkMetaData,
+            @NotNull final SeekableChannelsProvider channelsProvider,
+            @NotNull final Path rootPath,
+            @NotNull final MessageType type,
+            @NotNull final OffsetIndex offsetIndex,
+            @NotNull final List<Type> fieldTypes,
+            final long numRows,
+            @Nullable final String version) {
         this.columnChunk = columnChunk;
+        this.columnChunkMetaData = columnChunkMetaData;
+        this.channelsProvider = channelsProvider;
         this.rootPath = rootPath;
-        this.path = type
-                .getColumnDescription(columnChunk.meta_data.getPath_in_schema().toArray(new String[0]));
+        this.path = type.getColumnDescription(columnChunk.meta_data.getPath_in_schema().toArray(String[]::new));
         if (columnChunk.getMeta_data().isSetCodec()) {
             decompressor = DeephavenCompressorAdapterFactory.getInstance()
                     .getByName(columnChunk.getMeta_data().getCodec().name());
@@ -148,6 +158,17 @@ public class ColumnChunkReaderImpl implements ColumnChunkReader {
             }
         }
         return true;
+    }
+
+    @Override
+    public boolean hasStatistics() {
+        return columnChunk.getMeta_data().isSetStatistics();
+    }
+
+    @Override
+    public <T extends Comparable<T>, S extends Statistics<T>> S getStatistics() {
+        // noinspection unchecked
+        return (S) columnChunkMetaData.getStatistics();
     }
 
     @Override

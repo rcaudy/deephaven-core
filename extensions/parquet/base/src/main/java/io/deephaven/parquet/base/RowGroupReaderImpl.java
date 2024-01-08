@@ -8,6 +8,8 @@ import org.apache.parquet.format.ColumnChunk;
 import org.apache.parquet.format.RowGroup;
 import org.apache.parquet.format.Util;
 import org.apache.parquet.format.converter.ParquetMetadataConverter;
+import org.apache.parquet.hadoop.metadata.BlockMetaData;
+import org.apache.parquet.hadoop.metadata.ColumnChunkMetaData;
 import org.apache.parquet.internal.column.columnindex.OffsetIndex;
 import org.apache.parquet.schema.MessageType;
 import org.apache.parquet.schema.Type;
@@ -33,11 +35,13 @@ public class RowGroupReaderImpl implements RowGroupReader {
     private final MessageType type;
     private final Map<String, List<Type>> schemaMap = new HashMap<>();
     private final Map<String, ColumnChunk> chunkMap = new HashMap<>();
+    private final Map<String, ColumnChunkMetaData> metadataMap = new HashMap<>();
 
     private final Path rootPath;
     private final String version;
 
     RowGroupReaderImpl(
+            @NotNull final BlockMetaData blockMetaData,
             @NotNull final RowGroup rowGroup,
             @NotNull final SeekableChannelsProvider channelsProvider,
             @NotNull final Path rootPath,
@@ -48,19 +52,25 @@ public class RowGroupReaderImpl implements RowGroupReader {
         this.rowGroup = rowGroup;
         this.rootPath = rootPath;
         this.type = type;
-        for (ColumnChunk column : rowGroup.columns) {
-            List<String> path_in_schema = column.getMeta_data().path_in_schema;
-            String key = path_in_schema.toString();
-            chunkMap.put(key, column);
-            List<Type> nonRequiredFields = new ArrayList<>();
+
+        // TODO: Use BlockMetaData instead of column.getMetaData
+        final List<ColumnChunk> columns = rowGroup.columns;
+        for (int ii = 0; ii < columns.size(); ii++) {
+            final ColumnChunk column = columns.get(ii);
+            final List<String> path_in_schema = column.getMeta_data().path_in_schema;
+            final String key = path_in_schema.toString();
+            final List<Type> nonRequiredFields = new ArrayList<>();
             for (int indexInPath = 0; indexInPath < path_in_schema.size(); indexInPath++) {
-                Type fieldType = schema
-                        .getType(path_in_schema.subList(0, indexInPath + 1).toArray(new String[0]));
+                final Type fieldType = schema.getType(path_in_schema.subList(0, indexInPath + 1)
+                        .toArray(String[]::new));
                 if (fieldType.getRepetition() != Type.Repetition.REQUIRED) {
                     nonRequiredFields.add(fieldType);
                 }
             }
+
+            chunkMap.put(key, column);
             schemaMap.put(key, nonRequiredFields);
+            metadataMap.put(key, blockMetaData.getColumns().get(ii));
         }
         this.version = version;
     }
@@ -84,8 +94,15 @@ public class RowGroupReaderImpl implements RowGroupReader {
                 throw new UncheckedIOException(e);
             }
         }
-        return new ColumnChunkReaderImpl(columnChunk, channelsProvider, rootPath, type, offsetIndex, fieldTypes,
-                numRows(), version);
+        return new ColumnChunkReaderImpl(columnChunk,
+                metadataMap.get(key),
+                channelsProvider,
+                rootPath,
+                type,
+                offsetIndex,
+                fieldTypes,
+                numRows(),
+                version);
     }
 
     @Override

@@ -73,7 +73,7 @@ public abstract class ToInstantPage<ATTR extends Any> extends ToLongPage<ATTR> {
     private static final class ToInstantPageFromNanos<ATTR extends Any> extends ToInstantPage<ATTR> {
         @Override
         @NotNull
-        public ObjectVector<Instant> makeVector(long[] result) {
+        public ObjectVector<Instant> makeVector(@NotNull long[] result) {
             return makeVectorHelper(result, DateTimeUtils::epochNanosToInstant);
         }
     }
@@ -81,12 +81,12 @@ public abstract class ToInstantPage<ATTR extends Any> extends ToLongPage<ATTR> {
     private static final class ToInstantPageFromMicros<ATTR extends Any> extends ToInstantPage<ATTR> {
         @Override
         @NotNull
-        public ObjectVector<Instant> makeVector(long[] result) {
+        public ObjectVector<Instant> makeVector(@NotNull long[] result) {
             return makeVectorHelper(result, DateTimeUtils::epochMicrosToInstant);
         }
 
         @Override
-        public long[] convertResult(@NotNull final Object result) {
+        public long[] convertResultArray(@NotNull final Object result) {
             return convertResultHelper(result, DateTimeUtils::microsToNanos);
         }
     }
@@ -94,12 +94,12 @@ public abstract class ToInstantPage<ATTR extends Any> extends ToLongPage<ATTR> {
     private static final class ToInstantPageFromMillis<ATTR extends Any> extends ToInstantPage<ATTR> {
         @Override
         @NotNull
-        public ObjectVector<Instant> makeVector(long[] result) {
+        public ObjectVector<Instant> makeVector(@NotNull long[] result) {
             return makeVectorHelper(result, DateTimeUtils::epochMillisToInstant);
         }
 
         @Override
-        public long[] convertResult(@NotNull final Object result) {
+        public long[] convertResultArray(@NotNull final Object result) {
             return convertResultHelper(result, DateTimeUtils::millisToNanos);
         }
     }

@@ -4,6 +4,7 @@
 package io.deephaven.replicators;
 
 import org.apache.commons.io.FileUtils;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.IOException;
@@ -80,6 +81,11 @@ public class ReplicateRegionsAndRegionedSources {
                 "        }",
                 "        return destination;",
                 "    }"));
+        lines = replaceRegion(lines, "StaticRegion.getBytes", Arrays.asList(
+                "        @Override",
+                "        public byte[] getBytes(long firstElementIndex, @NotNull byte[] destination, int destinationOffset, int length) {",
+                "            return lookupRegion(firstElementIndex).getBytes(firstElementIndex, destination, destinationOffset, length);",
+                "        }"));
         FileUtils.writeLines(byteFile, lines);
     }
 
@@ -97,6 +103,10 @@ public class ReplicateRegionsAndRegionedSources {
         lines = lines.stream().map(x -> x.replaceAll("ColumnRegionObject<([^,>]+)>", "ColumnRegionObject<T, $1>"))
                 .collect(Collectors.toList());
         lines = lines.stream().map(x -> x.replaceAll("ChunkHolderPageObject<([^,>]+)>", "ChunkHolderPageObject<T, $1>"))
+                .collect(Collectors.toList());
+        lines = lines.stream().map(x -> x.replaceAll("T\\[] keys", "Object[] keys"))
+                .collect(Collectors.toList());
+        lines = lines.stream().map(x -> x.replaceAll("T\\[] sortedKeys", "Object[] sortedKeys"))
                 .collect(Collectors.toList());
         lines = replaceRegion(lines, "allocatePage", Arrays.asList(
                 "                    // noinspection unchecked",

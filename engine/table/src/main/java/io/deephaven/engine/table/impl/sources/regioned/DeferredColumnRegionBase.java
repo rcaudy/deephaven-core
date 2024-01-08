@@ -5,9 +5,11 @@ package io.deephaven.engine.table.impl.sources.regioned;
 
 import io.deephaven.base.verify.Require;
 import io.deephaven.chunk.attributes.Any;
+import io.deephaven.engine.rowset.WritableRowSet;
 import io.deephaven.engine.table.SharedContext;
 import io.deephaven.chunk.*;
 import io.deephaven.engine.rowset.RowSequence;
+import io.deephaven.engine.table.impl.locations.ColumnLocation;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.OverridingMethodsMustInvokeSuper;
@@ -77,8 +79,10 @@ public abstract class DeferredColumnRegionBase<ATTR extends Any, REGION_TYPE ext
     }
 
     @Override
-    public void fillChunk(@NotNull FillContext context, @NotNull WritableChunk<? super ATTR> destination,
-            @NotNull RowSequence rowSequence) {
+    public void fillChunk(
+            @NotNull final FillContext context,
+            @NotNull final WritableChunk<? super ATTR> destination,
+            @NotNull final RowSequence rowSequence) {
         getResultRegion().fillChunk(context, destination, rowSequence);
     }
 
@@ -91,12 +95,42 @@ public abstract class DeferredColumnRegionBase<ATTR extends Any, REGION_TYPE ext
     }
 
     @Override
-    public Chunk<? extends ATTR> getChunk(@NotNull GetContext context, @NotNull RowSequence rowSequence) {
+    public Chunk<? extends ATTR> getChunk(@NotNull final GetContext context, @NotNull final RowSequence rowSequence) {
         return getResultRegion().getChunk(context, rowSequence);
     }
 
     @Override
-    public Chunk<? extends ATTR> getChunk(@NotNull GetContext context, long firstKey, long lastKey) {
+    public Chunk<? extends ATTR> getChunk(@NotNull final GetContext context, final long firstKey, final long lastKey) {
         return getResultRegion().getChunk(context, firstKey, lastKey);
+    }
+
+    @Override
+    public FillContext makeFillContext(final int chunkCapacity, final SharedContext sharedContext) {
+        return getResultRegion().makeFillContext(chunkCapacity, sharedContext);
+    }
+
+    @Override
+    public GetContext makeGetContext(final int chunkCapacity, final SharedContext sharedContext) {
+        return getResultRegion().makeGetContext(chunkCapacity, sharedContext);
+    }
+
+    @Override
+    public ColumnLocation getLocation() {
+        return getResultRegion().getLocation();
+    }
+
+    @Override
+    public boolean supportsMatching() {
+        return getResultRegion().supportsMatching();
+    }
+
+    @Override
+    public WritableRowSet match(
+            final boolean invertMatch,
+            final boolean usePrev,
+            final boolean caseInsensitive,
+            @NotNull final RowSequence rowSequence,
+            final Object... sortedKeys) {
+        return getResultRegion().match(invertMatch, usePrev, caseInsensitive, rowSequence, sortedKeys);
     }
 }

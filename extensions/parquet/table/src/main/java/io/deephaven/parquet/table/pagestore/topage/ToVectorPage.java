@@ -54,12 +54,12 @@ public class ToVectorPage<ATTR extends Any, RESULT, VECTOR_TYPE extends Vector<?
 
     @NotNull
     @Override
-    public final VECTOR_TYPE[] convertResult(final Object object) {
+    public final VECTOR_TYPE[] convertResultArray(@NotNull final Object object) {
         final DataWithOffsets dataWithOffsets = (DataWithOffsets) object;
 
         // noinspection unchecked
         final VECTOR_TYPE dataWrapper =
-                (VECTOR_TYPE) toPage.makeVector(toPage.convertResult(dataWithOffsets.materializeResult));
+                (VECTOR_TYPE) toPage.makeVector(toPage.convertResultArray(dataWithOffsets.materializeResult));
         final IntBuffer offsets = dataWithOffsets.offsets;
 
         // noinspection unchecked

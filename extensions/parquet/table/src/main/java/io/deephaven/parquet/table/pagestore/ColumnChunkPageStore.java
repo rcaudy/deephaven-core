@@ -21,6 +21,7 @@ import io.deephaven.parquet.base.ColumnChunkReader;
 import io.deephaven.parquet.base.ColumnPageReader;
 import io.deephaven.util.SafeCloseable;
 import io.deephaven.vector.Vector;
+import org.apache.parquet.column.statistics.Statistics;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
@@ -161,6 +162,14 @@ public abstract class ColumnChunkPageStore<ATTR extends Any>
         return toPage.getChunkType();
     }
 
+    public boolean hasStatistics() {
+        return columnChunkReader.hasStatistics();
+    }
+
+    public <T extends Comparable<T>, S extends Statistics<T>> S getStatistics() {
+        return columnChunkReader.getStatistics();
+    }
+
     /**
      * @see ColumnChunkReader#usesDictionaryOnEveryPage()
      */
@@ -193,5 +202,9 @@ public abstract class ColumnChunkPageStore<ATTR extends Any>
                 ? currentInnerContext
                 // TODO(deephaven-core#4836): Replace this with getting a context from this.ColumnChunkReader
                 : makeFillContext(chunkCapacity, sharedContext));
+    }
+
+    public <T> T convertSingleValue(@NotNull final Object toConvert) {
+        return toPage.convertSingleResult(toConvert);
     }
 }

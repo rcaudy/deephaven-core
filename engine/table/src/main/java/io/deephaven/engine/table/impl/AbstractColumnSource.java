@@ -140,6 +140,7 @@ public abstract class AbstractColumnSource<T> implements
             final boolean caseInsensitive,
             @NotNull final RowSet mapper,
             final Object... keys) {
+        // TODO (deephaven-core#3851): port this to new grouping API
         final Map<T, RowSet> groupToRange = (isImmutable() || !usePrev) ? getGroupToRange(mapper) : null;
         if (groupToRange != null) {
             RowSetBuilderRandom allInMatchingGroups = RowSetFactory.builderRandom();

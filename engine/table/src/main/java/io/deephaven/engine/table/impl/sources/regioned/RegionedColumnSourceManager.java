@@ -8,16 +8,18 @@ import io.deephaven.engine.rowset.RowSet;
 import io.deephaven.engine.rowset.RowSetBuilderSequential;
 import io.deephaven.engine.rowset.RowSetFactory;
 import io.deephaven.engine.rowset.WritableRowSet;
-import io.deephaven.engine.table.ColumnDefinition;
-import io.deephaven.engine.table.impl.ColumnSourceManager;
 import io.deephaven.engine.table.impl.ColumnToCodecMappings;
-import io.deephaven.engine.table.impl.locations.*;
 import io.deephaven.engine.table.impl.locations.impl.TableLocationUpdateSubscriptionBuffer;
-import io.deephaven.engine.table.impl.sources.DeferredGroupingColumnSource;
+import io.deephaven.engine.table.impl.sources.regioned.instructions.SourceTableColumnInstructions;
+import io.deephaven.engine.table.impl.sources.regioned.instructions.SourceTableInstructions;
 import io.deephaven.hash.KeyedObjectHashMap;
 import io.deephaven.hash.KeyedObjectKey;
-import io.deephaven.internal.log.LoggerFactory;
 import io.deephaven.io.logger.Logger;
+import io.deephaven.engine.table.ColumnDefinition;
+import io.deephaven.engine.table.impl.ColumnSourceManager;
+import io.deephaven.engine.table.impl.locations.*;
+import io.deephaven.engine.table.impl.sources.DeferredGroupingColumnSource;
+import io.deephaven.internal.log.LoggerFactory;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -49,7 +51,7 @@ public class RegionedColumnSourceManager implements ColumnSourceManager {
     /**
      * An unmodifiable view of columnSources.
      */
-    private final Map<String, ? extends DeferredGroupingColumnSource<?>> sharedColumnSources =
+    private final Map<String, ? extends RegionedColumnSource<?>> sharedColumnSources =
             Collections.unmodifiableMap(columnSources);
 
     /**
@@ -69,6 +71,9 @@ public class RegionedColumnSourceManager implements ColumnSourceManager {
      */
     private final List<IncludedTableLocationEntry> orderedIncludedTableLocations = new ArrayList<>();
 
+    /** A control class for modifying the behavior of the table and its column sources */
+    private final SourceTableInstructions instructions;
+
     /**
      * Whether grouping is enabled.
      */
@@ -82,16 +87,38 @@ public class RegionedColumnSourceManager implements ColumnSourceManager {
      * @param componentFactory The component factory
      * @param columnDefinitions The column definitions
      */
-    RegionedColumnSourceManager(final boolean isRefreshing,
+    RegionedColumnSourceManager(
+            final boolean isRefreshing,
             @NotNull final RegionedTableComponentFactory componentFactory,
             @NotNull final ColumnToCodecMappings codecMappings,
             @NotNull final List<ColumnDefinition<?>> columnDefinitions) {
+        this(isRefreshing, componentFactory, codecMappings, SourceTableInstructions.EMPTY, columnDefinitions);
+    }
+
+    /**
+     * Construct a column manager with the specified component factory and definitions.
+     *
+     * @param isRefreshing Whether the table using this column source manager is refreshing
+     * @param componentFactory The component factory
+     * @param instructions A control class for modifying the behavior of the table and its column sources
+     * @param columnDefinitions The column definitions
+     */
+    RegionedColumnSourceManager(
+            final boolean isRefreshing,
+            @NotNull final RegionedTableComponentFactory componentFactory,
+            @NotNull final ColumnToCodecMappings codecMappings,
+            @NotNull final SourceTableInstructions instructions,
+            @NotNull final List<ColumnDefinition<?>> columnDefinitions) {
         this.isRefreshing = isRefreshing;
+        this.instructions = instructions;
         this.columnDefinitions = columnDefinitions;
         for (final ColumnDefinition<?> columnDefinition : columnDefinitions) {
-            columnSources.put(
-                    columnDefinition.getName(),
-                    componentFactory.createRegionedColumnSource(columnDefinition, codecMappings));
+            final RegionedColumnSource<?> regionedColumnSource =
+                    componentFactory.createRegionedColumnSource(columnDefinition, codecMappings);
+            if (instructions.groupingDisabled()) {
+                regionedColumnSource.disableGrouping();
+            }
+            columnSources.put(columnDefinition.getName(), regionedColumnSource);
         }
     }
 
@@ -199,7 +226,7 @@ public class RegionedColumnSourceManager implements ColumnSourceManager {
     }
 
     @Override
-    public final Map<String, ? extends DeferredGroupingColumnSource<?>> getColumnSources() {
+    public final Map<String, ? extends RegionedColumnSource<?>> getColumnSources() {
         return sharedColumnSources;
     }
 
@@ -211,7 +238,8 @@ public class RegionedColumnSourceManager implements ColumnSourceManager {
         isGroupingEnabled = false;
         for (ColumnDefinition<?> columnDefinition : columnDefinitions) {
             if (columnDefinition.isGrouping()) {
-                DeferredGroupingColumnSource<?> columnSource = getColumnSources().get(columnDefinition.getName());
+                final RegionedColumnSource<?> columnSource = getColumnSources().get(columnDefinition.getName());
+                columnSource.disableGrouping();
                 columnSource.setGroupingProvider(null);
                 columnSource.setGroupToRange(null);
             }
@@ -304,12 +332,13 @@ public class RegionedColumnSourceManager implements ColumnSourceManager {
                     .appendRange(regionFirstKey + subRegionFirstKey, regionFirstKey + subRegionLastKey));
             RowSet addRowSetInTable = null;
             try {
-                for (final ColumnDefinition columnDefinition : columnDefinitions) {
-                    // noinspection unchecked
+                for (final ColumnDefinition<?> columnDefinition : columnDefinitions) {
+                    // noinspection unchecked,rawtypes
                     final ColumnLocationState state = new ColumnLocationState(
                             columnDefinition,
                             columnSources.get(columnDefinition.getName()),
-                            location.getColumnLocation(columnDefinition.getName()));
+                            location.getColumnLocation(columnDefinition.getName()),
+                            instructions.getInstructions(columnDefinition.getName()));
                     columnLocationStates.add(state);
                     state.regionAllocated(regionIndex);
                     if (state.needToUpdateGrouping()) {
@@ -430,18 +459,23 @@ public class RegionedColumnSourceManager implements ColumnSourceManager {
         protected final ColumnDefinition<T> definition;
         protected final RegionedColumnSource<T> source;
         protected final ColumnLocation location;
+        @NotNull
+        private final SourceTableColumnInstructions instructions;
 
-        private ColumnLocationState(ColumnDefinition<T> definition,
-                RegionedColumnSource<T> source,
-                ColumnLocation location) {
+        private ColumnLocationState(
+                @NotNull final ColumnDefinition<T> definition,
+                @NotNull final RegionedColumnSource<T> source,
+                @NotNull final ColumnLocation location,
+                @NotNull final SourceTableColumnInstructions instructions) {
             this.definition = definition;
             this.source = source;
             this.location = location;
+            this.instructions = instructions;
         }
 
         private void regionAllocated(final int regionIndex) {
-            Assert.eq(regionIndex, "regionIndex", source.addRegion(definition, location),
-                    "source.addRegion((definition, location)");
+            Assert.eq(regionIndex, "regionIndex", source.addRegion(definition, location, instructions),
+                    "source.addRegion((definition, location, instructions)");
         }
 
         private boolean needToUpdateGrouping() {
@@ -456,6 +490,7 @@ public class RegionedColumnSourceManager implements ColumnSourceManager {
         private void updateGrouping(@NotNull final RowSet locationAddedRowSetInTable) {
             if (definition.isGrouping()) {
                 Assert.eqTrue(isGroupingEnabled, "isGroupingEnabled");
+                // noinspection rawtypes
                 GroupingProvider groupingProvider = source.getGroupingProvider();
                 if (groupingProvider == null) {
                     groupingProvider = GroupingProvider.makeGroupingProvider(definition);
@@ -463,7 +498,7 @@ public class RegionedColumnSourceManager implements ColumnSourceManager {
                     source.setGroupingProvider(groupingProvider);
                 }
                 if (groupingProvider instanceof KeyRangeGroupingProvider) {
-                    ((KeyRangeGroupingProvider) groupingProvider).addSource(location, locationAddedRowSetInTable);
+                    ((KeyRangeGroupingProvider<?>) groupingProvider).addSource(location, locationAddedRowSetInTable);
                 }
             } else if (definition.isPartitioning()) {
                 final DeferredGroupingColumnSource<T> partitioningColumnSource = source;

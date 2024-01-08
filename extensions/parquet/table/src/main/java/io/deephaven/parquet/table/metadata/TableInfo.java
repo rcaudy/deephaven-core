@@ -84,6 +84,10 @@ public abstract class TableInfo {
      */
     public abstract List<ColumnTypeInfo> columnTypes();
 
+    public abstract List<SortColumnInfo> sortingColumns();
+
+    public abstract List<DataIndexInfo> dataIndexes();
+
     @Value.Check
     final void checkVersion() {
         if (version().isEmpty()) {
@@ -110,6 +114,18 @@ public abstract class TableInfo {
         Builder addColumnTypes(ColumnTypeInfo... columnTypes);
 
         Builder addAllColumnTypes(Iterable<? extends ColumnTypeInfo> columnTypes);
+
+        Builder addSortingColumns(SortColumnInfo sortPair);
+
+        Builder addSortingColumns(SortColumnInfo... sortPairs);
+
+        Builder addAllSortingColumns(Iterable<? extends SortColumnInfo> sortPairs);
+
+        Builder addDataIndexes(DataIndexInfo info);
+
+        Builder addDataIndexes(DataIndexInfo... infos);
+
+        Builder addAllDataIndexes(Iterable<? extends DataIndexInfo> infos);
 
         TableInfo build();
     }

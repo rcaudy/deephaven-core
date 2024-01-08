@@ -8,7 +8,9 @@ import io.deephaven.engine.table.ColumnDefinition;
 import io.deephaven.engine.table.impl.locations.ColumnLocation;
 import io.deephaven.engine.table.ColumnSource;
 import io.deephaven.engine.table.SharedContext;
+import io.deephaven.engine.table.impl.sources.regioned.instructions.SourceTableColumnInstructions;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.annotation.OverridingMethodsMustInvokeSuper;
 
@@ -18,7 +20,7 @@ import javax.annotation.OverridingMethodsMustInvokeSuper;
  */
 abstract class RegionedColumnSourceReferencing<DATA_TYPE, ATTR extends Values, NATIVE_DATA_TYPE, NATIVE_REGION_TYPE extends ColumnRegion<ATTR>>
         extends RegionedColumnSourceBase<DATA_TYPE, ATTR, ColumnRegionReferencing<ATTR, NATIVE_REGION_TYPE>>
-        implements ColumnRegionReferencingImpl.Converter<ATTR> {
+        implements ColumnRegionReferencing.Converter<ATTR> {
 
     @NotNull
     private final ColumnRegionReferencing.Null<ATTR, NATIVE_REGION_TYPE> nullRegion;
@@ -57,7 +59,7 @@ abstract class RegionedColumnSourceReferencing<DATA_TYPE, ATTR extends Values, N
             return nullRegion;
         }
 
-        return new ColumnRegionReferencingImpl<>(nativeRegion);
+        return new ColumnRegionReferencingImpl<>(nativeRegion, this);
     }
 
     @Override
@@ -66,8 +68,11 @@ abstract class RegionedColumnSourceReferencing<DATA_TYPE, ATTR extends Values, N
     }
 
     @Override
-    public int addRegion(@NotNull ColumnDefinition<?> columnDefinition, @NotNull ColumnLocation columnLocation) {
-        return nativeSource.addRegion(columnDefinition, columnLocation);
+    public int addRegion(
+            @NotNull final ColumnDefinition<?> columnDefinition,
+            @NotNull final ColumnLocation columnLocation,
+            @NotNull final SourceTableColumnInstructions instructions) {
+        return nativeSource.addRegion(columnDefinition, columnLocation, instructions);
     }
 
     @Override
@@ -76,8 +81,10 @@ abstract class RegionedColumnSourceReferencing<DATA_TYPE, ATTR extends Values, N
     }
 
     @Override
-    public FillContext makeFillContext(int chunkCapacity, SharedContext sharedContext) {
-        return new ColumnRegionReferencingImpl.FillContext<>(nativeSource, this, chunkCapacity, sharedContext);
+    public FillContext makeFillContext(
+            final int chunkCapacity,
+            @Nullable final SharedContext sharedContext) {
+        return new ColumnRegionReferencingImpl.FillContext<>(nativeSource, chunkCapacity, sharedContext);
     }
 
     @NotNull

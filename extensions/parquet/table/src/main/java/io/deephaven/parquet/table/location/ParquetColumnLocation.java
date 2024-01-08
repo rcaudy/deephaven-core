@@ -51,6 +51,7 @@ import java.io.UncheckedIOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.LongFunction;
 import java.util.function.Supplier;
@@ -60,7 +61,7 @@ import java.util.stream.Stream;
 import static io.deephaven.engine.table.impl.sources.regioned.RegionedColumnSource.ROW_KEY_TO_SUB_REGION_ROW_INDEX_MASK;
 import static io.deephaven.parquet.table.ParquetTableWriter.*;
 
-final class ParquetColumnLocation<ATTR extends Values> extends AbstractColumnLocation {
+final public class ParquetColumnLocation<ATTR extends Values> extends AbstractColumnLocation {
 
     private static final String IMPLEMENTATION_NAME = ParquetColumnLocation.class.getSimpleName();
 
@@ -198,7 +199,7 @@ final class ParquetColumnLocation<ATTR extends Values> extends AbstractColumnLoc
                 }
             }
             final Optional<TableInfo> tableInfo = ParquetSchemaReader.parseMetadata(
-                    new ParquetMetadataConverter().fromParquetMetadata(parquetFileReader.fileMetaData)
+                    new ParquetMetadataConverter().fromParquetMetadata(parquetFileReader.getFileMetaData())
                             .getFileMetaData().getKeyValueMetaData());
             final Map<String, ColumnTypeInfo> columnTypes =
                     tableInfo.map(TableInfo::columnTypeMap).orElse(Collections.emptyMap());
@@ -251,7 +252,7 @@ final class ParquetColumnLocation<ATTR extends Values> extends AbstractColumnLoc
             @NotNull final Function<ColumnDefinition<?>, SOURCE[]> sourceArrayFactory,
             @NotNull final ColumnDefinition<?> columnDefinition,
             @NotNull final LongFunction<REGION_TYPE> nullRegionFactory,
-            @NotNull final Function<SOURCE, REGION_TYPE> singleRegionFactory,
+            @NotNull final BiFunction<SOURCE, ParquetColumnLocation<Values>, REGION_TYPE> singleRegionFactory,
             @NotNull final Function<Stream<REGION_TYPE>, REGION_TYPE> multiRegionFactory) {
         final SOURCE[] sources = sourceArrayFactory.apply(columnDefinition);
         return sources.length == 1
@@ -260,11 +261,12 @@ final class ParquetColumnLocation<ATTR extends Values> extends AbstractColumnLoc
                         source -> makeSingleColumnRegion(source, nullRegionFactory, singleRegionFactory)));
     }
 
-    private <SOURCE, REGION_TYPE> REGION_TYPE makeSingleColumnRegion(final SOURCE source,
+    private <SOURCE, REGION_TYPE> REGION_TYPE makeSingleColumnRegion(
+            final SOURCE source,
             @NotNull final LongFunction<REGION_TYPE> nullRegionFactory,
-            @NotNull final Function<SOURCE, REGION_TYPE> singleRegionFactory) {
+            @NotNull final BiFunction<SOURCE, ParquetColumnLocation<Values>, REGION_TYPE> singleRegionFactory) {
         return source == null ? nullRegionFactory.apply(tl().getRegionParameters().regionMask)
-                : singleRegionFactory.apply(source);
+                : singleRegionFactory.apply(source, this.cast());
     }
 
     @Override
@@ -273,8 +275,8 @@ final class ParquetColumnLocation<ATTR extends Values> extends AbstractColumnLoc
         // noinspection unchecked
         return (ColumnRegionChar<Values>) makeColumnRegion(this::getPageStores, columnDefinition,
                 ColumnRegionChar::createNull, ParquetColumnRegionChar::new,
-                rs -> new ColumnRegionChar.StaticPageStore<>(tl().getRegionParameters(),
-                        rs.toArray(ColumnRegionChar[]::new)));
+                rs -> new ColumnRegionChar.StaticPageStore<Values>(tl().getRegionParameters(),
+                        rs.toArray(ColumnRegionChar[]::new), this.cast()));
     }
 
     @Override
@@ -284,7 +286,7 @@ final class ParquetColumnLocation<ATTR extends Values> extends AbstractColumnLoc
         return (ColumnRegionByte<Values>) makeColumnRegion(this::getPageStores, columnDefinition,
                 ColumnRegionByte::createNull, ParquetColumnRegionByte::new,
                 rs -> new ColumnRegionByte.StaticPageStore<>(tl().getRegionParameters(),
-                        rs.toArray(ColumnRegionByte[]::new)));
+                        rs.toArray(ColumnRegionByte[]::new), this));
     }
 
     @Override
@@ -294,7 +296,7 @@ final class ParquetColumnLocation<ATTR extends Values> extends AbstractColumnLoc
         return (ColumnRegionShort<Values>) makeColumnRegion(this::getPageStores, columnDefinition,
                 ColumnRegionShort::createNull, ParquetColumnRegionShort::new,
                 rs -> new ColumnRegionShort.StaticPageStore<>(tl().getRegionParameters(),
-                        rs.toArray(ColumnRegionShort[]::new)));
+                        rs.toArray(ColumnRegionShort[]::new), this));
     }
 
     @Override
@@ -304,7 +306,7 @@ final class ParquetColumnLocation<ATTR extends Values> extends AbstractColumnLoc
         return (ColumnRegionInt<Values>) makeColumnRegion(this::getPageStores, columnDefinition,
                 ColumnRegionInt::createNull, ParquetColumnRegionInt::new,
                 rs -> new ColumnRegionInt.StaticPageStore<>(tl().getRegionParameters(),
-                        rs.toArray(ColumnRegionInt[]::new)));
+                        rs.toArray(ColumnRegionInt[]::new), this));
     }
 
     @Override
@@ -314,7 +316,7 @@ final class ParquetColumnLocation<ATTR extends Values> extends AbstractColumnLoc
         return (ColumnRegionLong<Values>) makeColumnRegion(this::getPageStores, columnDefinition,
                 ColumnRegionLong::createNull, ParquetColumnRegionLong::new,
                 rs -> new ColumnRegionLong.StaticPageStore<>(tl().getRegionParameters(),
-                        rs.toArray(ColumnRegionLong[]::new)));
+                        rs.toArray(ColumnRegionLong[]::new), this));
     }
 
     @Override
@@ -324,7 +326,7 @@ final class ParquetColumnLocation<ATTR extends Values> extends AbstractColumnLoc
         return (ColumnRegionFloat<Values>) makeColumnRegion(this::getPageStores, columnDefinition,
                 ColumnRegionFloat::createNull, ParquetColumnRegionFloat::new,
                 rs -> new ColumnRegionFloat.StaticPageStore<>(tl().getRegionParameters(),
-                        rs.toArray(ColumnRegionFloat[]::new)));
+                        rs.toArray(ColumnRegionFloat[]::new), this));
     }
 
     @Override
@@ -334,7 +336,7 @@ final class ParquetColumnLocation<ATTR extends Values> extends AbstractColumnLoc
         return (ColumnRegionDouble<Values>) makeColumnRegion(this::getPageStores, columnDefinition,
                 ColumnRegionDouble::createNull, ParquetColumnRegionDouble::new,
                 rs -> new ColumnRegionDouble.StaticPageStore<>(tl().getRegionParameters(),
-                        rs.toArray(ColumnRegionDouble[]::new)));
+                        rs.toArray(ColumnRegionDouble[]::new), this));
     }
 
     @Override
@@ -357,7 +359,8 @@ final class ParquetColumnLocation<ATTR extends Values> extends AbstractColumnLoc
                 IntStream.range(0, sources.length)
                         .mapToObj(ri -> makeSingleColumnRegionObject(dataType, sources[ri],
                                 dictKeySources[ri], dictionaryChunkSuppliers[ri]))
-                        .toArray(ColumnRegionObject[]::new));
+                        .toArray(ColumnRegionObject[]::new),
+                this);
     }
 
     private <TYPE> ColumnRegionObject<TYPE, ATTR> makeSingleColumnRegionObject(
@@ -369,9 +372,11 @@ final class ParquetColumnLocation<ATTR extends Values> extends AbstractColumnLoc
             return ColumnRegionObject.createNull(tl().getRegionParameters().regionMask);
         }
         return new ParquetColumnRegionObject<>(source,
-                () -> new ParquetColumnRegionLong<>(Require.neqNull(dictKeySource, "dictKeySource")),
+                () -> new ParquetColumnRegionLong<>(Require.neqNull(dictKeySource, "dictKeySource"),
+                        this.cast()),
                 () -> ColumnRegionChunkDictionary.create(tl().getRegionParameters().regionMask,
-                        dataType, Require.neqNull(dictValuesSupplier, "dictValuesSupplier")));
+                        dataType, Require.neqNull(dictValuesSupplier, "dictValuesSupplier"), this),
+                this.cast());
     }
 
     /**

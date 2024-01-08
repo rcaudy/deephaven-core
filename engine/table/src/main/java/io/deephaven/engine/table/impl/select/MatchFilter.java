@@ -13,6 +13,8 @@ import io.deephaven.engine.table.TableDefinition;
 import io.deephaven.engine.table.impl.preview.DisplayWrapper;
 import io.deephaven.engine.context.QueryScope;
 import io.deephaven.time.DateTimeUtils;
+import io.deephaven.util.BooleanUtils;
+import io.deephaven.util.QueryConstants;
 import io.deephaven.util.type.ArrayTypeUtils;
 import io.deephaven.engine.table.ColumnSource;
 import io.deephaven.engine.rowset.RowSet;
@@ -208,6 +210,9 @@ public class MatchFilter extends WhereFilterImpl {
                 return new ColumnTypeConvertor() {
                     @Override
                     Object convertStringLiteral(String str) {
+                        if ("null".equals(str) || "NULL_BYTE".equals(str)) {
+                            return QueryConstants.NULL_BYTE;
+                        }
                         return Byte.parseByte(str);
                     }
                 };
@@ -216,6 +221,9 @@ public class MatchFilter extends WhereFilterImpl {
                 return new ColumnTypeConvertor() {
                     @Override
                     Object convertStringLiteral(String str) {
+                        if ("null".equals(str) || "NULL_SHORT".equals(str)) {
+                            return QueryConstants.NULL_SHORT;
+                        }
                         return Short.parseShort(str);
                     }
                 };
@@ -224,6 +232,9 @@ public class MatchFilter extends WhereFilterImpl {
                 return new ColumnTypeConvertor() {
                     @Override
                     Object convertStringLiteral(String str) {
+                        if ("null".equals(str) || "NULL_INT".equals(str)) {
+                            return QueryConstants.NULL_INT;
+                        }
                         return Integer.parseInt(str);
                     }
                 };
@@ -232,6 +243,9 @@ public class MatchFilter extends WhereFilterImpl {
                 return new ColumnTypeConvertor() {
                     @Override
                     Object convertStringLiteral(String str) {
+                        if ("null".equals(str) || "NULL_LONG".equals(str)) {
+                            return QueryConstants.NULL_LONG;
+                        }
                         return Long.parseLong(str);
                     }
                 };
@@ -240,6 +254,9 @@ public class MatchFilter extends WhereFilterImpl {
                 return new ColumnTypeConvertor() {
                     @Override
                     Object convertStringLiteral(String str) {
+                        if ("null".equals(str) || "NULL_FLOAT".equals(str)) {
+                            return QueryConstants.NULL_FLOAT;
+                        }
                         return Float.parseFloat(str);
                     }
                 };
@@ -248,6 +265,9 @@ public class MatchFilter extends WhereFilterImpl {
                 return new ColumnTypeConvertor() {
                     @Override
                     Object convertStringLiteral(String str) {
+                        if ("null".equals(str) || "NULL_DOUBLE".equals(str)) {
+                            return QueryConstants.NULL_DOUBLE;
+                        }
                         return Double.parseDouble(str);
                     }
                 };
@@ -263,6 +283,9 @@ public class MatchFilter extends WhereFilterImpl {
                         if (str.equalsIgnoreCase("false")) {
                             return Boolean.FALSE;
                         }
+                        if ("null".equals(str) || "NULL_BOOLEAN".equals(str)) {
+                            return BooleanUtils.NULL_BOOLEAN_AS_BYTE;
+                        }
                         throw new IllegalArgumentException("String " + str
                                 + " isn't a valid boolean value (!str.equalsIgnoreCase(\"true\") && !str.equalsIgnoreCase(\"false\"))");
                     }
@@ -273,6 +296,9 @@ public class MatchFilter extends WhereFilterImpl {
                     @Override
                     Object convertStringLiteral(String str) {
                         if (str.length() > 1) {
+                            if ("null".equals(str) || "NULL_CHAR".equals(str)) {
+                                return QueryConstants.NULL_CHAR;
+                            }
                             // TODO: #1517 Allow escaping of chars
                             if (str.length() == 3 && ((str.charAt(0) == '\'' && str.charAt(2) == '\'')
                                     || (str.charAt(0) == '"' && str.charAt(2) == '"'))) {

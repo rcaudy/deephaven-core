@@ -5,17 +5,18 @@ package io.deephaven.engine.table.impl.sources.regioned;
 
 import io.deephaven.chunk.attributes.Any;
 import io.deephaven.engine.page.PagingContextHolder;
+import io.deephaven.engine.rowset.*;
 import io.deephaven.engine.table.impl.chunkattributes.DictionaryKeys;
 import io.deephaven.chunk.ChunkType;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.chunk.WritableLongChunk;
 import io.deephaven.engine.page.Page;
-import io.deephaven.engine.rowset.RowSequence;
-import io.deephaven.engine.rowset.RowSet;
-import io.deephaven.engine.rowset.RowSetBuilderSequential;
+import io.deephaven.engine.table.impl.locations.ColumnLocation;
+import io.deephaven.util.SafeCloseable;
 import io.deephaven.util.annotations.FinalDefault;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Arrays;
 import java.util.stream.IntStream;
 
 import static io.deephaven.util.QueryConstants.NULL_LONG;
@@ -162,6 +163,22 @@ public interface ColumnRegionObject<DATA_TYPE, ATTR extends Any> extends ColumnR
         public ColumnRegionLong<DictionaryKeys> getDictionaryKeysRegion() {
             return dictionaryKeysRegion == null ? dictionaryKeysRegion = ColumnRegionLong.createNull(mask()) : dictionaryKeysRegion;
         }
+
+        @Override
+        public WritableRowSet match(
+                final boolean invertMatch,
+                final boolean usePrev,
+                final boolean caseInsensitive,
+                @NotNull final RowSequence rowSequence,
+                final Object... sortedKeys) {
+            final boolean nullMatched = sortedKeys.length > 0 && sortedKeys[0] == null;
+            if (nullMatched && !invertMatch || !nullMatched && invertMatch) {
+                try (final RowSet rowSet = rowSequence.asRowSet()) {
+                    return rowSet.copy();
+                }
+            }
+            return RowSetFactory.empty();
+        }
     }
 
     static ColumnRegionLong<DictionaryKeys> createConstantDictionaryKeysRegion(final long pageMask) {
@@ -213,6 +230,40 @@ public interface ColumnRegionObject<DATA_TYPE, ATTR extends Any> extends ColumnR
         public ColumnRegionLong<DictionaryKeys> getDictionaryKeysRegion() {
             return dictionaryKeysRegion == null ? dictionaryKeysRegion = createConstantDictionaryKeysRegion(mask()) : dictionaryKeysRegion;
         }
+
+        @Override
+        public ColumnLocation getLocation() {
+            return null;
+        }
+
+        @Override
+        public boolean supportsMatching() {
+            return true;
+        }
+
+        @Override
+        public WritableRowSet match(
+                final boolean invertMatch,
+                final boolean usePrev,
+                final boolean caseInsensitive,
+                @NotNull final RowSequence rowSequence,
+                final Object... sortedKeys) {
+            final boolean valueMatches = arrayContainsValue(sortedKeys);
+            if (valueMatches && !invertMatch || !valueMatches && invertMatch) {
+                try (final RowSet rowSet = rowSequence.asRowSet()) {
+                    return rowSet.copy();
+                }
+            }
+
+            return RowSetFactory.empty();
+        }
+
+        private boolean arrayContainsValue(final Object[] sortedKeys) {
+            if (value == null && sortedKeys.length > 0 && sortedKeys[0] == null) {
+                return true;
+            }
+            return Arrays.asList(sortedKeys).contains(value);
+        }
     }
 
     final class StaticPageStore<DATA_TYPE, ATTR extends Any>
@@ -222,8 +273,11 @@ public interface ColumnRegionObject<DATA_TYPE, ATTR extends Any> extends ColumnR
         private ColumnRegionLong<DictionaryKeys> dictionaryKeysRegion;
         private ColumnRegionObject<DATA_TYPE, ATTR> dictionaryValuesRegion;
 
-        public StaticPageStore(@NotNull final Parameters parameters, @NotNull final ColumnRegionObject<DATA_TYPE, ATTR>[] regions) {
-            super(parameters, regions);
+        public StaticPageStore(
+                @NotNull final Parameters parameters,
+                @NotNull final ColumnRegionObject<DATA_TYPE, ATTR>[] regions,
+                @NotNull final ColumnLocation location) {
+            super(parameters, regions, location);
         }
 
         @Override
@@ -268,14 +322,16 @@ public interface ColumnRegionObject<DATA_TYPE, ATTR extends Any> extends ColumnR
         @Override
         public ColumnRegionLong<DictionaryKeys> getDictionaryKeysRegion() {
             return dictionaryKeysRegion == null
-                    ? dictionaryKeysRegion = new ColumnRegionLong.StaticPageStore<>(parameters(), mapRegionsToDictionaryKeys())
+                    ? dictionaryKeysRegion = new ColumnRegionLong.StaticPageStore<>(
+                            parameters(), mapRegionsToDictionaryKeys(), getLocation())
                     : dictionaryKeysRegion;
         }
 
         @Override
         public ColumnRegionObject<DATA_TYPE, ATTR> getDictionaryValuesRegion() {
             return dictionaryValuesRegion == null
-                    ? dictionaryValuesRegion = new ColumnRegionObject.StaticPageStore<>(parameters(), mapRegionsToDictionaryValues())
+                    ? dictionaryValuesRegion = new ColumnRegionObject.StaticPageStore<>(
+                            parameters(), mapRegionsToDictionaryValues(), getLocation())
                     : dictionaryValuesRegion;
         }
 
@@ -291,6 +347,34 @@ public interface ColumnRegionObject<DATA_TYPE, ATTR extends Any> extends ColumnR
             return IntStream.range(0, getRegionCount())
                     .mapToObj(ri -> getRegion(ri).getDictionaryValuesRegion())
                     .toArray(ColumnRegionObject[]::new);
+        }
+
+        @Override
+        public WritableRowSet match(
+                final boolean invertMatch,
+                final boolean usePrev, boolean caseInsensitive,
+                @NotNull final RowSequence rowSequence,
+                final Object... sortedKeys) {
+            // TODO NATE NOCOMMIT: should this parallelize matching?
+
+            WritableRowSet dest = null;
+            try (final RowSequence.Iterator rowIter = rowSequence.getRowSequenceIterator()) {
+                while (rowIter.hasMore()) {
+                    final long firstRow = rowIter.peekNextKey();
+                    final ColumnRegionObject<DATA_TYPE, ATTR> region = lookupRegion(firstRow);
+                    final long lastRow = region.maxRow(firstRow);
+                    final WritableRowSet result = region.match(
+                            invertMatch, usePrev, caseInsensitive, rowIter.getNextRowSequenceThrough(lastRow), sortedKeys);
+                    if (dest == null) {
+                        dest = result;
+                    } else {
+                        try (final SafeCloseable ignored = result) {
+                            dest.insert(result);
+                        }
+                    }
+                }
+            }
+            return dest == null ? RowSetFactory.empty() : dest;
         }
     }
 
@@ -350,6 +434,26 @@ public interface ColumnRegionObject<DATA_TYPE, ATTR extends Any> extends ColumnR
                     typed.set(dki, prefixBits | dictionaryKey);
                 }
             }
+        }
+
+        @Override
+        public boolean supportsMatching() {
+            return wrapped.supportsMatching();
+        }
+
+        @Override
+        public WritableRowSet match(
+                final boolean invertMatch,
+                final boolean usePrev,
+                final boolean caseInsensitive,
+                @NotNull final RowSequence rowSequence,
+                final Object... sortedKeys) {
+            return wrapped.match(invertMatch, usePrev, caseInsensitive, rowSequence, sortedKeys);
+        }
+
+        @Override
+        public ColumnLocation getLocation() {
+            return wrapped.getLocation();
         }
     }
 }

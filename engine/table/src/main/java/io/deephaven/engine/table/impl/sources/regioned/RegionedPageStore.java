@@ -9,9 +9,12 @@ import io.deephaven.chunk.attributes.Any;
 import io.deephaven.engine.page.Page;
 import io.deephaven.engine.page.PageStore;
 import io.deephaven.engine.rowset.RowSequence;
+import io.deephaven.engine.table.impl.locations.ColumnLocation;
 import io.deephaven.util.annotations.FinalDefault;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.Arrays;
 
 public interface RegionedPageStore<ATTR extends Any, INNER_ATTR extends ATTR, REGION_TYPE extends Page<INNER_ATTR>>
         extends PageStore<ATTR, INNER_ATTR, REGION_TYPE> {
@@ -128,18 +131,22 @@ public interface RegionedPageStore<ATTR extends Any, INNER_ATTR extends ATTR, RE
     /**
      * A regioned page store for use when the full set of regions and their sizes are known.
      */
-    abstract class Static<ATTR extends Any, INNER_ATTR extends ATTR, REGION_TYPE extends Page<INNER_ATTR>>
+    abstract class Static<ATTR extends Any, INNER_ATTR extends ATTR, REGION_TYPE extends ColumnRegion<INNER_ATTR>>
             implements RegionedPageStore<ATTR, INNER_ATTR, REGION_TYPE> {
 
         private final Parameters parameters;
         private final REGION_TYPE[] regions;
+        @NotNull
+        private final ColumnLocation columnLocation;
 
         /**
          * @param parameters Mask and shift parameters
          * @param regions Array of all regions in this page store. Array becomes property of the page store.
          */
-        public Static(@NotNull final Parameters parameters,
-                @NotNull final REGION_TYPE[] regions) {
+        public Static(
+                @NotNull final Parameters parameters,
+                @NotNull final REGION_TYPE[] regions,
+                @NotNull final ColumnLocation columnLocation) {
             this.parameters = parameters;
             this.regions = Require.elementsNeqNull(regions, "regions");
             Require.leq(regions.length, "regions.length", parameters.maximumRegionCount,
@@ -147,6 +154,7 @@ public interface RegionedPageStore<ATTR extends Any, INNER_ATTR extends ATTR, RE
             for (final REGION_TYPE region : regions) {
                 Require.eq(region.mask(), "region.mask()", parameters.regionMask, "parameters.regionMask");
             }
+            this.columnLocation = columnLocation;
         }
 
         @Override
@@ -162,6 +170,10 @@ public interface RegionedPageStore<ATTR extends Any, INNER_ATTR extends ATTR, RE
         @Override
         public final REGION_TYPE getRegion(final int regionIndex) {
             return regions[regionIndex];
+        }
+
+        public ColumnLocation getLocation() {
+            return columnLocation;
         }
     }
 }

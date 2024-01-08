@@ -286,6 +286,7 @@ public final class ColumnWriterImpl implements ColumnWriter {
         final int uncompressedDataSize = data.remaining();
         final int uncompressedSize = (int) (uncompressedDataSize + repetitionLevels.size() + definitionLevels.size());
 
+        compressorAdapter.reset();
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (final WritableByteChannel channel = Channels.newChannel(compressorAdapter.compress(baos))) {
             channel.write(data);
@@ -447,6 +448,7 @@ public final class ColumnWriterImpl implements ColumnWriter {
         statistics = Statistics.createStats(column.getPrimitiveType());
     }
 
+    @NotNull
     @Override
     public Statistics<?> getStats() {
         return statistics;

@@ -6,8 +6,8 @@ package io.deephaven.server.table.inputtables;
 import com.google.rpc.Code;
 import io.deephaven.auth.codegen.impl.InputTableServiceContextualAuthWiring;
 import io.deephaven.engine.context.ExecutionContext;
+import io.deephaven.engine.exceptions.IncompatibleTableDefinitionException;
 import io.deephaven.engine.table.Table;
-import io.deephaven.engine.table.TableDefinition;
 import io.deephaven.engine.table.impl.perf.QueryPerformanceNugget;
 import io.deephaven.engine.table.impl.perf.QueryPerformanceRecorder;
 import io.deephaven.engine.util.input.InputTableStatusListener;
@@ -29,7 +29,6 @@ import io.grpc.stub.StreamObserver;
 import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
-import java.io.IOException;
 import java.util.List;
 
 public class InputTableServiceGrpcImpl extends InputTableServiceGrpc.InputTableServiceImplBase {
@@ -91,7 +90,7 @@ public class InputTableServiceGrpcImpl extends InputTableServiceGrpc.InputTableS
                         // validate that the columns are compatible
                         try {
                             inputTableUpdater.validateAddOrModify(tableToAdd);
-                        } catch (TableDefinition.IncompatibleTableDefinitionException exception) {
+                        } catch (IncompatibleTableDefinitionException exception) {
                             throw Exceptions.statusRuntimeException(Code.INVALID_ARGUMENT,
                                     "Provided tables's columns are not compatible: " + exception.getMessage());
                         }
@@ -154,7 +153,7 @@ public class InputTableServiceGrpcImpl extends InputTableServiceGrpc.InputTableS
                         // validate that the columns are compatible
                         try {
                             inputTableUpdater.validateDelete(tableToRemove);
-                        } catch (TableDefinition.IncompatibleTableDefinitionException exception) {
+                        } catch (IncompatibleTableDefinitionException exception) {
                             throw Exceptions.statusRuntimeException(Code.INVALID_ARGUMENT,
                                     "Provided tables's columns are not compatible: " + exception.getMessage());
                         } catch (UnsupportedOperationException exception) {

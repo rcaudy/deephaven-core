@@ -4,9 +4,15 @@
 package io.deephaven.engine.table.impl.sources.regioned;
 
 import io.deephaven.base.string.cache.StringCache;
-import io.deephaven.engine.table.impl.DefaultChunkSource;
-import io.deephaven.engine.util.string.StringUtils;
 import io.deephaven.chunk.attributes.Any;
+import io.deephaven.chunk.attributes.Values;
+import io.deephaven.engine.rowset.WritableRowSet;
+import io.deephaven.engine.table.ChunkSource;
+import io.deephaven.engine.table.impl.DefaultChunkSource;
+import io.deephaven.engine.table.impl.chunkfilter.ChunkFilter;
+import io.deephaven.engine.table.impl.chunkfilter.ChunkMatchFilterFactory;
+import io.deephaven.engine.table.impl.locations.ColumnLocation;
+import io.deephaven.engine.util.string.StringUtils;
 import io.deephaven.chunk.*;
 import io.deephaven.engine.page.Page;
 import io.deephaven.engine.rowset.RowSequence;
@@ -28,11 +34,14 @@ public class ColumnRegionChunkDictionary<DICT_TYPE, DATA_TYPE, ATTR extends Any>
 
     private final Supplier<Chunk<ATTR>> dictionaryChunkSupplier;
     private final Function<DICT_TYPE, DATA_TYPE> conversion;
+    @NotNull
+    private final ColumnLocation location;
 
     public static <DATA_TYPE, ATTR extends Any> ColumnRegionObject<DATA_TYPE, ATTR> create(
             final long pageMask,
             @NotNull final Class<DATA_TYPE> dataType,
-            @NotNull final Supplier<Chunk<ATTR>> dictionaryChunkSupplier) {
+            @NotNull final Supplier<Chunk<ATTR>> dictionaryChunkSupplier,
+            @NotNull final ColumnLocation location) {
         if (CharSequence.class.isAssignableFrom(dataType)) {
             // noinspection unchecked
             final StringCache<?> stringCache =
@@ -40,18 +49,21 @@ public class ColumnRegionChunkDictionary<DICT_TYPE, DATA_TYPE, ATTR extends Any>
             // noinspection unchecked
             final Function<String, DATA_TYPE> conversion =
                     (final String dictValue) -> (DATA_TYPE) stringCache.getCachedString(dictValue);
-            return new ColumnRegionChunkDictionary<>(pageMask, dictionaryChunkSupplier, conversion);
+            return new ColumnRegionChunkDictionary<>(pageMask, dictionaryChunkSupplier, conversion, location);
         }
         return new ColumnRegionChunkDictionary<>(pageMask, dictionaryChunkSupplier,
-                Function.identity());
+                Function.identity(), location);
     }
 
-    private ColumnRegionChunkDictionary(final long pageMask,
+    private ColumnRegionChunkDictionary(
+            final long pageMask,
             @NotNull final Supplier<Chunk<ATTR>> dictionaryChunkSupplier,
-            @NotNull final Function<DICT_TYPE, DATA_TYPE> conversion) {
+            @NotNull final Function<DICT_TYPE, DATA_TYPE> conversion,
+            @NotNull final ColumnLocation location) {
         super(pageMask);
         this.dictionaryChunkSupplier = dictionaryChunkSupplier;
         this.conversion = conversion;
+        this.location = location;
     }
 
     private ObjectChunk<DICT_TYPE, ATTR> getDictionaryChunk() {
@@ -101,5 +113,30 @@ public class ColumnRegionChunkDictionary<DICT_TYPE, DATA_TYPE, ATTR extends Any>
             }
         }
         return advanceToNextPage(keysToVisit);
+    }
+
+    @Override
+    public ColumnLocation getLocation() {
+        return location;
+    }
+
+    @Override
+    public boolean supportsMatching() {
+        return true;
+    }
+
+    @Override
+    public WritableRowSet match(
+            final boolean invertMatch,
+            final boolean usePrev,
+            final boolean caseInsensitive,
+            @NotNull final RowSequence rowSequence,
+            final Object... sortedKeys) {
+        // TODO NATE NOCOMMIT - needs getNativeType (maybe?) pushdown instead?
+        try (RowSet selection = rowSequence.asRowSet()) {
+            // noinspection unchecked
+            return ChunkFilter.applyChunkFilter(selection, (ChunkSource<? extends Values>) this, false,
+                    ChunkMatchFilterFactory.getChunkFilter(Object.class, caseInsensitive, invertMatch, sortedKeys));
+        }
     }
 }

@@ -15,6 +15,7 @@ import io.deephaven.engine.table.impl.ColumnSourceGetDefaults;
 import io.deephaven.engine.table.impl.sources.RowIdSource;
 import io.deephaven.engine.table.impl.chunkattributes.DictionaryKeys;
 import io.deephaven.chunk.attributes.Values;
+import io.deephaven.engine.table.impl.sources.regioned.instructions.SourceTableColumnInstructions;
 import org.apache.commons.lang3.mutable.Mutable;
 import org.apache.commons.lang3.mutable.MutableObject;
 import org.jetbrains.annotations.NotNull;
@@ -61,12 +62,10 @@ class RegionedColumnSourceWithDictionary<DATA_TYPE>
             extends RegionedColumnSourceBase<Long, DictionaryKeys, ColumnRegionLong<DictionaryKeys>>
             implements ColumnSourceGetDefaults.ForLong {
 
-        private final ColumnRegionLong<DictionaryKeys> nullRegion;
         private volatile ColumnRegionLong<DictionaryKeys>[] wrapperRegions;
 
         private AsLong() {
             super(long.class);
-            nullRegion = ColumnRegionLong.createNull(PARAMETERS.regionMask);
             // noinspection unchecked
             wrapperRegions = new ColumnRegionLong[0];
         }
@@ -78,9 +77,11 @@ class RegionedColumnSourceWithDictionary<DATA_TYPE>
         }
 
         @Override
-        public int addRegion(@NotNull final ColumnDefinition<?> columnDefinition,
-                @NotNull final ColumnLocation columnLocation) {
-            return RegionedColumnSourceWithDictionary.this.addRegion(columnDefinition, columnLocation);
+        public int addRegion(
+                @NotNull final ColumnDefinition<?> columnDefinition,
+                @NotNull final ColumnLocation columnLocation,
+                @NotNull final SourceTableColumnInstructions instructions) {
+            return RegionedColumnSourceWithDictionary.this.addRegion(columnDefinition, columnLocation, instructions);
         }
 
         @Override
@@ -91,7 +92,7 @@ class RegionedColumnSourceWithDictionary<DATA_TYPE>
         @NotNull
         @Override
         ColumnRegionLong<DictionaryKeys> getNullRegion() {
-            return nullRegion;
+            return ColumnRegionLong.createNull(PARAMETERS.regionMask);
         }
 
         @Override
@@ -104,7 +105,7 @@ class RegionedColumnSourceWithDictionary<DATA_TYPE>
             final ColumnRegionObject<DATA_TYPE, Values> sourceRegion =
                     RegionedColumnSourceWithDictionary.this.getRegion(regionIndex);
             if (sourceRegion instanceof ColumnRegion.Null) {
-                return nullRegion;
+                return getNullRegion();
             }
             ColumnRegionLong<DictionaryKeys>[] localWrappers;
             ColumnRegionLong<DictionaryKeys> wrapper;
@@ -168,9 +169,11 @@ class RegionedColumnSourceWithDictionary<DATA_TYPE>
         }
 
         @Override
-        public int addRegion(@NotNull final ColumnDefinition<?> columnDefinition,
-                @NotNull final ColumnLocation columnLocation) {
-            return RegionedColumnSourceWithDictionary.this.addRegion(columnDefinition, columnLocation);
+        public int addRegion(
+                @NotNull final ColumnDefinition<?> columnDefinition,
+                @NotNull final ColumnLocation columnLocation,
+                @NotNull final SourceTableColumnInstructions instructions) {
+            return RegionedColumnSourceWithDictionary.this.addRegion(columnDefinition, columnLocation, instructions);
         }
 
         @Override

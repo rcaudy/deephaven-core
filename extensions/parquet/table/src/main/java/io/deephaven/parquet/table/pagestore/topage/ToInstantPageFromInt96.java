@@ -86,7 +86,7 @@ public class ToInstantPageFromInt96<ATTR extends Any> implements ToPage<ATTR, lo
     }
 
     @Override
-    public final long[] convertResult(@NotNull final Object result) {
+    public final long[] convertResultArray(@NotNull final Object result) {
         // result is delivered as an array of Binary[12]
         final Binary[] results = (Binary[])result;
         final int resultLength = results.length;

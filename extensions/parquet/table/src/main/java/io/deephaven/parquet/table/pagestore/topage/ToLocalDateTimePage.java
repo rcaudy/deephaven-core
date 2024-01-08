@@ -77,24 +77,24 @@ public class ToLocalDateTimePage<ATTR extends Any> implements ToPage<ATTR, Local
     }
 
     private static final class ToLocalDateTimePageFromMillis<ATTR extends Any> extends ToLocalDateTimePage<ATTR> {
-        @Override
-        public LocalDateTime[] convertResult(@NotNull final Object result) {
-            return convertResultHelper(result, TransferUtils::epochMillisToLocalDateTimeUTC);
-        }
+        // @Override
+        // public LocalDateTime[] convertResult(@NotNull final Object result) {
+        // return convertResultHelper(result, TransferUtils::epochMillisToLocalDateTimeUTC);
+        // }
     }
 
     private static final class ToLocalDateTimePageFromMicros<ATTR extends Any> extends ToLocalDateTimePage<ATTR> {
-        @Override
-        public LocalDateTime[] convertResult(@NotNull final Object result) {
-            return convertResultHelper(result, TransferUtils::epochMicrosToLocalDateTimeUTC);
-        }
+        // @Override
+        // public LocalDateTime[] convertResult(@NotNull final Object result) {
+        // return convertResultHelper(result, TransferUtils::epochMicrosToLocalDateTimeUTC);
+        // }
     }
 
     private static final class ToLocalDateTimePageFromNanos<ATTR extends Any> extends ToLocalDateTimePage<ATTR> {
-        @Override
-        public LocalDateTime[] convertResult(@NotNull final Object result) {
-            return convertResultHelper(result, TransferUtils::epochNanosToLocalDateTimeUTC);
-        }
+        // @Override
+        // public LocalDateTime[] convertResult(@NotNull final Object result) {
+        // return convertResultHelper(result, TransferUtils::epochNanosToLocalDateTimeUTC);
+        // }
     }
 
 }

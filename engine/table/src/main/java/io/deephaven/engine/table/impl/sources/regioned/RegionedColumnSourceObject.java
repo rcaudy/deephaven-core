@@ -10,6 +10,7 @@ import io.deephaven.engine.table.impl.locations.TableDataException;
 import io.deephaven.engine.table.impl.locations.TableLocationKey;
 import io.deephaven.engine.table.impl.ColumnSourceGetDefaults;
 import io.deephaven.chunk.attributes.Values;
+import io.deephaven.engine.table.impl.sources.regioned.instructions.SourceTableColumnInstructions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -39,9 +40,12 @@ abstract class RegionedColumnSourceObject<DATA_TYPE, ATTR extends Values>
             super(ColumnRegionObject.createNull(PARAMETERS.regionMask), dataType, componentType, DeferredColumnRegionObject::new);
         }
 
-        public ColumnRegionObject<DATA_TYPE, Values> makeRegion(@NotNull final ColumnDefinition<?> columnDefinition,
-                                                                @NotNull final ColumnLocation columnLocation,
-                                                                final int regionIndex) {
+        public ColumnRegionObject<DATA_TYPE, Values> makeRegion(
+                @NotNull final ColumnDefinition<?> columnDefinition,
+                @NotNull final ColumnLocation columnLocation,
+                @NotNull final SourceTableColumnInstructions instructions,
+                final int regionIndex) {
+            // TODO NATE NOCOMMIT: propagate instructions to region creation
             if (columnLocation.exists()) {
                 //noinspection unchecked
                 return (ColumnRegionObject<DATA_TYPE, Values>) columnLocation.makeColumnRegionObject(columnDefinition);
@@ -59,9 +63,11 @@ abstract class RegionedColumnSourceObject<DATA_TYPE, ATTR extends Values>
         }
 
         @Override
-        public ColumnRegionObject<DATA_TYPE, Values> makeRegion(@NotNull final ColumnDefinition<?> columnDefinition,
-                                                                @NotNull final ColumnLocation columnLocation,
-                                                                final int regionIndex) {
+        public ColumnRegionObject<DATA_TYPE, Values> makeRegion(
+                @NotNull final ColumnDefinition<?> columnDefinition,
+                @NotNull final ColumnLocation columnLocation,
+                @NotNull final SourceTableColumnInstructions instructions,
+                final int regionIndex) {
             final TableLocationKey locationKey = columnLocation.getTableLocation().getKey();
             final Object partitioningColumnValue = locationKey.getPartitionValue(columnDefinition.getName());
             if (partitioningColumnValue != null && !getType().isAssignableFrom(partitioningColumnValue.getClass())) {

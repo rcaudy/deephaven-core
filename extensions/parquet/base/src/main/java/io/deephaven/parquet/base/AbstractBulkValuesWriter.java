@@ -85,7 +85,7 @@ public abstract class AbstractBulkValuesWriter<BUFFER_TYPE> extends ValuesWriter
      * </p>
      *
      * <p>
-     * Definition levels are used to encode how many preceeding optional fields are defined at a given point. For
+     * Definition levels are used to encode how many preceding optional fields are defined at a given point. For
      * Vectors, as defined above, this gives us three different possible values for the definition value of a single
      * item:
      * <ul>

@@ -37,6 +37,7 @@ dependencies {
 
     implementation project(':plugin')
     implementation depCommonsLang3
+    implementation 'org.testng:testng:7.1.0'
     Classpaths.inheritCommonsText(project, 'implementation')
 
     Classpaths.inheritGroovy(project, 'groovy', 'implementation')

@@ -15,6 +15,7 @@ import io.deephaven.chunk.ChunkType;
 import io.deephaven.util.annotations.FinalDefault;
 import io.deephaven.parquet.base.ColumnPageReader;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 
@@ -53,22 +54,30 @@ public interface ToPage<ATTR extends Any, RESULT> {
     /**
      * @return Gets the result from the columnPageReader.
      */
-    default Object getResult(ColumnPageReader columnPageReader) throws IOException {
+    default Object getResult(@NotNull final ColumnPageReader columnPageReader) throws IOException {
         return columnPageReader.materialize(nullValue());
     }
 
     /**
      * @return Produce the array of values from the result
      */
-    default RESULT convertResult(Object result) {
+    default RESULT convertResultArray(@NotNull Object result) {
         // noinspection unchecked
         return (RESULT) result;
     }
 
     /**
+     * @return Produce the value from the result
+     */
+    default <R> R convertSingleResult(@Nullable final Object result) {
+        // noinspection unchecked
+        return (R) result;
+    }
+
+    /**
      * @return the method to create a Vector from RESULT.
      */
-    default Vector<?> makeVector(RESULT result) {
+    default Vector<?> makeVector(@NotNull RESULT result) {
         return VectorFactory.forElementType(getNativeType()).vectorWrap(result);
     }
 
@@ -78,10 +87,10 @@ public interface ToPage<ATTR extends Any, RESULT> {
      */
     @NotNull
     @FinalDefault
-    default ChunkPage<ATTR> toPage(long offset, ColumnPageReader columnPageReader, long mask)
+    default ChunkPage<ATTR> toPage(final long offset, @NotNull final ColumnPageReader columnPageReader, final long mask)
             throws IOException {
         return ChunkPageFactory.forChunkType(getChunkType())
-                .pageWrap(offset, convertResult(getResult(columnPageReader)), mask);
+                .pageWrap(offset, convertResultArray(getResult(columnPageReader)), mask);
     }
 
     /**
@@ -124,12 +133,12 @@ public interface ToPage<ATTR extends Any, RESULT> {
 
         @NotNull
         @Override
-        public Object getResult(ColumnPageReader columnPageReader) throws IOException {
+        public Object getResult(@NotNull final ColumnPageReader columnPageReader) throws IOException {
             return toPage.getResult(columnPageReader);
         }
 
         @Override
-        public abstract OUTER_RESULT convertResult(Object object);
+        public abstract OUTER_RESULT convertResultArray(@NotNull final Object object);
 
 
         @Override

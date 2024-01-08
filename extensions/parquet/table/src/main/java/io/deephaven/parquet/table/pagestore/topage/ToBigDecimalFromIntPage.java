@@ -25,7 +25,7 @@ public class ToBigDecimalFromIntPage<ATTR extends Any> extends ToBigDecimalBase<
     }
 
     @Override
-    public BigDecimal[] convertResult(@NotNull final Object result) {
+    public BigDecimal[] convertResultArray(@NotNull final Object result) {
         final int[] in = (int[]) result;
         final int resultLength = in.length;
         final BigDecimal[] out = new BigDecimal[resultLength];

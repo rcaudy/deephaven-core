@@ -9,6 +9,7 @@ import io.deephaven.util.codec.ObjectCodec;
 import org.apache.parquet.column.Dictionary;
 import org.apache.parquet.io.api.Binary;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Array;
 import java.util.function.Supplier;
@@ -58,8 +59,18 @@ public class ToObjectPage<T, ATTR extends Any> implements ToPage<ATTR, T[]> {
 
     @Override
     @NotNull
-    public final T[] convertResult(Object result) {
+    public final T[] convertResultArray(@NotNull final Object result) {
         return convertResult(nativeType, codec, result);
+    }
+
+    @Override
+    public T convertSingleResult(@Nullable final Object result) {
+        if (result == null) {
+            return null;
+        } else {
+            final byte[] resultBytes = ((Binary) result).getBytes();
+            return codec.decode(resultBytes, 0,resultBytes.length);
+        }
     }
 
     private static <T2> T2[] convertResult(final Class<T2> nativeType, final ObjectCodec<T2> codec, final Object result) {

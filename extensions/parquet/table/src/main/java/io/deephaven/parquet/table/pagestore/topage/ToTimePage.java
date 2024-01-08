@@ -64,16 +64,16 @@ public class ToTimePage<ATTR extends Any> implements ToPage<ATTR, LocalTime[]> {
             return QueryConstants.NULL_INT_BOXED;
         }
 
-        @Override
-        public LocalTime[] convertResult(@NotNull final Object result) {
-            final int[] from = (int[]) result;
-            final LocalTime[] to = new LocalTime[from.length];
-
-            for (int i = 0; i < from.length; ++i) {
-                to[i] = DateTimeUtils.millisOfDayToLocalTime(from[i]);
-            }
-            return to;
-        }
+        // @Override
+        // public LocalTime[] convertResult(@NotNull final Object result) {
+        // final int[] from = (int[]) result;
+        // final LocalTime[] to = new LocalTime[from.length];
+        //
+        // for (int i = 0; i < from.length; ++i) {
+        // to[i] = DateTimeUtils.millisOfDayToLocalTime(from[i]);
+        // }
+        // return to;
+        // }
     }
 
     private static class ToTimePageFromLong<ATTR extends Any> extends ToTimePage<ATTR> {
@@ -96,16 +96,16 @@ public class ToTimePage<ATTR extends Any> implements ToPage<ATTR, LocalTime[]> {
     }
 
     private static final class ToTimePageFromMicros<ATTR extends Any> extends ToTimePageFromLong<ATTR> {
-        @Override
-        public LocalTime[] convertResult(@NotNull final Object result) {
-            return convertResultHelper(result, DateTimeUtils::microsOfDayToLocalTime);
-        }
+        // @Override
+        // public LocalTime[] convertResult(@NotNull final Object result) {
+        // return convertResultHelper(result, DateTimeUtils::microsOfDayToLocalTime);
+        // }
     }
 
     private static final class ToTimePageFromNanos<ATTR extends Any> extends ToTimePageFromLong<ATTR> {
-        @Override
-        public LocalTime[] convertResult(@NotNull final Object result) {
-            return convertResultHelper(result, DateTimeUtils::nanosOfDayToLocalTime);
-        }
+        // @Override
+        // public LocalTime[] convertResult(@NotNull final Object result) {
+        // return convertResultHelper(result, DateTimeUtils::nanosOfDayToLocalTime);
+        // }
     }
 }

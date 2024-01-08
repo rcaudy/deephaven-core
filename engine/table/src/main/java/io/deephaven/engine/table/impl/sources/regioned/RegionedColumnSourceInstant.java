@@ -87,4 +87,16 @@ final class RegionedColumnSourceInstant
     public ColumnSource<Long> toEpochNano() {
         return getNativeSource();
     }
+
+    @Override
+    @NotNull
+    public Object[] convertArray(@NotNull final Object[] keys) {
+        final Object[] newValues = new Object[keys.length];
+        for (int ii = 0; ii < keys.length; ii++) {
+            if (keys[ii] == null || keys[ii] instanceof Instant) {
+                newValues[ii] = DateTimeUtils.epochNanos((Instant) keys[ii]);
+            }
+        }
+        return newValues;
+    }
 }

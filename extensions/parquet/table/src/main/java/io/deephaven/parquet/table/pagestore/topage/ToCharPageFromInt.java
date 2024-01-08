@@ -46,7 +46,7 @@ public class ToCharPageFromInt<ATTR extends Any> implements ToPage<ATTR, char[]>
 
     @Override
     @NotNull
-    public final char[] convertResult(Object result) {
+    public final char[] convertResultArray(@NotNull final Object result) {
         int [] from = (int []) result;
         char [] to = new char [from.length];
 

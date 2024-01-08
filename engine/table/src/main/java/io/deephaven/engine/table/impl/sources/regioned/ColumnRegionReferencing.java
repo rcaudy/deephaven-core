@@ -8,6 +8,7 @@ import io.deephaven.chunk.Chunk;
 import io.deephaven.chunk.ChunkType;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.engine.rowset.RowSequence;
+import io.deephaven.engine.rowset.WritableRowSet;
 import io.deephaven.util.annotations.FinalDefault;
 import org.jetbrains.annotations.NotNull;
 
@@ -33,6 +34,15 @@ public interface ColumnRegionReferencing<ATTR extends Any, REFERENCED_COLUMN_REG
                 @NotNull WritableChunk<? super ATTR> destination,
                 @NotNull Chunk<? extends ATTR> source,
                 @NotNull RowSequence rowSequence);
+
+        /**
+         * Convert an array of values in the region type to an array of values in boxed native format.
+         *
+         * @param values the values to convert
+         * @return a new array of converted values
+         */
+        @NotNull
+        Object[] convertArray(@NotNull Object[] values);
     }
 
     class Null<ATTR extends Any, REFERENCED_COLUMN_REGION extends ColumnRegion<ATTR>>
@@ -50,6 +60,16 @@ public interface ColumnRegionReferencing<ATTR extends Any, REFERENCED_COLUMN_REG
         @NotNull
         public REFERENCED_COLUMN_REGION getReferencedRegion() {
             return nullReferencedColumnRegion;
+        }
+
+        @Override
+        public WritableRowSet match(
+                final boolean invertMatch,
+                final boolean usePrev,
+                final boolean caseInsensitive,
+                @NotNull final RowSequence rowSequence,
+                final Object... sortedKeys) {
+            return nullReferencedColumnRegion.match(invertMatch, usePrev, caseInsensitive, rowSequence, sortedKeys);
         }
     }
 }

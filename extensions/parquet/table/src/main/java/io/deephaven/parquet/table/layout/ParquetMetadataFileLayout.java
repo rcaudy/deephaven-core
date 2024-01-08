@@ -139,7 +139,7 @@ public class ParquetMetadataFileLayout implements TableLocationKeyFinder<Parquet
                 ColumnDefinition::getName,
                 cd -> PartitionParser.lookupSupported(cd.getDataType(), cd.getComponentType())));
         final Map<String, TIntList> fileNameToRowGroupIndices = new LinkedHashMap<>();
-        final List<RowGroup> rowGroups = metadataFileReader.fileMetaData.getRow_groups();
+        final List<RowGroup> rowGroups = metadataFileReader.getFileMetaData().getRow_groups();
         final int numRowGroups = rowGroups.size();
         for (int rgi = 0; rgi < numRowGroups; ++rgi) {
             fileNameToRowGroupIndices
@@ -212,7 +212,7 @@ public class ParquetMetadataFileLayout implements TableLocationKeyFinder<Parquet
             @NotNull final ParquetFileReader fileReader,
             @NotNull final ParquetMetadataConverter converter) {
         try {
-            return converter.fromParquetMetadata(fileReader.fileMetaData);
+            return converter.fromParquetMetadata(fileReader.getFileMetaData());
         } catch (IOException e) {
             throw new TableDataException("Error while converting file metadata from " + file);
         }

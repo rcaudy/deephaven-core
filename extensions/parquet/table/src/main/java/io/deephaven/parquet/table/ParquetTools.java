@@ -702,7 +702,7 @@ public class ParquetTools {
                 null);
         return new SimpleSourceTable(tableDefinition.getWritable(),
                 "Read single parquet file from " + tableLocationKey.getFile(),
-                RegionedTableComponentFactoryImpl.INSTANCE, locationProvider, null);
+                RegionedTableComponentFactoryImpl.make(), locationProvider, null);
     }
 
     /**
@@ -756,7 +756,7 @@ public class ParquetTools {
         return new PartitionAwareSourceTable(
                 tableDefinition,
                 description,
-                RegionedTableComponentFactoryImpl.INSTANCE,
+                RegionedTableComponentFactoryImpl.make(),
                 new PollingTableLocationProvider<>(
                         StandaloneTableKey.getInstance(),
                         keyFinder,

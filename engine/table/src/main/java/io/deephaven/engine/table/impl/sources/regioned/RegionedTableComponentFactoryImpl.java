@@ -7,6 +7,7 @@ import io.deephaven.engine.table.ColumnDefinition;
 import io.deephaven.engine.table.impl.locations.TableDataException;
 import io.deephaven.engine.table.impl.ColumnSourceManager;
 import io.deephaven.engine.table.impl.ColumnToCodecMappings;
+import io.deephaven.engine.table.impl.sources.regioned.instructions.SourceTableInstructions;
 import io.deephaven.util.type.TypeUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -24,6 +25,11 @@ public class RegionedTableComponentFactoryImpl implements RegionedTableComponent
 
     private static final Map<Class<?>, Supplier<RegionedColumnSource<?>>> SIMPLE_DATA_TYPE_TO_REGIONED_COLUMN_SOURCE_SUPPLIER;
 
+    private static final RegionedTableComponentFactory INSTANCE =
+            new RegionedTableComponentFactoryImpl(SourceTableInstructions.EMPTY);
+
+    private final SourceTableInstructions instructions;
+
     static {
         Map<Class<?>, Supplier<RegionedColumnSource<?>>> typeToSupplier = new HashMap<>();
         typeToSupplier.put(Byte.class, RegionedColumnSourceByte.AsValues::new);
@@ -38,16 +44,35 @@ public class RegionedTableComponentFactoryImpl implements RegionedTableComponent
         SIMPLE_DATA_TYPE_TO_REGIONED_COLUMN_SOURCE_SUPPLIER = Collections.unmodifiableMap(typeToSupplier);
     }
 
-    public static final RegionedTableComponentFactory INSTANCE = new RegionedTableComponentFactoryImpl();
+    /**
+     * Create a default instance of the factory, using no special table or column instructions.
+     *
+     * @return a {RegionedTableComponentFactory}
+     */
+    public static RegionedTableComponentFactory make() {
+        return INSTANCE;
+    }
 
-    private RegionedTableComponentFactoryImpl() {}
+    /**
+     * Create a factory that uses the input {@link SourceTableInstructions} for column and region creation.
+     * 
+     * @param instructions the instructions
+     * @return a new {@link RegionedTableComponentFactory}
+     */
+    public static RegionedTableComponentFactory make(@NotNull final SourceTableInstructions instructions) {
+        return new RegionedTableComponentFactoryImpl(instructions);
+    }
+
+    private RegionedTableComponentFactoryImpl(@NotNull final SourceTableInstructions instructions) {
+        this.instructions = instructions;
+    }
 
     @Override
     public ColumnSourceManager createColumnSourceManager(
             final boolean isRefreshing,
             @NotNull final ColumnToCodecMappings codecMappings,
             @NotNull final List<ColumnDefinition<?>> columnDefinitions) {
-        return new RegionedColumnSourceManager(isRefreshing, this, codecMappings, columnDefinitions);
+        return new RegionedColumnSourceManager(isRefreshing, this, codecMappings, instructions, columnDefinitions);
     }
 
     /**

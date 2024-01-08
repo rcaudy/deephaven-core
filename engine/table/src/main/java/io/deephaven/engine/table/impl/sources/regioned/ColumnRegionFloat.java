@@ -8,13 +8,21 @@
  */
 package io.deephaven.engine.table.impl.sources.regioned;
 
-import io.deephaven.chunk.attributes.Any;
 import io.deephaven.chunk.ChunkType;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.engine.page.PagingContextHolder;
+import io.deephaven.chunk.attributes.Any;
+import io.deephaven.engine.rowset.RowSequence;
+import io.deephaven.engine.rowset.RowSet;
+import io.deephaven.engine.rowset.RowSetFactory;
+import io.deephaven.engine.rowset.WritableRowSet;
+import io.deephaven.engine.table.impl.locations.ColumnLocation;
 import io.deephaven.util.QueryConstants;
+import io.deephaven.util.SafeCloseable;
 import io.deephaven.util.annotations.FinalDefault;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.Arrays;
 
 /**
  * Column region interface for regions that support fetching primitive floats.
@@ -64,6 +72,23 @@ public interface ColumnRegionFloat<ATTR extends Any> extends ColumnRegion<ATTR> 
         public float getFloat(final long elementIndex) {
             return QueryConstants.NULL_FLOAT;
         }
+
+        @Override
+        public WritableRowSet match(
+                final boolean invertMatch,
+                final boolean usePrev,
+                final boolean caseInsensitive,
+                @NotNull final RowSequence rowSequence,
+                final Object... sortedKeys) {
+            final boolean nullMatched = sortedKeys.length > 0
+                    && (sortedKeys[0] == null || sortedKeys[0].equals(QueryConstants.NULL_FLOAT_BOXED));
+            if (nullMatched && !invertMatch || !nullMatched && invertMatch) {
+                try (final RowSet rowSet = rowSequence.asRowSet()) {
+                    return rowSet.copy();
+                }
+            }
+            return RowSetFactory.empty();
+        }
     }
 
     final class Constant<ATTR extends Any>
@@ -88,14 +113,52 @@ public interface ColumnRegionFloat<ATTR extends Any> extends ColumnRegion<ATTR> 
             destination.asWritableFloatChunk().fillWithValue(offset, length, value);
             destination.setSize(offset + length);
         }
+
+        @Override
+        public ColumnLocation getLocation() {
+            return null;
+        }
+
+        @Override
+        public boolean supportsMatching() {
+            return true;
+        }
+
+        @Override
+        public WritableRowSet match(
+                final boolean invertMatch,
+                final boolean usePrev,
+                final boolean caseInsensitive,
+                @NotNull final RowSequence rowSequence,
+                final Object... sortedKeys) {
+            boolean valueMatches = arrayContainsValue(sortedKeys);
+            if (valueMatches && !invertMatch || !valueMatches && invertMatch) {
+                try (final RowSet rowSet = rowSequence.asRowSet()) {
+                    return rowSet.copy();
+                }
+            }
+
+            return RowSetFactory.empty();
+        }
+
+        private boolean arrayContainsValue(final Object[] sortedKeys) {
+            if (value == QueryConstants.NULL_FLOAT && sortedKeys.length > 0
+                    && (sortedKeys[0] == null || sortedKeys[0] == QueryConstants.NULL_FLOAT_BOXED)) {
+                return true;
+            }
+            return Arrays.binarySearch(sortedKeys,  value) >= 0;
+        }
     }
 
     final class StaticPageStore<ATTR extends Any>
             extends RegionedPageStore.Static<ATTR, ATTR, ColumnRegionFloat<ATTR>>
             implements ColumnRegionFloat<ATTR> {
 
-        public StaticPageStore(@NotNull final Parameters parameters, @NotNull final ColumnRegionFloat<ATTR>[] regions) {
-            super(parameters, regions);
+        public StaticPageStore(
+                @NotNull final Parameters parameters,
+                @NotNull final ColumnRegionFloat<ATTR>[] regions,
+                @NotNull final ColumnLocation location) {
+            super(parameters, regions, location);
         }
 
         @Override
@@ -113,6 +176,34 @@ public interface ColumnRegionFloat<ATTR extends Any> extends ColumnRegion<ATTR> 
         @Override
         public float getFloat(@NotNull final FillContext context, final long elementIndex) {
             return lookupRegion(elementIndex).getFloat(context, elementIndex);
+        }
+
+        @Override
+        public WritableRowSet match(
+                final boolean invertMatch,
+                final boolean usePrev, boolean caseInsensitive,
+                @NotNull final RowSequence rowSequence,
+                final Object... sortedKeys) {
+            // TODO NATE NOCOMMIT: should this parallelize matching?
+
+            WritableRowSet dest = null;
+            try (final RowSequence.Iterator rowIter = rowSequence.getRowSequenceIterator()) {
+                while (rowIter.hasMore()) {
+                    final long firstRow = rowIter.peekNextKey();
+                    final ColumnRegionFloat<ATTR> region = lookupRegion(firstRow);
+                    final long lastRow = region.maxRow(firstRow);
+                    final WritableRowSet result = region.match(
+                            invertMatch, usePrev, caseInsensitive, rowIter.getNextRowSequenceThrough(lastRow), sortedKeys);
+                    if (dest == null) {
+                        dest = result;
+                    } else {
+                        try (final SafeCloseable ignored = result) {
+                            dest.insert(result);
+                        }
+                    }
+                }
+            }
+            return dest == null ? RowSetFactory.empty() : dest;
         }
     }
 }

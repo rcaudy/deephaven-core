@@ -4,13 +4,13 @@
 package io.deephaven.parquet.table;
 
 import io.deephaven.UncheckedDeephavenException;
-import io.deephaven.stringset.StringSet;
 import io.deephaven.engine.table.impl.locations.TableDataException;
+import io.deephaven.parquet.base.ParquetFileReader;
 import io.deephaven.parquet.table.metadata.CodecInfo;
 import io.deephaven.parquet.table.metadata.ColumnTypeInfo;
 import io.deephaven.parquet.table.metadata.TableInfo;
-import io.deephaven.parquet.base.ParquetFileReader;
 import org.apache.parquet.format.converter.ParquetMetadataConverter;
+import io.deephaven.stringset.StringSet;
 import io.deephaven.util.codec.SimpleByteArrayCodec;
 import io.deephaven.util.codec.UTF8StringAsByteArrayCodec;
 import org.apache.commons.lang3.mutable.MutableObject;
@@ -100,7 +100,7 @@ public class ParquetSchemaReader {
             @NotNull final BiFunction<String, Set<String>, String> legalizeColumnNameFunc) throws IOException {
         final ParquetFileReader parquetFileReader = ParquetTools.getParquetFileReaderChecked(new File(filePath));
         final ParquetMetadata parquetMetadata =
-                new ParquetMetadataConverter().fromParquetMetadata(parquetFileReader.fileMetaData);
+                new ParquetMetadataConverter().fromParquetMetadata(parquetFileReader.getFileMetaData());
         return readParquetSchema(parquetFileReader.getSchema(), parquetMetadata.getFileMetaData().getKeyValueMetaData(),
                 readInstructions, consumer, legalizeColumnNameFunc);
     }

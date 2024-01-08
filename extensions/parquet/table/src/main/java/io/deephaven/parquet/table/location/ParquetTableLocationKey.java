@@ -125,7 +125,7 @@ public class ParquetTableLocationKey extends FileTableLocationKey {
             return metadata;
         }
         try {
-            return metadata = new ParquetMetadataConverter().fromParquetMetadata(getFileReader().fileMetaData);
+            return metadata = new ParquetMetadataConverter().fromParquetMetadata(getFileReader().getFileMetaData());
         } catch (IOException e) {
             throw new TableDataException("Failed to convert Parquet file metadata: " + getFile(), e);
         }
@@ -151,7 +151,7 @@ public class ParquetTableLocationKey extends FileTableLocationKey {
         if (rowGroupIndices != null) {
             return rowGroupIndices;
         }
-        final List<RowGroup> rowGroups = getFileReader().fileMetaData.getRow_groups();
+        final List<RowGroup> rowGroups = getFileReader().getFileMetaData().getRow_groups();
         return rowGroupIndices = IntStream.range(0, rowGroups.size()).filter(rgi -> {
             // 1. We can safely assume there's always at least one column. Our tools will refuse to write a
             // column-less table, and other readers we've tested fail catastrophically.

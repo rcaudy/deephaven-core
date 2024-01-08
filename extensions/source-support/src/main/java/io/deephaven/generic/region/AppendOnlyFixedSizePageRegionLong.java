@@ -9,6 +9,9 @@ import io.deephaven.base.MathUtil;
 import io.deephaven.chunk.WritableLongChunk;
 import io.deephaven.chunk.attributes.Any;
 import io.deephaven.engine.page.PageStore;
+import io.deephaven.engine.rowset.RowSequence;
+import io.deephaven.engine.rowset.WritableRowSet;
+import io.deephaven.engine.table.impl.locations.ColumnLocation;
 import io.deephaven.engine.table.impl.locations.TableDataException;
 import io.deephaven.engine.table.impl.sources.regioned.ColumnRegionLong;
 import io.deephaven.engine.table.impl.sources.regioned.GenericColumnRegionBase;
@@ -30,6 +33,7 @@ public class AppendOnlyFixedSizePageRegionLong<ATTR extends Any>
 
     private final int pageSize;
     private final AppendOnlyRegionAccessor<ATTR> accessor;
+    private final ColumnLocation location;
 
     @SuppressWarnings("unchecked")
     private volatile SoftReference<ChunkHolderPageLong<ATTR>>[] pageHolderRefs = new SoftReference[0];
@@ -37,10 +41,12 @@ public class AppendOnlyFixedSizePageRegionLong<ATTR extends Any>
     public AppendOnlyFixedSizePageRegionLong(
             final long pageMask,
             final int pageSize,
-            @NotNull final AppendOnlyRegionAccessor<ATTR> accessor) {
+            @NotNull final AppendOnlyRegionAccessor<ATTR> accessor,
+            @NotNull final ColumnLocation location) {
         super(pageMask);
         this.pageSize = pageSize;
         this.accessor = accessor;
+        this.location = location;
     }
 
     @Override
@@ -140,5 +146,21 @@ public class AppendOnlyFixedSizePageRegionLong<ATTR extends Any>
             accessor.readChunkPage(pageFirstRowInclusive + currentSize, thisPageSize - currentSize, destination);
             pageHolder.acceptAppend(destination, currentSize);
         }
+    }
+
+    @Override
+    public @Nullable ColumnLocation getLocation() {
+        return location;
+    }
+
+    @Override
+    public WritableRowSet match(
+            final boolean invertMatch,
+            final boolean usePrev,
+            final boolean caseInsensitive,
+            @NotNull final RowSequence rowSequence,
+            final Object... sortedKeys) {
+        // what should we do on an append only region?
+        throw new UnsupportedOperationException("TODO NATE NOCOMMIT");
     }
 }

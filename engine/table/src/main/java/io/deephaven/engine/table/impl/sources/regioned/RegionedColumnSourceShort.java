@@ -15,6 +15,7 @@ import io.deephaven.engine.table.impl.locations.TableDataException;
 import io.deephaven.engine.table.impl.locations.TableLocationKey;
 import io.deephaven.engine.table.impl.ColumnSourceGetDefaults;
 import io.deephaven.chunk.attributes.Values;
+import io.deephaven.engine.table.impl.sources.regioned.instructions.SourceTableColumnInstructions;
 import org.jetbrains.annotations.NotNull;
 
 import static io.deephaven.util.type.TypeUtils.unbox;
@@ -38,9 +39,11 @@ abstract class RegionedColumnSourceShort<ATTR extends Values>
 
     interface MakeRegionDefault extends MakeRegion<Values, ColumnRegionShort<Values>> {
         @Override
-        default ColumnRegionShort<Values> makeRegion(@NotNull final ColumnDefinition<?> columnDefinition,
-                                                    @NotNull final ColumnLocation columnLocation,
-                                                    final int regionIndex) {
+        default ColumnRegionShort<Values> makeRegion(
+                @NotNull final ColumnDefinition<?> columnDefinition,
+                @NotNull final ColumnLocation columnLocation,
+                @NotNull final SourceTableColumnInstructions instructions,
+                final int regionIndex) {
             if (columnLocation.exists()) {
                 return columnLocation.makeColumnRegionShort(columnDefinition);
             }
@@ -66,9 +69,11 @@ abstract class RegionedColumnSourceShort<ATTR extends Values>
         }
 
         @Override
-        public ColumnRegionShort<Values> makeRegion(@NotNull final ColumnDefinition<?> columnDefinition,
-                                                   @NotNull final ColumnLocation columnLocation,
-                                                   final int regionIndex) {
+        public ColumnRegionShort<Values> makeRegion(
+                @NotNull final ColumnDefinition<?> columnDefinition,
+                @NotNull final ColumnLocation columnLocation,
+                @NotNull final SourceTableColumnInstructions instructions,
+                final int regionIndex) {
             final TableLocationKey locationKey = columnLocation.getTableLocation().getKey();
             final Object partitioningColumnValue = locationKey.getPartitionValue(columnDefinition.getName());
             if (partitioningColumnValue != null && !Short.class.isAssignableFrom(partitioningColumnValue.getClass())) {

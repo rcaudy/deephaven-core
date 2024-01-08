@@ -4,25 +4,18 @@
 package io.deephaven.engine.table.impl;
 
 import io.deephaven.api.filter.Filter;
-import io.deephaven.chunk.attributes.Values;
 import io.deephaven.engine.table.ColumnDefinition;
 import io.deephaven.engine.table.Table;
 import io.deephaven.engine.table.TableDefinition;
 import io.deephaven.engine.testutil.TstUtils;
 import io.deephaven.engine.testutil.junit4.EngineCleanup;
 import io.deephaven.time.DateTimeUtils;
-import io.deephaven.engine.table.impl.locations.ColumnLocation;
-import io.deephaven.engine.table.impl.locations.TableKey;
-import io.deephaven.engine.table.impl.locations.TableLocation;
-import io.deephaven.engine.table.impl.locations.TableLocationKey;
 import io.deephaven.engine.table.impl.locations.impl.*;
 import io.deephaven.engine.table.impl.select.MatchFilter;
 import io.deephaven.engine.table.impl.select.WhereFilter;
 import io.deephaven.engine.table.ColumnSource;
 import io.deephaven.engine.table.impl.sources.regioned.*;
 import io.deephaven.engine.rowset.RowSetFactory;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -74,7 +67,7 @@ public class TestPartitioningColumns {
         final TableDefinition resultDefinition = TableDefinition.of(input.getDefinition().getColumnStream()
                 .map(ColumnDefinition::withPartitioning).collect(Collectors.toList()));
         final Table result = new PartitionAwareSourceTable(resultDefinition, "TestPartitioningColumns",
-                RegionedTableComponentFactoryImpl.INSTANCE,
+                RegionedTableComponentFactoryImpl.make(),
                 new PollingTableLocationProvider<>(
                         StandaloneTableKey.getInstance(),
                         recordingLocationKeyFinder,
@@ -95,96 +88,5 @@ public class TestPartitioningColumns {
         TstUtils.assertTableEquals(expected.where(Filter.and(filters)), result.where(Filter.and(filters)));
 
         TstUtils.assertTableEquals(expected.selectDistinct(), result.selectDistinct());
-    }
-
-    private static final class DummyTableLocation extends AbstractTableLocation {
-
-        protected DummyTableLocation(@NotNull final TableKey tableKey,
-                @NotNull final TableLocationKey tableLocationKey) {
-            super(tableKey, tableLocationKey, false);
-        }
-
-        @Override
-        public void refresh() {
-
-        }
-
-        @NotNull
-        @Override
-        protected ColumnLocation makeColumnLocation(@NotNull String name) {
-            return new ColumnLocation() {
-                @NotNull
-                @Override
-                public TableLocation getTableLocation() {
-                    return DummyTableLocation.this;
-                }
-
-                @NotNull
-                @Override
-                public String getName() {
-                    return name;
-                }
-
-                @Override
-                public boolean exists() {
-                    throw new UnsupportedOperationException();
-                }
-
-                @Nullable
-                @Override
-                public <METADATA_TYPE> METADATA_TYPE getMetadata(@NotNull ColumnDefinition<?> columnDefinition) {
-                    throw new UnsupportedOperationException();
-                }
-
-                @Override
-                public ColumnRegionChar<Values> makeColumnRegionChar(
-                        @NotNull ColumnDefinition<?> columnDefinition) {
-                    throw new UnsupportedOperationException();
-                }
-
-                @Override
-                public ColumnRegionByte<Values> makeColumnRegionByte(
-                        @NotNull ColumnDefinition<?> columnDefinition) {
-                    throw new UnsupportedOperationException();
-                }
-
-                @Override
-                public ColumnRegionShort<Values> makeColumnRegionShort(
-                        @NotNull ColumnDefinition<?> columnDefinition) {
-                    throw new UnsupportedOperationException();
-                }
-
-                @Override
-                public ColumnRegionInt<Values> makeColumnRegionInt(
-                        @NotNull ColumnDefinition<?> columnDefinition) {
-                    throw new UnsupportedOperationException();
-                }
-
-                @Override
-                public ColumnRegionLong<Values> makeColumnRegionLong(
-                        @NotNull ColumnDefinition<?> columnDefinition) {
-                    throw new UnsupportedOperationException();
-                }
-
-                @Override
-                public ColumnRegionFloat<Values> makeColumnRegionFloat(
-                        @NotNull ColumnDefinition<?> columnDefinition) {
-                    throw new UnsupportedOperationException();
-                }
-
-                @Override
-                public ColumnRegionDouble<Values> makeColumnRegionDouble(
-                        @NotNull ColumnDefinition<?> columnDefinition) {
-                    throw new UnsupportedOperationException();
-                }
-
-                @Override
-                public <TYPE> ColumnRegionObject<TYPE, Values> makeColumnRegionObject(
-                        @NotNull ColumnDefinition<TYPE> columnDefinition) {
-                    throw new UnsupportedOperationException();
-                }
-
-            };
-        }
     }
 }

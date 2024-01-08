@@ -9,6 +9,8 @@ import io.deephaven.engine.table.impl.locations.ColumnLocation;
 import io.deephaven.engine.table.impl.sources.DeferredGroupingColumnSource;
 import io.deephaven.engine.table.impl.ImmutableColumnSource;
 import io.deephaven.engine.rowset.RowSet;
+import io.deephaven.engine.rowset.TrackingWritableRowSet;
+import io.deephaven.engine.table.impl.sources.regioned.instructions.SourceTableColumnInstructions;
 import io.deephaven.util.annotations.VisibleForTesting;
 import org.jetbrains.annotations.NotNull;
 
@@ -106,10 +108,13 @@ public interface RegionedColumnSource<DATA_TYPE>
      *
      * @param columnDefinition The column definition for this column source (potentially varies by region)
      * @param columnLocation The column location for the region being added
+     * @param instructions The instructions for the region being added
      * @return The index assigned to the added region
      */
-    int addRegion(@NotNull final ColumnDefinition<?> columnDefinition,
-            @NotNull final ColumnLocation columnLocation);
+    int addRegion(
+            @NotNull final ColumnDefinition<?> columnDefinition,
+            @NotNull final ColumnLocation columnLocation,
+            @NotNull final SourceTableColumnInstructions instructions);
 
     /**
      * Invalidate the specified region. An invalidated region will throw an exception on any read attempt if it cannot
@@ -118,4 +123,9 @@ public interface RegionedColumnSource<DATA_TYPE>
      * @param regionIndex the region to invalidate
      */
     void invalidateRegion(int regionIndex);
+
+    /**
+     * Disable the use of grouping for any operation of this source.
+     */
+    void disableGrouping();
 }

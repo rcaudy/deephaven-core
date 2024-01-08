@@ -8,6 +8,10 @@ import io.deephaven.api.SortColumn;
 import io.deephaven.chunk.WritableChunk;
 import io.deephaven.chunk.attributes.Values;
 import io.deephaven.engine.rowset.RowSet;
+import io.deephaven.engine.table.impl.locations.impl.DummyColumnLocation;
+import io.deephaven.engine.table.impl.locations.impl.DummyTableLocation;
+import io.deephaven.engine.table.impl.locations.impl.StandaloneTableKey;
+import io.deephaven.engine.table.impl.locations.impl.StandaloneTableLocationKey;
 import io.deephaven.engine.table.impl.sources.regioned.ColumnRegionChar;
 import io.deephaven.engine.table.impl.sources.regioned.RegionedColumnSource;
 import io.deephaven.engine.testutil.junit4.EngineCleanup;
@@ -219,6 +223,11 @@ public class CharRegionBinarySearchKernelTest {
     }
 
     private static final int PAGE_SIZE = 1 << 16;
+    private static final DummyTableLocation dummyTableLocation = new DummyTableLocation(
+            StandaloneTableKey.getInstance(), StandaloneTableLocationKey.getInstance());
+    private static final DummyColumnLocation dummyColumnLocation = new DummyColumnLocation(
+            dummyTableLocation, "dummyColumn");
+
     private static ColumnRegionChar<Values> makeColumnRegionChar(@NotNull final List<Character> values) {
         return new AppendOnlyFixedSizePageRegionChar<>(
                 RegionedColumnSource.ROW_KEY_TO_SUB_REGION_ROW_INDEX_MASK, PAGE_SIZE, new AppendOnlyRegionAccessor<>() {
@@ -235,6 +244,6 @@ public class CharRegionBinarySearchKernelTest {
             public long size() {
                 return values.size();
             }
-        });
+        }, dummyColumnLocation);
     }
 }

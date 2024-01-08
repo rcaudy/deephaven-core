@@ -9,8 +9,8 @@ import static io.deephaven.replication.ReplicatePrimitiveCode.charToAllButBoolea
 import static io.deephaven.replication.ReplicatePrimitiveCode.charToAllButBooleanAndByte;
 
 /**
- * Code generation for tests of {@link RegionedColumnSource} implementations as well as well as the primary region
- * interfaces for some primitive types.
+ * Code generation for tests of {@code RegionedColumnSource} implementations as well as the primary region interfaces
+ * for some primitive types.
  */
 public class ReplicateRegionAndRegionedSourceTests {
 

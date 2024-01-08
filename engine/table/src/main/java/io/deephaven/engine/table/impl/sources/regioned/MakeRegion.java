@@ -6,6 +6,7 @@ package io.deephaven.engine.table.impl.sources.regioned;
 import io.deephaven.chunk.attributes.Values;
 import io.deephaven.engine.table.ColumnDefinition;
 import io.deephaven.engine.table.impl.locations.ColumnLocation;
+import io.deephaven.engine.table.impl.sources.regioned.instructions.SourceTableColumnInstructions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -17,6 +18,7 @@ public interface MakeRegion<ATTR extends Values, REGION_TYPE extends ColumnRegio
      *
      * @param columnDefinition The {@link ColumnDefinition}
      * @param columnLocation The {@link ColumnLocation}
+     * @param instructions The {@link SourceTableColumnInstructions}
      * @param regionIndex The index of the region to add.
      *
      * @return A new or re-usable column region appropriate for this source and the supplied parameters. A null value
@@ -24,7 +26,9 @@ public interface MakeRegion<ATTR extends Values, REGION_TYPE extends ColumnRegio
      *         full of the appropriate "null" value for the column's type.
      */
     @Nullable
-    REGION_TYPE makeRegion(@NotNull ColumnDefinition<?> columnDefinition,
+    REGION_TYPE makeRegion(
+            @NotNull ColumnDefinition<?> columnDefinition,
             @NotNull ColumnLocation columnLocation,
+            @NotNull SourceTableColumnInstructions instructions,
             int regionIndex);
 }

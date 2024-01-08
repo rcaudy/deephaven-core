@@ -54,10 +54,10 @@ public class ToArrayPage<ATTR extends Any, RESULT, ARRAY_TYPE>
 
     @NotNull
     @Override
-    public final ARRAY_TYPE[] convertResult(Object object) {
+    public final ARRAY_TYPE[] convertResultArray(@NotNull final Object object) {
         final DataWithOffsets dataWithOffsets = (DataWithOffsets) object;
 
-        final Vector<?> dataWrapper = toPage.makeVector(toPage.convertResult(dataWithOffsets.materializeResult));
+        final Vector<?> dataWrapper = toPage.makeVector(toPage.convertResultArray(dataWithOffsets.materializeResult));
         final IntBuffer offsets = dataWithOffsets.offsets;
 
         // noinspection unchecked

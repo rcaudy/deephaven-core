@@ -105,4 +105,16 @@ final class RegionedColumnSourceZonedDateTime
     public ZoneId getZone() {
         return zone;
     }
+
+    @Override
+    @NotNull
+    public Object[] convertArray(@NotNull final Object[] keys) {
+        final Object[] convertedValues = new Object[keys.length];
+        for (int ii = 0; ii < keys.length; ii++) {
+            if (keys[ii] == null || keys[ii] instanceof ZonedDateTime) {
+                convertedValues[ii] = DateTimeUtils.epochNanos((ZonedDateTime) keys[ii]);
+            }
+        }
+        return convertedValues;
+    }
 }

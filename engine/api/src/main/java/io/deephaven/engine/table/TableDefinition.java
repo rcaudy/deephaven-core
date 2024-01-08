@@ -3,13 +3,13 @@
  */
 package io.deephaven.engine.table;
 
-import io.deephaven.UncheckedDeephavenException;
 import io.deephaven.api.ColumnName;
 import io.deephaven.base.cache.OpenAddressedCanonicalizationCache;
 import io.deephaven.base.log.LogOutput;
 import io.deephaven.base.log.LogOutputAppendable;
 import io.deephaven.base.verify.Assert;
 import io.deephaven.engine.table.impl.NoSuchColumnException;
+import io.deephaven.engine.exceptions.IncompatibleTableDefinitionException;
 import io.deephaven.io.log.impl.LogOutputStringImpl;
 import io.deephaven.qst.column.header.ColumnHeader;
 import org.jetbrains.annotations.NotNull;
@@ -653,30 +653,5 @@ public class TableDefinition implements LogOutputAppendable {
             return getColumnStream().filter(ColumnDefinition::isDirect).collect(Collectors.toList());
         }
         return columns;
-    }
-
-    /**
-     * Runtime exception representing an incompatibility between table definitions.
-     */
-    @SuppressWarnings({"WeakerAccess", "unused"})
-    public static class IncompatibleTableDefinitionException extends UncheckedDeephavenException {
-
-        private static final long serialVersionUID = 7668080323885707687L;
-
-        public IncompatibleTableDefinitionException() {
-            super();
-        }
-
-        public IncompatibleTableDefinitionException(String message) {
-            super(message);
-        }
-
-        public IncompatibleTableDefinitionException(String message, Throwable cause) {
-            super(message, cause);
-        }
-
-        public IncompatibleTableDefinitionException(Throwable cause) {
-            super(cause);
-        }
     }
 }

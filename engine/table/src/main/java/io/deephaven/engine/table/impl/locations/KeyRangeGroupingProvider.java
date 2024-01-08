@@ -4,7 +4,6 @@
 package io.deephaven.engine.table.impl.locations;
 
 import io.deephaven.engine.rowset.RowSet;
-import io.deephaven.engine.rowset.TrackingWritableRowSet;
 import org.jetbrains.annotations.NotNull;
 
 /**

@@ -47,4 +47,16 @@ final class RegionedColumnSourceBoolean
         return rowKey == RowSequence.NULL_ROW_KEY ? null :
                 BooleanUtils.byteAsBoolean(getNativeSource().lookupRegion(rowKey).getByte(rowKey));
     }
+
+    @Override
+    @NotNull
+    public Object[] convertArray(@NotNull final Object[] keys) {
+        final Object[] convertedValues = new Object[keys.length];
+        for(int ii = 0; ii < keys.length; ii++) {
+            if(keys[ii] == null || keys[ii] instanceof Boolean) {
+                convertedValues[ii] = BooleanUtils.booleanAsByte((Boolean)keys[ii]);
+            }
+        }
+        return convertedValues;
+    }
 }

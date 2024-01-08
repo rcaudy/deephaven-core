@@ -8,6 +8,7 @@ import io.deephaven.chunk.ChunkType;
 import org.apache.parquet.column.Dictionary;
 import org.apache.parquet.io.api.Binary;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Supplier;
 
@@ -26,7 +27,7 @@ public class ToStringPage<ATTR extends Any> implements ToPage<ATTR, String[]> {
                             new ChunkDictionary<>(
                                     (dictionary, key) -> dictionary.decodeToBinary(key).toStringUsingUTF8(),
                                     dictionarySupplier),
-                            INSTANCE::convertResult);
+                            INSTANCE::convertResultArray);
         }
 
         throw new IllegalArgumentException(
@@ -49,7 +50,7 @@ public class ToStringPage<ATTR extends Any> implements ToPage<ATTR, String[]> {
 
     @Override
     @NotNull
-    public final String[] convertResult(final Object result) {
+    public final String[] convertResultArray(@NotNull final Object result) {
         final Binary[] from = (Binary[]) result;
         final String[] to = new String[from.length];
         for (int ri = 0; ri < to.length; ++ri) {
@@ -58,5 +59,11 @@ public class ToStringPage<ATTR extends Any> implements ToPage<ATTR, String[]> {
             }
         }
         return to;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public String convertSingleResult(@Nullable final Object result) {
+        return result == null ? null : ((Binary) result).toStringUsingUTF8();
     }
 }

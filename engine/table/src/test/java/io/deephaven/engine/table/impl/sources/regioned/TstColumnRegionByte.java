@@ -4,6 +4,8 @@
 package io.deephaven.engine.table.impl.sources.regioned;
 
 import io.deephaven.chunk.attributes.Values;
+import io.deephaven.engine.rowset.WritableRowSet;
+import io.deephaven.engine.table.impl.locations.ColumnLocation;
 import io.deephaven.util.QueryConstants;
 import io.deephaven.chunk.WritableByteChunk;
 import io.deephaven.chunk.WritableChunk;
@@ -61,6 +63,21 @@ public abstract class TstColumnRegionByte {
             });
 
             charDestination.setSize(size + length);
+        }
+
+        @Override
+        public ColumnLocation getLocation() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public WritableRowSet match(
+                final boolean invertMatch,
+                final boolean usePrev,
+                final boolean caseInsensitive,
+                @NotNull final RowSequence rowSequence,
+                final Object... sortedKeys) {
+            throw new UnsupportedOperationException("This test region does not support matching");
         }
     }
 

@@ -12,6 +12,7 @@ import io.deephaven.chunk.ChunkType;
 import io.deephaven.parquet.base.ColumnPageReader;
 import io.deephaven.parquet.base.DataWithOffsets;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.nio.IntBuffer;
@@ -56,9 +57,9 @@ public class ToStringSetPage<ATTR extends Any, STRING_ARRAY>
 
     @Override
     @NotNull
-    public final StringSet[] convertResult(Object result) {
+    public final StringSet[] convertResultArray(@NotNull final Object result) {
         DataWithOffsets dataWithOffsets = (DataWithOffsets) result;
-        String[] from = (String[]) toPage.convertResult(dataWithOffsets.materializeResult);
+        String[] from = (String[]) toPage.convertResultArray(dataWithOffsets.materializeResult);
         IntBuffer offsets = dataWithOffsets.offsets;
 
         StringSet[] to = new StringSet[offsets.remaining()];
@@ -77,6 +78,11 @@ public class ToStringSetPage<ATTR extends Any, STRING_ARRAY>
         return to;
     }
 
+    @Override
+    public <R> R convertSingleResult(@Nullable Object result) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
     private static final class WithShortDictionary<ATTR extends Any, STRING_ARRAY>
             extends ToPage.Wrap<ATTR, STRING_ARRAY, StringSet[]> {
 
@@ -86,25 +92,25 @@ public class ToStringSetPage<ATTR extends Any, STRING_ARRAY>
 
         @Override
         @NotNull
-        public final Class<StringSet> getNativeType() {
+        public Class<StringSet> getNativeType() {
             return StringSet.class;
         }
 
         @Override
         @NotNull
-        public final ChunkType getChunkType() {
+        public ChunkType getChunkType() {
             return ChunkType.Object;
         }
 
         @Override
         @NotNull
-        public final Object getResult(ColumnPageReader columnPageReader) throws IOException {
+        public Object getResult(@NotNull final ColumnPageReader columnPageReader) throws IOException {
             return toPage.getDictionaryKeysToPage().getResult(columnPageReader);
         }
 
         @Override
         @NotNull
-        public final StringSet[] convertResult(Object result) {
+        public StringSet[] convertResultArray(@NotNull final Object result) {
             DataWithOffsets dataWithOffsets = (DataWithOffsets) result;
             int[] from = (int[]) dataWithOffsets.materializeResult;
             IntBuffer offsets = dataWithOffsets.offsets;

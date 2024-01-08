@@ -10,6 +10,7 @@ import javax.annotation.OverridingMethodsMustInvokeSuper;
 import io.deephaven.chunk.attributes.Values;
 import io.deephaven.engine.table.ColumnDefinition;
 import io.deephaven.engine.table.impl.locations.ColumnLocation;
+import io.deephaven.engine.table.impl.sources.regioned.instructions.SourceTableColumnInstructions;
 import io.deephaven.util.annotations.TestUseOnly;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -80,19 +81,21 @@ abstract class RegionedColumnSourceArray<DATA_TYPE, ATTR extends Values, REGION_
 
     @Override
     @OverridingMethodsMustInvokeSuper
-    public synchronized int addRegion(@NotNull final ColumnDefinition<?> columnDefinition,
-            @NotNull final ColumnLocation columnLocation) {
+    public synchronized int addRegion(
+            @NotNull final ColumnDefinition<?> columnDefinition,
+            @NotNull final ColumnLocation columnLocation,
+            @NotNull final SourceTableColumnInstructions instructions) {
         maybeExtendRegions();
         final int regionIndex = regionCount;
-        regions[regionIndex] = makeDeferred.make(PARAMETERS.regionMask,
-                () -> updateRegion(regionIndex, makeRegion(columnDefinition, columnLocation, regionIndex)));
+        regions[regionIndex] = makeDeferred.make(PARAMETERS.regionMask, () -> updateRegion(regionIndex,
+                makeRegion(columnDefinition, columnLocation, instructions, regionIndex)));
         return regionCount++;
     }
 
     /**
      * <p>
      * Add a pre-constructed region without going through the abstract factory method
-     * {@link #makeRegion(ColumnDefinition, ColumnLocation, int)}.
+     * {@link #makeRegion(ColumnDefinition, ColumnLocation, SourceTableColumnInstructions, int)}.
      * <p>
      * <em>This method is for unit testing purposes only!</em>
      *

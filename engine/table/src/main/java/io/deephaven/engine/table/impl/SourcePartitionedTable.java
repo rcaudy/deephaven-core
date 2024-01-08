@@ -203,7 +203,7 @@ public class SourcePartitionedTable extends PartitionedTableImpl {
             final PartitionAwareSourceTable constituent = new PartitionAwareSourceTable(
                     constituentDefinition,
                     "SingleLocationSourceTable-" + tableLocation,
-                    RegionedTableComponentFactoryImpl.INSTANCE,
+                    RegionedTableComponentFactoryImpl.make(),
                     new SingleTableLocationProvider(tableLocation),
                     refreshSizes ? refreshCombiner : null);
 

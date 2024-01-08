@@ -7,6 +7,7 @@ import io.deephaven.base.verify.AssertionFailure;
 import io.deephaven.engine.rowset.WritableRowSet;
 import io.deephaven.engine.table.ColumnDefinition;
 import io.deephaven.engine.table.impl.ColumnToCodecMappings;
+import io.deephaven.engine.table.impl.sources.regioned.instructions.SourceTableColumnInstructions;
 import io.deephaven.engine.testutil.testcase.RefreshingTableTestCase;
 import io.deephaven.engine.table.impl.locations.*;
 import io.deephaven.engine.table.impl.locations.impl.SimpleTableLocationKey;
@@ -325,8 +326,10 @@ public class TestRegionedColumnSourceManager extends RefreshingTableTestCase {
                     locationIndexToRegionIndex.put(li, regionIndex);
                     IntStream.range(0, NUM_COLUMNS).forEach(ci -> checking(new Expectations() {
                         {
-                            oneOf(columnSources[ci]).addRegion(with(columnDefinitions.get(ci)),
-                                    with(columnLocations[li][ci]));
+                            oneOf(columnSources[ci]).addRegion(
+                                    with(columnDefinitions.get(ci)),
+                                    with(columnLocations[li][ci]),
+                                    SourceTableColumnInstructions.DEFAULT);
                             will(returnValue(regionIndex));
                         }
                     }));
