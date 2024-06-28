@@ -91,6 +91,9 @@ class Classpaths {
     static final String GROOVY_GROUP = 'org.codehaus.groovy'
     static final String GROOVY_VERSION = '3.0.21'
 
+    static final String KOTLIN_GROUP = 'org.jetbrains.kotlin'
+    static final String KOTLIN_VERSION = '2.0.0'
+
     static final String GRPC_GROUP = 'io.grpc'
     static final String GRPC_NAME = 'grpc-bom'
     // Only bump this in concert w/ BORINGSSL_VERSION
@@ -265,6 +268,13 @@ class Classpaths {
     static void inheritGroovy(Project p, String name, String configName) {
         Configuration config = p.configurations.getByName(configName)
         addDependency(config, GROOVY_GROUP, name, GROOVY_VERSION)
+    }
+
+    static void inheritKotlin(Project p, String configName) {
+        Configuration config = p.configurations.getByName(configName)
+        addDependency(config, KOTLIN_GROUP, "kotlin-scripting-jsr223", KOTLIN_VERSION)
+//        addDependency(config, KOTLIN_GROUP, "kotlin-compiler", KOTLIN_VERSION)
+//        addDependency(config, KOTLIN_GROUP, "kotlin-script-runtime", KOTLIN_VERSION)
     }
 
     static void inheritGrpcPlatform(Project p, String configName = JavaPlugin.IMPLEMENTATION_CONFIGURATION_NAME) {
