@@ -22,9 +22,9 @@ public class ImmediateJobScheduler implements JobScheduler {
     private final Deque<Runnable> pendingJobs = new ArrayDeque<>();
 
     @Override
-    public void submit(
+    public Runnable submit(
             final ExecutionContext executionContext,
-            final Runnable runnable,
+            final Runnable task,
             final LogOutputAppendable description,
             final Consumer<Exception> onError) {
         final Thread thisThread = Thread.currentThread();
@@ -37,7 +37,7 @@ public class ImmediateJobScheduler implements JobScheduler {
         pendingJobs.addLast(() -> {
             // We do not need to install the update context since we are not changing thread contexts.
             try (SafeCloseable ignored = executionContext != null ? executionContext.open() : null) {
-                runnable.run();
+                task.run();
             } catch (Exception e) {
                 onError.accept(e);
             }
@@ -45,7 +45,7 @@ public class ImmediateJobScheduler implements JobScheduler {
 
         if (thisThreadIsProcessing) {
             // We're already draining the queue in an ancestor stack frame
-            return;
+            return () -> {};
         }
 
         try {
@@ -56,6 +56,7 @@ public class ImmediateJobScheduler implements JobScheduler {
         } finally {
             PROCESSING_THREAD_UPDATER.set(this, null);
         }
+        return () -> {};
     }
 
     @Override

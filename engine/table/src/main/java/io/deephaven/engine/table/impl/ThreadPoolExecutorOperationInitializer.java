@@ -10,7 +10,6 @@ import io.deephaven.util.thread.NamingThreadFactory;
 import io.deephaven.util.thread.ThreadInitializationFactory;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -19,33 +18,34 @@ import java.util.concurrent.TimeUnit;
 import static io.deephaven.util.thread.ThreadHelpers.getOrComputeThreadCountProperty;
 
 /**
- * Implementation of OperationInitializer that delegates to a pool of threads.
+ * Implementation of {@link OperationInitializer} that delegates to a {@link ThreadPoolExecutor}.
  */
-public class OperationInitializationThreadPool implements OperationInitializer {
+public class ThreadPoolExecutorOperationInitializer implements OperationInitializer {
 
     /**
      * The number of threads that will be used for parallel initialization in this process
      */
     private static final int NUM_THREADS =
             getOrComputeThreadCountProperty("OperationInitializationThreadPool.threads", -1);
+
     private final ThreadLocal<Boolean> isInitializationThread = ThreadLocal.withInitial(() -> false);
 
     private final ThreadPoolExecutor executorService;
 
-    public OperationInitializationThreadPool(ThreadInitializationFactory factory) {
+    public ThreadPoolExecutorOperationInitializer(ThreadInitializationFactory factory) {
         final ThreadGroup threadGroup = new ThreadGroup("OperationInitializationThreadPool");
         final ThreadFactory threadFactory = new NamingThreadFactory(
-                threadGroup, OperationInitializationThreadPool.class, "initializationExecutor", true) {
-            @Override
+                threadGroup, ThreadPoolExecutorOperationInitializer.class, "initializationExecutor", true) {
+                @Override
             public Thread newThread(@NotNull final Runnable r) {
                 return super.newThread(factory.createInitializer(() -> {
                     isInitializationThread.set(true);
-                    MultiChunkPool.enableDedicatedPoolForThisThread();
+                        MultiChunkPool.enableDedicatedPoolForThisThread();
                     ExecutionContext.newBuilder().setOperationInitializer(OperationInitializer.NON_PARALLELIZABLE)
                             .build().apply(r);
                 }));
-            }
-        };
+                }
+            };
         executorService = new ThreadPoolExecutor(
                 NUM_THREADS, NUM_THREADS, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(), threadFactory);
 
@@ -58,8 +58,10 @@ public class OperationInitializationThreadPool implements OperationInitializer {
     }
 
     @Override
-    public Future<?> submit(Runnable runnable) {
-        return executorService.submit(runnable);
+    @NotNull
+    public Runnable submit(@NotNull final Runnable task) {
+        executorService.submit(task);
+        return () -> {};
     }
 
     @Override

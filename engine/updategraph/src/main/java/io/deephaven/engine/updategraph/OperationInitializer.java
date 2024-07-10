@@ -3,13 +3,14 @@
 //
 package io.deephaven.engine.updategraph;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
+import org.jetbrains.annotations.NotNull;
 
 /**
- * Provides guidance for initialization operations on how they can parallelize.
+ * Execution framework for possibly-parallel operation initialization tasks. Provides guidance for initialization
+ * operations on how they can parallelize.
  */
 public interface OperationInitializer {
+
     OperationInitializer NON_PARALLELIZABLE = new OperationInitializer() {
         @Override
         public boolean canParallelize() {
@@ -17,9 +18,11 @@ public interface OperationInitializer {
         }
 
         @Override
-        public Future<?> submit(Runnable runnable) {
-            runnable.run();
-            return CompletableFuture.completedFuture(null);
+        @NotNull
+        public Runnable submit(@NotNull final Runnable task) {
+            task.run();
+            return () -> {
+            };
         }
 
         @Override
@@ -29,14 +32,19 @@ public interface OperationInitializer {
     };
 
     /**
-     * Whether the current thread can parallelize operations using this OperationInitialization.
+     * Whether the current thread can parallelize operations using this OperationInitializer.
      */
     boolean canParallelize();
 
     /**
-     * Submits a task to run in this thread pool.
+     * Submits a task to run in this OperationInitializer.
+     *
+     * @param task The task to be {@link Runnable#run() run}
+     * @return A {@link Runnable} that should be invoked if or when the calling thread cannot make progress until the
+     *         job is completed. Some implementations may use this to ensure progress for nested parallel jobs.
      */
-    Future<?> submit(Runnable runnable);
+    @NotNull
+    Runnable submit(@NotNull Runnable task);
 
     /**
      * Number of threads that are potentially available.

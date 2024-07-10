@@ -29,10 +29,15 @@ public class UpdateGraphJobScheduler implements JobScheduler {
         this(ExecutionContext.getContext().getUpdateGraph());
     }
 
+    /**
+     * @inheritDoc
+     * @implNote This implementation is used only for parallel, asynchronous notification processing. Its return should
+     *           never be invoked in correct usage.
+     */
     @Override
-    public void submit(
+    public Runnable submit(
             final ExecutionContext executionContext,
-            final Runnable runnable,
+            final Runnable task,
             final LogOutputAppendable description,
             final Consumer<Exception> onError) {
         updateGraph.addNotification(new AbstractNotification(false) {
@@ -46,7 +51,7 @@ public class UpdateGraphJobScheduler implements JobScheduler {
                 final BasePerformanceEntry baseEntry = new BasePerformanceEntry();
                 baseEntry.onBaseEntryStart();
                 try (final SafeCloseable ignored = executionContext == null ? null : executionContext.open()) {
-                    runnable.run();
+                    task.run();
                 } catch (Exception e) {
                     onError.accept(e);
                 } catch (Error e) {
@@ -65,6 +70,9 @@ public class UpdateGraphJobScheduler implements JobScheduler {
                         .append(description).append("}");
             }
         });
+        return () -> {
+            throw new UnsupportedOperationException("This implementation is not intended for synchronous use");
+        };
     }
 
     @Override

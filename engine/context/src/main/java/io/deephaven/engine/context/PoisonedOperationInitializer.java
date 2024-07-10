@@ -5,8 +5,7 @@ package io.deephaven.engine.context;
 
 import io.deephaven.engine.updategraph.OperationInitializer;
 import io.deephaven.util.ExecutionContextRegistrationException;
-
-import java.util.concurrent.Future;
+import org.jetbrains.annotations.NotNull;
 
 public class PoisonedOperationInitializer implements OperationInitializer {
 
@@ -22,7 +21,8 @@ public class PoisonedOperationInitializer implements OperationInitializer {
     }
 
     @Override
-    public Future<?> submit(Runnable runnable) {
+    @NotNull
+    public Runnable submit(@NotNull final Runnable task) {
         return fail();
     }
 

@@ -41,16 +41,20 @@ public interface JobScheduler {
     Supplier<JobThreadContext> DEFAULT_CONTEXT_FACTORY = () -> DEFAULT_CONTEXT;
 
     /**
-     * Cause runnable to be executed.
+     * Cause {@code task} to be executed.
      *
-     * @param executionContext the execution context to run it under
-     * @param runnable the runnable to execute
-     * @param description a description for logging
-     * @param onError a routine to call if an exception occurs while running runnable
+     * @param executionContext The execution context to run it under
+     * @param task The task to execute
+     * @param description A description for logging
+     * @param onError A routine to call if an exception occurs while running {@code task}}
+     * @return A {@link Runnable} that should be invoked if or when the calling thread cannot make progress until the
+     *         job is completed. Some implementations may use this to ensure progress for nested parallel jobs. Others
+     *         may throw if invoked, because they only allow asynchronous result handling. Still others may return a
+     *         no-op.
      */
-    void submit(
+    Runnable submit(
             ExecutionContext executionContext,
-            Runnable runnable,
+            Runnable task,
             final LogOutputAppendable description,
             final Consumer<Exception> onError);
 
@@ -142,7 +146,7 @@ public interface JobScheduler {
             exception = new AtomicReference<>();
         }
 
-        private void startTasks(
+        private Runnable startTasks(
                 @NotNull final JobScheduler scheduler,
                 @Nullable final ExecutionContext executionContext,
                 @NotNull final Supplier<CONTEXT_TYPE> taskThreadContextFactory,
@@ -150,6 +154,7 @@ public interface JobScheduler {
             // Increment this once in order to maintain >=1 until completed
             incrementReferenceCount();
             final int numTaskInvokers = Math.min(maxThreads, scheduler.threadCount());
+            final Runnable[] suspensionCallbacks = new Runnable[numTaskInvokers];
             for (int tii = 0; tii < numTaskInvokers; ++tii) {
                 final int initialTaskIndex = nextAvailableTaskIndex.getAndIncrement();
                 if (initialTaskIndex >= start + count || exception.get() != null) {
@@ -161,9 +166,16 @@ public interface JobScheduler {
                     break;
                 }
                 final TaskInvoker taskInvoker = new TaskInvoker(context, tii, initialTaskIndex);
-                scheduler.submit(executionContext, taskInvoker::execute, description,
+                suspensionCallbacks[tii] = scheduler.submit(executionContext, taskInvoker::execute, description,
                         IterationManager::onUnexpectedJobError);
             }
+            return () -> {
+                for (final Runnable suspensionCallback : suspensionCallbacks) {
+                    if (suspensionCallback != null) {
+                        suspensionCallback.run();
+                    }
+                }
+            };
         }
 
         private void onTaskComplete() {
@@ -337,9 +349,13 @@ public interface JobScheduler {
      * @param action the task to perform, the current iteration index is provided as a parameter
      * @param onComplete this will be called when all iterations are complete
      * @param onError error handler for the scheduler to use while iterating
+     * @return A {@link Runnable} that should be invoked if or when the calling thread cannot make progress until the
+     *         job is completed. Some implementations may use this to ensure progress for nested parallel jobs. Others
+     *         may throw if invoked, because they only allow asynchronous result handling. Still others may return a
+     *         no-op.
      */
     @FinalDefault
-    default <CONTEXT_TYPE extends JobThreadContext> void iterateParallel(
+    default <CONTEXT_TYPE extends JobThreadContext> Runnable iterateParallel(
             @Nullable final ExecutionContext executionContext,
             @Nullable final LogOutputAppendable description,
             @NotNull final Supplier<CONTEXT_TYPE> taskThreadContextFactory,
@@ -348,7 +364,7 @@ public interface JobScheduler {
             @NotNull final IterateAction<CONTEXT_TYPE> action,
             @NotNull final Runnable onComplete,
             @NotNull final Consumer<Exception> onError) {
-        iterateParallel(executionContext, description, taskThreadContextFactory, start, count,
+        return iterateParallel(executionContext, description, taskThreadContextFactory, start, count,
                 (final CONTEXT_TYPE taskThreadContext,
                         final int taskIndex,
                         final Consumer<Exception> nestedErrorConsumer,
@@ -373,9 +389,13 @@ public interface JobScheduler {
      * @param action the task to perform, the current iteration index and a resume Runnable are parameters
      * @param onComplete this will be called when all iterations are complete
      * @param onError error handler for the scheduler to use while iterating
+     * @return A {@link Runnable} that should be invoked if or when the calling thread cannot make progress until the
+     *         job is completed. Some implementations may use this to ensure progress for nested parallel jobs. Others
+     *         may throw if invoked, because they only allow asynchronous result handling. Still others may return a
+     *         no-op.
      */
     @FinalDefault
-    default <CONTEXT_TYPE extends JobThreadContext> void iterateParallel(
+    default <CONTEXT_TYPE extends JobThreadContext> Runnable iterateParallel(
             @Nullable final ExecutionContext executionContext,
             @Nullable final LogOutputAppendable description,
             @NotNull final Supplier<CONTEXT_TYPE> taskThreadContextFactory,
@@ -392,7 +412,7 @@ public interface JobScheduler {
 
         final IterationManager<CONTEXT_TYPE> iterationManager =
                 new IterationManager<>(description, start, count, action, onComplete, onError);
-        iterationManager.startTasks(this, executionContext, taskThreadContextFactory, count);
+        return iterationManager.startTasks(this, executionContext, taskThreadContextFactory, count);
     }
 
     /**
@@ -409,9 +429,13 @@ public interface JobScheduler {
      * @param action the task to perform, the current iteration index and a resume Runnable are parameters
      * @param onComplete this will be called when all iterations are complete
      * @param onError error handler for the scheduler to use while iterating
+     * @return A {@link Runnable} that should be invoked if or when the calling thread cannot make progress until the
+     *         job is completed. Some implementations may use this to ensure progress for nested parallel jobs. Others
+     *         may throw if invoked, because they only allow asynchronous result handling. Still others may return a
+     *         no-op.
      */
     @FinalDefault
-    default <CONTEXT_TYPE extends JobThreadContext> void iterateSerial(
+    default <CONTEXT_TYPE extends JobThreadContext> Runnable iterateSerial(
             @Nullable final ExecutionContext executionContext,
             @Nullable final LogOutputAppendable description,
             @NotNull final Supplier<CONTEXT_TYPE> taskThreadContextFactory,
@@ -428,6 +452,6 @@ public interface JobScheduler {
 
         final IterationManager<CONTEXT_TYPE> iterationManager =
                 new IterationManager<>(description, start, count, action, onComplete, onError);
-        iterationManager.startTasks(this, executionContext, taskThreadContextFactory, 1);
+        return iterationManager.startTasks(this, executionContext, taskThreadContextFactory, 1);
     }
 }

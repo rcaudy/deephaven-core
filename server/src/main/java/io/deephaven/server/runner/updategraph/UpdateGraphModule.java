@@ -5,7 +5,9 @@ package io.deephaven.server.runner.updategraph;
 
 import dagger.Module;
 import dagger.Provides;
-import io.deephaven.engine.table.impl.OperationInitializationThreadPool;
+import io.deephaven.configuration.Configuration;
+import io.deephaven.engine.table.impl.ForkJoinPoolOperationInitializer;
+import io.deephaven.engine.table.impl.ThreadPoolExecutorOperationInitializer;
 import io.deephaven.engine.updategraph.OperationInitializer;
 import io.deephaven.engine.updategraph.UpdateGraph;
 import io.deephaven.engine.updategraph.impl.PeriodicUpdateGraph;
@@ -15,7 +17,8 @@ import javax.inject.Named;
 import javax.inject.Singleton;
 
 /**
- * Provides a {@value PeriodicUpdateGraph#DEFAULT_UPDATE_GRAPH_NAME} named {@link UpdateGraph}.
+ * Provides a {@value PeriodicUpdateGraph#DEFAULT_UPDATE_GRAPH_NAME} named {@link UpdateGraph} and an
+ * {@link OperationInitializer}.
  */
 @Module
 public class UpdateGraphModule {
@@ -36,6 +39,9 @@ public class UpdateGraphModule {
     @Singleton
     public static OperationInitializer provideOperationInitializer(
             final ThreadInitializationFactory factory) {
-        return new OperationInitializationThreadPool(factory);
+        return Configuration.getInstance()
+                .getBooleanWithDefault("OperationInitializationThreadPool.useForkJoinPool", true)
+                        ? new ForkJoinPoolOperationInitializer(factory)
+                        : new ThreadPoolExecutorOperationInitializer(factory);
     }
 }

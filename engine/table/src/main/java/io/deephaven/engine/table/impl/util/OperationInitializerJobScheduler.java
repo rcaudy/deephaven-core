@@ -28,16 +28,17 @@ public class OperationInitializerJobScheduler implements JobScheduler {
     }
 
     @Override
-    public void submit(
+    @NotNull
+    public Runnable submit(
             final ExecutionContext executionContext,
-            final Runnable runnable,
+            final Runnable task,
             final LogOutputAppendable description,
             final Consumer<Exception> onError) {
-        operationInitializer.submit(() -> {
+        return operationInitializer.submit(() -> {
             final BasePerformanceEntry basePerformanceEntry = new BasePerformanceEntry();
             basePerformanceEntry.onBaseEntryStart();
             try (final SafeCloseable ignored = executionContext == null ? null : executionContext.open()) {
-                runnable.run();
+                task.run();
             } catch (Exception e) {
                 onError.accept(e);
             } catch (Error e) {
