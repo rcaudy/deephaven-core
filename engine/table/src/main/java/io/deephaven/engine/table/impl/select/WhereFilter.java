@@ -253,6 +253,9 @@ public interface WhereFilter extends Filter {
 
     /**
      * @return if this filter can be applied in parallel
+     * @apiNote This method should be invoked only after {@link #beginOperation(Table) beginOperation} has been called
+     *          and before the operation has been completed (via the {@link SafeCloseable} returned by
+     *          {@code beginOperation}).
      */
     default boolean permitParallelization() {
         return true;

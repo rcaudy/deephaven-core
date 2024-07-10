@@ -313,6 +313,11 @@ public class MatchFilter extends WhereFilterImpl implements DependencyStreamProv
     }
 
     @Override
+    public boolean permitParallelization() {
+        return dataIndex == null;
+    }
+
+    @Override
     public void setRecomputeListener(RecomputeListener listener) {}
 
     public static abstract class ColumnTypeConvertor {
