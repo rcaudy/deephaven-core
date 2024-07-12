@@ -9,6 +9,7 @@ import io.deephaven.engine.updategraph.OperationInitializer;
 import io.deephaven.util.thread.ThreadInitializationFactory;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Objects;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinWorkerThread;
 
@@ -19,20 +20,38 @@ import static io.deephaven.util.thread.ThreadHelpers.getOrComputeThreadCountProp
  */
 public class ForkJoinPoolOperationInitializer implements OperationInitializer {
 
-    /**
-     * The number of threads that will be used for parallel initialization in this process
-     */
-    private static final int NUM_THREADS =
-            getOrComputeThreadCountProperty("OperationInitializationThreadPool.threads", -1);
+    @NotNull
+    public static OperationInitializer fromCommonPool() {
+        return COMMON;
+    }
+
+    private static final ForkJoinPoolOperationInitializer COMMON =
+            new ForkJoinPoolOperationInitializer(ForkJoinPool.commonPool()) {
+                @Override
+                public @NotNull Runnable submit(@NotNull final Runnable task) {
+                    return super.submit(() -> {
+                        ExecutionContext.newBuilder()
+                                .setOperationInitializer(this)
+                                .build()
+                                .apply(task);
+                    });
+                }
+            };
 
     private final ForkJoinPool pool;
 
-    public ForkJoinPoolOperationInitializer(ThreadInitializationFactory factory) {
+    private ForkJoinPoolOperationInitializer(@NotNull final ForkJoinPool pool) {
+        this.pool = Objects.requireNonNull(pool);
+    }
+
+    public ForkJoinPoolOperationInitializer(
+            @NotNull final ThreadInitializationFactory threadInitializationFactory,
+            final int parallelism) {
         final ForkJoinPool.ForkJoinWorkerThreadFactory threadFactory = pool -> {
             final ForkJoinWorkerThread thread = new ForkJoinWorkerThread(pool) {
                 @Override
                 public void run() {
-                    factory.createInitializer(() -> {
+                    threadInitializationFactory.createInitializer(() -> {
                         MultiChunkPool.enableDedicatedPoolForThisThread();
                         ExecutionContext.newBuilder()
                                 .setOperationInitializer(ForkJoinPoolOperationInitializer.this)
@@ -45,12 +64,17 @@ public class ForkJoinPoolOperationInitializer implements OperationInitializer {
             thread.setName("OperationInitializationThreadPool-unregistered");
             return thread;
         };
-        pool = new ForkJoinPool(NUM_THREADS, threadFactory, null, false);
+        pool = new ForkJoinPool(parallelism, threadFactory, null, false);
+    }
+
+    public ForkJoinPoolOperationInitializer(@NotNull final ThreadInitializationFactory threadInitializationFactory) {
+        this(threadInitializationFactory,
+                getOrComputeThreadCountProperty("OperationInitializationThreadPool.threads", -1));
     }
 
     @Override
     public boolean canParallelize() {
-        return NUM_THREADS > 1;
+        return parallelismFactor() > 1;
     }
 
     @Override
@@ -61,6 +85,6 @@ public class ForkJoinPoolOperationInitializer implements OperationInitializer {
 
     @Override
     public int parallelismFactor() {
-        return NUM_THREADS;
+        return pool.getParallelism();
     }
 }

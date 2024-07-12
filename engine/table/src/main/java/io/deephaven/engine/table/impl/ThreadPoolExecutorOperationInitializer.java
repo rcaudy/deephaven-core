@@ -22,39 +22,41 @@ import static io.deephaven.util.thread.ThreadHelpers.getOrComputeThreadCountProp
  */
 public class ThreadPoolExecutorOperationInitializer implements OperationInitializer {
 
-    /**
-     * The number of threads that will be used for parallel initialization in this process
-     */
-    private static final int NUM_THREADS =
-            getOrComputeThreadCountProperty("OperationInitializationThreadPool.threads", -1);
+    private final ThreadPoolExecutor executorService;
 
     private final ThreadLocal<Boolean> isInitializationThread = ThreadLocal.withInitial(() -> false);
 
-    private final ThreadPoolExecutor executorService;
-
-    public ThreadPoolExecutorOperationInitializer(ThreadInitializationFactory factory) {
+    public ThreadPoolExecutorOperationInitializer(
+            @NotNull final ThreadInitializationFactory threadInitializationFactory,
+            final int parallelism) {
         final ThreadGroup threadGroup = new ThreadGroup("OperationInitializationThreadPool");
         final ThreadFactory threadFactory = new NamingThreadFactory(
                 threadGroup, ThreadPoolExecutorOperationInitializer.class, "initializationExecutor", true) {
-                @Override
+            @Override
             public Thread newThread(@NotNull final Runnable r) {
-                return super.newThread(factory.createInitializer(() -> {
+                return super.newThread(threadInitializationFactory.createInitializer(() -> {
                     isInitializationThread.set(true);
-                        MultiChunkPool.enableDedicatedPoolForThisThread();
+                    MultiChunkPool.enableDedicatedPoolForThisThread();
                     ExecutionContext.newBuilder().setOperationInitializer(OperationInitializer.NON_PARALLELIZABLE)
                             .build().apply(r);
                 }));
-                }
-            };
+            }
+        };
         executorService = new ThreadPoolExecutor(
-                NUM_THREADS, NUM_THREADS, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(), threadFactory);
+                parallelism, parallelism, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(), threadFactory);
 
         executorService.prestartAllCoreThreads();
     }
 
+    public ThreadPoolExecutorOperationInitializer(
+            @NotNull final ThreadInitializationFactory threadInitializationFactory) {
+        this(threadInitializationFactory,
+                getOrComputeThreadCountProperty("OperationInitializationThreadPool.threads", -1));
+    }
+
     @Override
     public boolean canParallelize() {
-        return NUM_THREADS > 1 && !isInitializationThread.get();
+        return parallelismFactor() > 1 && !isInitializationThread.get();
     }
 
     @Override
@@ -66,6 +68,6 @@ public class ThreadPoolExecutorOperationInitializer implements OperationInitiali
 
     @Override
     public int parallelismFactor() {
-        return NUM_THREADS;
+        return executorService.getCorePoolSize();
     }
 }
