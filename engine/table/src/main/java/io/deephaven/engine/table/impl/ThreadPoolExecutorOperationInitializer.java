@@ -62,7 +62,7 @@ public class ThreadPoolExecutorOperationInitializer implements OperationInitiali
     @Override
     @NotNull
     public Runnable submit(@NotNull final Runnable task) {
-        executorService.submit(task);
+        executorService.execute(task);
         return () -> {};
     }
 
