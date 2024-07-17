@@ -63,11 +63,11 @@ public final class RedirectionLayer extends SelectAndViewAnalyzer {
     }
 
     @Override
-    public void applyUpdate(TableUpdate upstream, RowSet toClear, UpdateHelper helper, JobScheduler jobScheduler,
+    public Runnable applyUpdate(TableUpdate upstream, RowSet toClear, UpdateHelper helper, JobScheduler jobScheduler,
             @Nullable LivenessNode liveResultOwner, SelectLayerCompletionHandler onCompletion) {
         final BitSet baseLayerBitSet = new BitSet();
         inner.setBaseBits(baseLayerBitSet);
-        inner.applyUpdate(upstream, toClear, helper, jobScheduler, liveResultOwner,
+        return inner.applyUpdate(upstream, toClear, helper, jobScheduler, liveResultOwner,
                 new SelectLayerCompletionHandler(baseLayerBitSet, onCompletion) {
                     @Override
                     public void onAllRequiredColumnsCompleted() {

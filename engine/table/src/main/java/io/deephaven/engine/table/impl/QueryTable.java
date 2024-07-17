@@ -1547,7 +1547,7 @@ public class QueryTable extends BaseTable<QueryTable> {
 
                             try {
                                 analyzer.applyUpdate(fakeUpdate, emptyRowSet, updateHelper, jobScheduler,
-                                        liveResultCapture, analyzer.futureCompletionHandler(waitForResult));
+                                        liveResultCapture, analyzer.futureCompletionHandler(waitForResult)).run();
                             } catch (Exception e) {
                                 waitForResult.completeExceptionally(e);
                             }

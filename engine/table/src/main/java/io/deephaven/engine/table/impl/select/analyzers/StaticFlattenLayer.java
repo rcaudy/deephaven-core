@@ -77,7 +77,7 @@ final public class StaticFlattenLayer extends SelectAndViewAnalyzer {
     }
 
     @Override
-    public void applyUpdate(TableUpdate upstream, RowSet toClear, UpdateHelper helper, JobScheduler jobScheduler,
+    public Runnable applyUpdate(TableUpdate upstream, RowSet toClear, UpdateHelper helper, JobScheduler jobScheduler,
             @Nullable LivenessNode liveResultOwner, SelectLayerCompletionHandler onCompletion) {
         // this must be the fake update used to initialize the result table
         Assert.eqTrue(upstream.added().isFlat(), "upstream.added.isFlat()");
@@ -90,7 +90,7 @@ final public class StaticFlattenLayer extends SelectAndViewAnalyzer {
         final TableUpdate innerUpdate = new TableUpdateImpl(
                 parentRowSet.copy(), RowSetFactory.empty(), RowSetFactory.empty(),
                 RowSetShiftData.EMPTY, ModifiedColumnSet.EMPTY);
-        inner.applyUpdate(innerUpdate, toClear, helper, jobScheduler, liveResultOwner,
+        return inner.applyUpdate(innerUpdate, toClear, helper, jobScheduler, liveResultOwner,
                 new SelectLayerCompletionHandler(baseLayerBitSet, onCompletion) {
                     @Override
                     public void onAllRequiredColumnsCompleted() {

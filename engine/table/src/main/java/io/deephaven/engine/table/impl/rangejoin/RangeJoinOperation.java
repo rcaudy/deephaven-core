@@ -314,13 +314,14 @@ public class RangeJoinOperation implements QueryTable.MemoizableOperation<QueryT
         private void start() {
             // Perform the left table work via the job scheduler, possibly concurrently with the right table work.
             final CompletableFuture<Table> groupLeftTableFuture = new CompletableFuture<>();
-            jobScheduler.submit(
+            final Runnable groupLeftTableSuspend = jobScheduler.submit(
                     executionContext,
                     () -> groupLeftTableFuture.complete(groupLeftTable()),
                     logOutput -> logOutput.append("static range join group left table"),
                     groupLeftTableFuture::completeExceptionally);
+
             // Perform the right table work on this thread. We don't need to involve the scheduler, and this way we may
-            // be able to exploit filter parallelism.
+            // be better able to exploit filter parallelism.
             final Table rightTableGrouped;
             try {
                 rightTableGrouped = filterAndGroupRightTable();
@@ -334,6 +335,8 @@ public class RangeJoinOperation implements QueryTable.MemoizableOperation<QueryT
                 resultFuture.completeExceptionally(e);
                 return;
             }
+
+            groupLeftTableSuspend.run();
             final Table leftTableGrouped;
             try {
                 leftTableGrouped = groupLeftTableFuture.get();

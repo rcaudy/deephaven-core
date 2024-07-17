@@ -60,12 +60,12 @@ public class ConstantColumnLayer extends SelectOrViewColumnLayer {
     }
 
     @Override
-    public void applyUpdate(final TableUpdate upstream, final RowSet toClear, final UpdateHelper helper,
+    public Runnable applyUpdate(final TableUpdate upstream, final RowSet toClear, final UpdateHelper helper,
             final JobScheduler jobScheduler, @Nullable final LivenessNode liveResultOwner,
             final SelectLayerCompletionHandler onCompletion) {
         // Nothing to do at this level, but need to recurse because my inner layers might need to be called (e.g.
         // because they are SelectColumnLayers)
-        inner.applyUpdate(upstream, toClear, helper, jobScheduler, liveResultOwner,
+        return inner.applyUpdate(upstream, toClear, helper, jobScheduler, liveResultOwner,
                 new SelectLayerCompletionHandler(dependencyBitSet, onCompletion) {
                     @Override
                     public void onAllRequiredColumnsCompleted() {

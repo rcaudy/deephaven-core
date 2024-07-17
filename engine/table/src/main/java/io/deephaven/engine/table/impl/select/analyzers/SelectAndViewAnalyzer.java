@@ -520,8 +520,10 @@ public abstract class SelectAndViewAnalyzer implements LogOutputAppendable {
      * @param liveResultOwner {@link LivenessNode node} to be used to manage/unmanage results that happen to be
      *        {@link io.deephaven.engine.liveness.LivenessReferent liveness referents}
      * @param onCompletion Called when an inner column is complete. The outer layer should pass the {@code onCompletion}
+     * @return A {@link Runnable} that should be invoked if or when the calling thread cannot make progress until the
+     *         {@code onCompletion} is invoked, in order to help ensure progress.
      */
-    public abstract void applyUpdate(TableUpdate upstream, RowSet toClear, UpdateHelper helper,
+    public abstract Runnable applyUpdate(TableUpdate upstream, RowSet toClear, UpdateHelper helper,
             JobScheduler jobScheduler, @Nullable LivenessNode liveResultOwner,
             SelectLayerCompletionHandler onCompletion);
 

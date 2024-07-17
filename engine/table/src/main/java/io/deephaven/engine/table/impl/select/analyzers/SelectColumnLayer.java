@@ -136,7 +136,7 @@ final public class SelectColumnLayer extends SelectOrViewColumnLayer {
     }
 
     @Override
-    public void applyUpdate(final TableUpdate upstream, final RowSet toClear,
+    public Runnable applyUpdate(final TableUpdate upstream, final RowSet toClear,
             final UpdateHelper helper, final JobScheduler jobScheduler, @Nullable final LivenessNode liveResultOwner,
             final SelectLayerCompletionHandler onCompletion) {
         if (upstream.removed().isNonempty()) {
@@ -149,7 +149,7 @@ final public class SelectColumnLayer extends SelectOrViewColumnLayer {
         }
 
         // recurse so that dependent intermediate columns are already updated
-        inner.applyUpdate(upstream, toClear, helper, jobScheduler, liveResultOwner,
+        return inner.applyUpdate(upstream, toClear, helper, jobScheduler, liveResultOwner,
                 new SelectLayerCompletionHandler(dependencyBitSet, onCompletion) {
                     @Override
                     public void onAllRequiredColumnsCompleted() {

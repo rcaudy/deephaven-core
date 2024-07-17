@@ -880,26 +880,27 @@ public class QueryCompilerImpl implements QueryCompiler, LogOutputAppendable {
             cleanup.run();
         };
 
-        jobScheduler.iterateParallel(executionContext, null, JobScheduler.DEFAULT_CONTEXT_FACTORY,
-                0, numTasks, (context, jobId, nestedErrorConsumer) -> {
+        final Runnable suspend = jobScheduler.iterateParallel(executionContext, null,
+                JobScheduler.DEFAULT_CONTEXT_FACTORY, 0, numTasks, (context, jobId, nestedErrorConsumer) -> {
                     final int startInclusive = jobId * requestsPerTask;
                     final int endExclusive = Math.min(requests.size(), (jobId + 1) * requestsPerTask);
                     doCreateClasses(
                             fileManager, requests, rootPathAsString, tempDirAsString, startInclusive, endExclusive);
                 }, cleanup, onError);
 
+        suspend.run();
         try {
             latch.await();
-            final BasePerformanceEntry perfEntry = jobScheduler.getAccumulatedPerformance();
-            if (perfEntry != null) {
-                QueryPerformanceRecorder.getInstance().getEnclosingNugget().accumulate(perfEntry);
-            }
-            final RuntimeException err = exception.get();
-            if (err != null) {
-                throw err;
-            }
         } catch (final InterruptedException e) {
             throw new CancellationException("interrupted while compiling");
+        }
+        final BasePerformanceEntry perfEntry = jobScheduler.getAccumulatedPerformance();
+        if (perfEntry != null) {
+            QueryPerformanceRecorder.getInstance().getEnclosingNugget().accumulate(perfEntry);
+        }
+        final RuntimeException err = exception.get();
+        if (err != null) {
+            throw err;
         }
     }
 
