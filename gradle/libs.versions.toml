@@ -1,6 +1,6 @@
 [versions]
 airlift = "2.0.2"
-arrow = "13.0.0"
+arrow = "15.0.2"
 autoservice = "1.1.1"
 avro = "1.12.0"
 awssdk = "2.24.5"
