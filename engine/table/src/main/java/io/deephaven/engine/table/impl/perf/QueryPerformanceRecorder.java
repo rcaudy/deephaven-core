@@ -136,6 +136,12 @@ public interface QueryPerformanceRecorder {
         QueryPerformanceRecorderState.clearCallsite();
     }
 
+    static SafeCloseable setCallSiteTWR(@NotNull final String callsite) {
+        final boolean needToClearCallsite = setCallsite(callsite);
+        return needToClearCallsite ? () -> clearCallsite() : () -> {
+        };
+    }
+
     ////////////////////////////////////////////
     // Server-Level Performance Recording API //
     ////////////////////////////////////////////

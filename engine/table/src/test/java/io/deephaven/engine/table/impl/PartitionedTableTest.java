@@ -201,7 +201,7 @@ public class PartitionedTableTest extends RefreshingTableTestCase {
     public void testProxy() {
         final Random random = new Random(0);
 
-        final int size = 100;
+        final int size = 100_000;
 
         final ColumnInfo<?, ?>[] columnInfo;
         final QueryTable table = getTable(size, random,

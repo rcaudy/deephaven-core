@@ -17,6 +17,7 @@ import io.deephaven.engine.rowset.*;
 import io.deephaven.engine.table.*;
 import io.deephaven.engine.table.impl.QueryTable;
 import io.deephaven.engine.table.impl.TableUpdateImpl;
+import io.deephaven.engine.table.impl.perf.QueryPerformanceRecorder;
 import io.deephaven.engine.table.impl.select.SelectColumn;
 import io.deephaven.engine.table.impl.select.VectorChunkAdapter;
 import io.deephaven.engine.table.impl.sources.ChunkedBackingStoreExposedWritableSource;
@@ -61,6 +62,7 @@ final public class SelectColumnLayer extends SelectOrViewColumnLayer {
     private final boolean isSystemic;
     private final boolean resultTypeIsLivenessReferent;
     private final boolean resultTypeIsTableOrRowSet;
+    private final String callsite;
 
     private UpdateCommitterEx<SelectColumnLayer, LivenessNode> prevUnmanager;
     private List<WritableObjectChunk<? extends LivenessReferent, Values>> prevValueChunksToUnmanage;
@@ -128,6 +130,7 @@ final public class SelectColumnLayer extends SelectOrViewColumnLayer {
         // effect of our parallelism.
         resultTypeIsTableOrRowSet = Table.class.isAssignableFrom(ws.getType())
                 || RowSet.class.isAssignableFrom(ws.getType());
+        callsite = QueryPerformanceRecorder.getCallerLine();
     }
 
     private ChunkSource<Values> getChunkSource() {
@@ -354,6 +357,7 @@ final public class SelectColumnLayer extends SelectOrViewColumnLayer {
                 ChunkedBackingStoreExposedWritableSource.exposesChunkedBackingStore(writableSource);
 
         try (final SafeCloseable ignored = LivenessScopeStack.open();
+             final SafeCloseable ignored2 = QueryPerformanceRecorder.setCallSiteTWR(callsite);
                 final ChunkSink.FillFromContext destContext = needDestContext
                         ? writableSource.makeFillFromContext(destContextSize)
                         : null;
