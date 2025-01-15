@@ -54,6 +54,7 @@ public class SourcePartitionedTable extends PartitionedTableImpl {
      * @param refreshSizes Whether the locations found should be refreshed
      * @param locationKeyMatcher Function to filter desired location keys
      */
+    @Deprecated(forRemoval = true)
     public SourcePartitionedTable(
             @NotNull final TableDefinition constituentDefinition,
             @NotNull final UnaryOperator<Table> applyTablePermissions,
@@ -61,13 +62,44 @@ public class SourcePartitionedTable extends PartitionedTableImpl {
             final boolean refreshLocations,
             final boolean refreshSizes,
             @NotNull final Predicate<ImmutableTableLocationKey> locationKeyMatcher) {
+        this(constituentDefinition, applyTablePermissions, tableLocationProvider, refreshLocations, refreshSizes,
+                locationKeyMatcher, true);
+    }
+
+    /**
+     * Construct a {@link SourcePartitionedTable} from the supplied parameters.
+     * <p>
+     * Note that refreshLocations and refreshSizes are distinct because there are use cases that supply an external
+     * RowSet and hence don't require size refreshes. Others might care for size refreshes, but only the
+     * initially-available set of locations.
+     *
+     * @param constituentDefinition The {@link TableDefinition} expected of constituent {@link Table tables}
+     * @param applyTablePermissions Function to apply in order to correctly restrict the visible result rows
+     * @param tableLocationProvider Source for table locations
+     * @param refreshLocations Whether the set of locations should be refreshed
+     * @param refreshSizes Whether the locations found should be refreshed
+     * @param locationKeyMatcher Function to filter desired location keys
+     * @param preCheckExistence Whether to pre-check the existence (non-null, non-zero size) of locations before
+     *        including them in the result SourcePartitionedTable as constituents. It is recommended to set this to
+     *        {@code false} if you will do subsequent filtering on the result, or if you are confident that all
+     *        locations are valid.
+     */
+    public SourcePartitionedTable(
+            @NotNull final TableDefinition constituentDefinition,
+            @NotNull final UnaryOperator<Table> applyTablePermissions,
+            @NotNull final TableLocationProvider tableLocationProvider,
+            final boolean refreshLocations,
+            final boolean refreshSizes,
+            @NotNull final Predicate<ImmutableTableLocationKey> locationKeyMatcher,
+            final boolean preCheckExistence) {
         super(new UnderlyingTableMaintainer(
                 constituentDefinition,
                 applyTablePermissions,
                 tableLocationProvider,
                 refreshLocations,
                 refreshSizes,
-                locationKeyMatcher).result(),
+                locationKeyMatcher,
+                preCheckExistence).result(),
                 Set.of(KEY_COLUMN_NAME),
                 true,
                 CONSTITUENT_COLUMN_NAME,
@@ -86,6 +118,8 @@ public class SourcePartitionedTable extends PartitionedTableImpl {
         private final Predicate<ImmutableTableLocationKey> locationKeyMatcher;
 
         private final TrackingWritableRowSet resultRows;
+        private final String[] partitioningColumnNames;
+        private final WritableColumnSource<?>[] resultPartitionValues;
         private final WritableColumnSource<TableLocationKey> resultTableLocationKeys;
         private final WritableColumnSource<Table> resultLocationTables;
         private final QueryTable result;
@@ -106,7 +140,8 @@ public class SourcePartitionedTable extends PartitionedTableImpl {
                 @NotNull final TableLocationProvider tableLocationProvider,
                 final boolean refreshLocations,
                 final boolean refreshSizes,
-                @NotNull final Predicate<ImmutableTableLocationKey> locationKeyMatcher) {
+                @NotNull final Predicate<ImmutableTableLocationKey> locationKeyMatcher,
+                final boolean preCheckExistence) {
             super(false);
 
             this.constituentDefinition = constituentDefinition;
@@ -116,10 +151,20 @@ public class SourcePartitionedTable extends PartitionedTableImpl {
             this.locationKeyMatcher = locationKeyMatcher;
 
             resultRows = RowSetFactory.empty().toTracking();
+            final List<ColumnDefinition<?>> partitioningColumns = constituentDefinition.getPartitioningColumns();
+            partitioningColumnNames = partitioningColumns.stream()
+                    .map(ColumnDefinition::getName)
+                    .toArray(String[]::new);
+            resultPartitionValues = partitioningColumns.stream()
+                    .map(cd -> ArrayBackedColumnSource.getMemoryColumnSource(cd.getDataType(), cd.getComponentType()))
+                    .toArray(WritableColumnSource[]::new);
             resultTableLocationKeys = ArrayBackedColumnSource.getMemoryColumnSource(TableLocationKey.class, null);
             resultLocationTables = ArrayBackedColumnSource.getMemoryColumnSource(Table.class, null);
 
-            final Map<String, ColumnSource<?>> resultSources = new LinkedHashMap<>(2);
+            final Map<String, ColumnSource<?>> resultSources = new LinkedHashMap<>(partitioningColumns.size() + 2);
+            for (int pci = 0; pci < partitioningColumns.size(); ++pci) {
+                resultSources.put(partitioningColumnNames[pci], resultPartitionValues[pci]);
+            }
             resultSources.put(KEY_COLUMN_NAME, resultTableLocationKeys);
             resultSources.put(CONSTITUENT_COLUMN_NAME, resultLocationTables);
             result = new QueryTable(resultRows, resultSources);
@@ -135,14 +180,17 @@ public class SourcePartitionedTable extends PartitionedTableImpl {
             }
 
             if (needToRefreshLocations) {
+                Arrays.stream(resultPartitionValues).forEach(ColumnSource::startTrackingPrevValues);
                 resultTableLocationKeys.startTrackingPrevValues();
                 resultLocationTables.startTrackingPrevValues();
 
                 subscriptionBuffer = new TableLocationSubscriptionBuffer(tableLocationProvider);
                 manage(subscriptionBuffer);
 
-                pendingLocationStates = new IntrusiveDoublyLinkedQueue<>(
-                        IntrusiveDoublyLinkedNode.Adapter.<PendingLocationState>getInstance());
+                pendingLocationStates = preCheckExistence
+                        ? new IntrusiveDoublyLinkedQueue<>(
+                                IntrusiveDoublyLinkedNode.Adapter.<PendingLocationState>getInstance())
+                        : null;
                 readyLocationStates = new IntrusiveDoublyLinkedQueue<>(
                         IntrusiveDoublyLinkedNode.Adapter.<PendingLocationState>getInstance());
                 processNewLocationsUpdateRoot = new InstrumentedTableUpdateSource(
@@ -206,12 +254,17 @@ public class SourcePartitionedTable extends PartitionedTableImpl {
             // Note that makeConstituentTable expects us to subsequently unmanage the TableLocations
             unmanage(locations.sorted(Comparator.comparing(TableLocation::getKey)).peek(tl -> {
                 final long constituentRowKey = lastInsertedRowKey.incrementAndGet();
-                final Table constituentTable = makeConstituentTable(tl);
+
+                for (int pci = 0; pci < resultPartitionValues.length; ++pci) {
+                    addPartitionValue(tl.getKey(), partitioningColumnNames[pci], resultPartitionValues[pci],
+                            constituentRowKey);
+                }
 
                 resultTableLocationKeys.ensureCapacity(constituentRowKey + 1);
                 resultTableLocationKeys.set(constituentRowKey, tl.getKey());
 
                 resultLocationTables.ensureCapacity(constituentRowKey + 1);
+                final Table constituentTable = makeConstituentTable(tl);
                 resultLocationTables.set(constituentRowKey, constituentTable);
 
                 if (result.isRefreshing()) {
@@ -221,6 +274,15 @@ public class SourcePartitionedTable extends PartitionedTableImpl {
             return initialLastRowKey == lastInsertedRowKey.get()
                     ? RowSetFactory.empty()
                     : RowSetFactory.fromRange(initialLastRowKey + 1, lastInsertedRowKey.get());
+        }
+
+        private static <T> void addPartitionValue(
+                @NotNull final TableLocationKey tableLocationKey,
+                @NotNull final String partitioningColumnName,
+                @NotNull final WritableColumnSource<T> partitionValueColumn,
+                final long rowKey) {
+            partitionValueColumn.ensureCapacity(rowKey + 1);
+            partitionValueColumn.set(rowKey, tableLocationKey.getPartitionValue(partitioningColumnName));
         }
 
         private Table makeConstituentTable(@NotNull final TableLocation tableLocation) {
@@ -280,19 +342,24 @@ public class SourcePartitionedTable extends PartitionedTableImpl {
              * population in STM ColumnSources.
              */
             // TODO (https://github.com/deephaven/deephaven-core/issues/867): Refactor around a ticking partition table
-            locationUpdate.getPendingAddedLocationKeys().stream()
+            final Stream<PendingLocationState> newPendingLocations = locationUpdate.getPendingAddedLocationKeys()
+                    .stream()
                     .map(LiveSupplier::get)
                     .filter(locationKeyMatcher)
                     .map(tableLocationProvider::getTableLocation)
                     .peek(this::manage)
-                    .map(PendingLocationState::new)
-                    .forEach(pendingLocationStates::offer);
-            for (final Iterator<PendingLocationState> iter = pendingLocationStates.iterator(); iter.hasNext();) {
-                final PendingLocationState pendingLocationState = iter.next();
-                if (pendingLocationState.exists()) {
-                    iter.remove();
-                    readyLocationStates.offer(pendingLocationState);
+                    .map(PendingLocationState::new);
+            if (pendingLocationStates != null) {
+                newPendingLocations.forEach(pendingLocationStates::offer);
+                for (final Iterator<PendingLocationState> iter = pendingLocationStates.iterator(); iter.hasNext();) {
+                    final PendingLocationState pendingLocationState = iter.next();
+                    if (pendingLocationState.exists()) {
+                        iter.remove();
+                        readyLocationStates.offer(pendingLocationState);
+                    }
                 }
+            } else {
+                newPendingLocations.forEach(readyLocationStates::offer);
             }
 
             if (readyLocationStates.isEmpty()) {
@@ -317,22 +384,24 @@ public class SourcePartitionedTable extends PartitionedTableImpl {
             }
 
             // Iterate through the pending locations and remove any that are in the removed set.
-            List<LivenessReferent> toUnmanage = null;
-            for (final Iterator<PendingLocationState> iter = pendingLocationStates.iterator(); iter.hasNext();) {
-                final PendingLocationState pendingLocationState = iter.next();
-                if (relevantRemovedLocations.contains(pendingLocationState.location.getKey())) {
-                    iter.remove();
-                    // Release the state and plan to unmanage the location
-                    if (toUnmanage == null) {
-                        toUnmanage = new ArrayList<>();
+            if (pendingLocationStates != null) {
+                List<LivenessReferent> toUnmanage = null;
+                for (final Iterator<PendingLocationState> iter = pendingLocationStates.iterator(); iter.hasNext();) {
+                    final PendingLocationState pendingLocationState = iter.next();
+                    if (relevantRemovedLocations.contains(pendingLocationState.location.getKey())) {
+                        iter.remove();
+                        // Release the state and plan to unmanage the location
+                        if (toUnmanage == null) {
+                            toUnmanage = new ArrayList<>();
+                        }
+                        toUnmanage.add(pendingLocationState.release());
                     }
-                    toUnmanage.add(pendingLocationState.release());
                 }
-            }
-            if (toUnmanage != null) {
-                unmanage(toUnmanage.stream());
-                // noinspection UnusedAssignment
-                toUnmanage = null;
+                if (toUnmanage != null) {
+                    unmanage(toUnmanage.stream());
+                    // noinspection UnusedAssignment
+                    toUnmanage = null;
+                }
             }
 
             // At the end of the cycle we need to make sure we unmanage any removed constituents.
@@ -367,6 +436,7 @@ public class SourcePartitionedTable extends PartitionedTableImpl {
             this.removedLocationsCommitter.maybeActivate();
 
             final WritableRowSet deletedRows = deleteBuilder.build();
+            Arrays.stream(resultPartitionValues).forEach(cs -> cs.setNull(deletedRows));
             resultTableLocationKeys.setNull(deletedRows);
             resultLocationTables.setNull(deletedRows);
             return deletedRows;
