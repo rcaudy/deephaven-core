@@ -2388,6 +2388,42 @@ class Table(JObjectWrapper):
         except Exception as e:
             raise DHError(e, "table slice operation failed.") from e
 
+    def slice_to_partitions(self, num_partitions: int) -> PartitionedTable:
+        """Slices a table into the specified number of partitions.
+
+        The rows of the table are divided as evenly as possible into the specified number of partitions.
+        The result is a PartitionedTable containing the partitions. If the number of rows is not evenly
+        divisible by the number of partitions, the earlier partitions will contain one more row than the later
+        partitions. For example, slicing a table of size 10 into 3 partitions will result in partition sizes of
+        4, 3, and 3. If num_partitions is greater than the number of rows in the table, the result will contain
+        fewer partitions, one per row in the table.
+
+        Args:
+            num_partitions (int): the number of partitions to create
+
+        Returns:
+            a new PartitionedTable
+
+        Raises:
+            ValueError: if num_partitions is not a positive integer
+            DHError: if the table is refreshing or the operation fails
+        """
+        if num_partitions <= 0:
+            raise ValueError("num_partitions must be a positive integer.")
+        if self.is_refreshing:
+            raise DHError("slice_to_partitions is only supported on static tables.")
+        try:
+            # Slice the table into num_partitions parts, as evenly as possible. If the table size is not
+            # evenly divisible by num_partitions, the earlier partitions will contain one more row than the later partitions.
+            # The following calculation is just for documentation purpose.
+            total_size = self.size
+            num_partitions = min(num_partitions, total_size)
+            max_partition_size = (total_size + num_partitions - 1) // num_partitions
+            partitions = list(self.slice(ii * max_partition_size, (ii + 1) * max_partition_size) for ii in range(num_partitions))
+            return PartitionedTable.from_constituent_tables(partitions)
+        except Exception as e:
+            raise DHError(e, "table slice_to_partitions operation failed.") from e
+
     def slice_pct(self, start_pct: float, end_pct: float) -> Table:
         """Extracts a subset of a table by row percentages.
 
