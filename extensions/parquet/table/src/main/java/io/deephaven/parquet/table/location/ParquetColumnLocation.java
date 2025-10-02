@@ -632,7 +632,7 @@ final class ParquetColumnLocation<ATTR extends Values> extends AbstractColumnLoc
 
         @Override
         public Optional<ToPage<ATTR, ?>> visit(final LogicalTypeAnnotation.DateLogicalTypeAnnotation dateLogicalType) {
-            return Optional.of(ToLocalDatePage.create(pageType));
+            return Optional.of(ToIntPage.create(pageType));
         }
 
         @Override
