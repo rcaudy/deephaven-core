@@ -454,6 +454,12 @@ public class RegionedColumnSourceManager
                         true) //@formatter:on
                 .peek(EmptyTableLocationEntry::refresh)
                 .filter((final EmptyTableLocationEntry emptyEntry) -> {
+                    // This size check is redundant if the location is non-empty, but some implementations implement
+                    // getSize() more cheaply than getRowSet(), and so it's best to "pre-filter".
+                    final long locationSize = emptyEntry.location.getSize();
+                    if (locationSize == TableLocationState.NULL_SIZE || locationSize == 0) {
+                        return false;
+                    }
                     final RowSet locationRowSet = emptyEntry.location.getRowSet();
                     if (locationRowSet == null) {
                         return false;
