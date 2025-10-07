@@ -16,7 +16,7 @@ import java.util.Collection;
 import java.util.Map;
 
 /**
- * Manager for ColumnSources in a Table.
+ * Manager for ColumnSources in a {@link SourceTable}.
  */
 public interface ColumnSourceManager extends LivenessNode {
 
@@ -35,8 +35,14 @@ public interface ColumnSourceManager extends LivenessNode {
     void addLocation(@NotNull TableLocation tableLocation);
 
     /**
-     * Observe initial sizes for the previously added table locations, and update the managed column sources
-     * accordingly. Create any {@link DataIndex data indexes} that may be derived from the locations.
+     * Initialize the sizes of the previously added table locations, without observing their row sets. This is useful
+     * when we want to know the total size of the table before we are ready to observe the row sets.
+     */
+    void initializeLocationSizesOnly();
+
+    /**
+     * Observe initial {@link RowSet row sets} for the previously added table locations, and update the managed column
+     * sources accordingly. Create any {@link DataIndex data indexes} that may be derived from the locations.
      *
      * @return The initial set of initially-available row keys, to be owned by the caller. This row set will have a
      *         {@link io.deephaven.engine.table.impl.indexer.DataIndexer data indexer} populated with any data indexes
@@ -45,9 +51,9 @@ public interface ColumnSourceManager extends LivenessNode {
     TrackingWritableRowSet initialize();
 
     /**
-     * Observe size changes in the previously added table locations, and update the managed column sources accordingly.
+     * Observe changes in the previously added table locations, and update the managed column sources accordingly.
      *
-     * @return The set of added row keys, to be owned by the caller
+     * @return A {@link TableUpdate table update} reporting changes, to be owned by the caller
      */
     TableUpdate refresh();
 
