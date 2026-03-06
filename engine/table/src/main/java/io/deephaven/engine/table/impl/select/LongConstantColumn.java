@@ -1,7 +1,7 @@
 //
 // Copyright (c) 2016-2026 Deephaven Data Labs and Patent Pending
 //
-package io.deephaven.engine.table.impl.partitioned;
+package io.deephaven.engine.table.impl.select;
 
 import io.deephaven.chunk.ChunkType;
 import io.deephaven.chunk.WritableChunk;
@@ -10,8 +10,6 @@ import io.deephaven.engine.rowset.RowSequence;
 import io.deephaven.engine.rowset.TrackingRowSet;
 import io.deephaven.engine.table.*;
 import io.deephaven.engine.table.impl.MatchPair;
-import io.deephaven.engine.table.impl.select.Formula;
-import io.deephaven.engine.table.impl.select.SelectColumn;
 import io.deephaven.engine.table.impl.sources.LongSingleValueSource;
 import io.deephaven.engine.table.impl.sources.ViewColumnSource;
 import io.deephaven.util.type.TypeUtils;
@@ -24,12 +22,12 @@ import java.util.Map;
 /**
  * {@link SelectColumn} implementation to assign a constant {@code long} value.
  */
-class LongConstantColumn implements SelectColumn {
+public class LongConstantColumn implements SelectColumn {
 
     private final String outputColumnName;
     private final long outputValue;
 
-    LongConstantColumn(
+    public LongConstantColumn(
             @NotNull final String outputColumnName,
             final long outputValue) {
         this.outputColumnName = outputColumnName;
