@@ -14,9 +14,9 @@ import io.deephaven.engine.rowset.RowSequence;
 import io.deephaven.engine.rowset.TrackingRowSet;
 import io.deephaven.engine.table.*;
 import io.deephaven.engine.table.impl.MatchPair;
-import io.deephaven.engine.table.impl.sources.LongSingleValueSource;
+import io.deephaven.engine.table.impl.sources.ObjectSingleValueSource;
 import io.deephaven.engine.table.impl.sources.ViewColumnSource;
-import io.deephaven.util.type.TypeUtils;
+import io.deephaven.vector.Vector;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
@@ -24,40 +24,93 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * {@link SelectColumn} implementation to assign a constant {@code long} value.
+ * {@link SelectColumn} implementation to assign a constant {@code Object} value.
  * <p>
  * The C-harConstantColumn is replicated to all other types with
  * io.deephaven.replicators.ReplicateConstantColumns.
  * <p>
  * (C-har is deliberately spelled that way in order to prevent Replicate from altering this very comment).
  */
-public class LongConstantColumn implements SelectColumn {
+public class ObjectConstantColumn<T> implements SelectColumn {
 
     private final String outputColumnName;
 
     // region Typed Fields
-    private final long outputValue;
+    private final T outputValue;
+    private final Class<T> type;
+    private final Class<?> componentType;
     // endregion Typed Fields
 
     // region Constructor
-    private LongConstantColumn(
+    private ObjectConstantColumn(
             @NotNull final String outputColumnName,
-            final long outputValue) {
+            final T outputValue,
+            @NotNull final Class<T> type,
+            final Class<?> componentType) {
         this.outputColumnName = outputColumnName;
         this.outputValue = outputValue;
+        this.type = type;
+        this.componentType = componentType;
     }
 
     /**
-     * Create a LongConstantColumn.
+     * Create an ObjectConstantColumn with explicit type and component type.
      *
      * @param outputColumnName the name of the output column
      * @param outputValue the constant value
-     * @return the new LongConstantColumn
+     * @param type the type of the value
+     * @param componentType the component type (for array/vector types), or null
+     * @return the new ObjectConstantColumn
      */
-    public static LongConstantColumn of(
+    public static <T> ObjectConstantColumn<T> of(
             @NotNull final String outputColumnName,
-            final long outputValue) {
-        return new LongConstantColumn(outputColumnName, outputValue);
+            final T outputValue,
+            @NotNull final Class<T> type,
+            final Class<?> componentType) {
+        return new ObjectConstantColumn<>(outputColumnName, outputValue, type, componentType);
+    }
+
+    /**
+     * Create an ObjectConstantColumn with explicit type and null component type.
+     *
+     * @param outputColumnName the name of the output column
+     * @param outputValue the constant value
+     * @param type the type of the value
+     * @return the new ObjectConstantColumn
+     */
+    public static <T> ObjectConstantColumn<T> of(
+            @NotNull final String outputColumnName,
+            final T outputValue,
+            @NotNull final Class<T> type) {
+        return new ObjectConstantColumn<>(outputColumnName, outputValue, type, null);
+    }
+
+    /**
+     * Create an ObjectConstantColumn inferring the type and component type from the value.
+     * If the value is null, the type will be {@code Object}.
+     *
+     * @param outputColumnName the name of the output column
+     * @param outputValue the constant value
+     * @return the new ObjectConstantColumn
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> ObjectConstantColumn<T> of(
+            @NotNull final String outputColumnName,
+            final T outputValue) {
+        if (outputValue == null) {
+            return (ObjectConstantColumn<T>) new ObjectConstantColumn<>(
+                    outputColumnName, null, Object.class, null);
+        }
+        final Class<T> type = (Class<T>) outputValue.getClass();
+        final Class<?> componentType;
+        if (type.isArray()) {
+            componentType = type.getComponentType();
+        } else if (outputValue instanceof Vector) {
+            componentType = ((Vector<?>) outputValue).getComponentType();
+        } else {
+            componentType = null;
+        }
+        return new ObjectConstantColumn<>(outputColumnName, outputValue, type, componentType);
     }
     // endregion Constructor
 
@@ -81,7 +134,7 @@ public class LongConstantColumn implements SelectColumn {
     @NotNull
     @Override
     public ColumnSource<?> getDataView() {
-        return new ViewColumnSource<>(long.class, new OutputFormula(), true);
+        return new ViewColumnSource<>(type, new OutputFormula(), true);
     }
 
     @Override
@@ -96,14 +149,13 @@ public class LongConstantColumn implements SelectColumn {
 
     @Override
     public final Class<?> getReturnedType() {
-        return long.class;
+        return type;
     }
 
     // region getReturnedComponentType
     @Override
     public Class<?> getReturnedComponentType() {
-        // long does not have a component type
-        return null;
+        return componentType;
     }
     // endregion getReturnedComponentType
 
@@ -125,12 +177,12 @@ public class LongConstantColumn implements SelectColumn {
 
     @Override
     public final WritableColumnSource<?> newDestInstance(final long size) {
-        return new LongSingleValueSource();
+        return new ObjectSingleValueSource<>(type, componentType);
     }
 
     @Override
     public final WritableColumnSource<?> newFlatDestInstance(final long size) {
-        return new LongSingleValueSource();
+        return new ObjectSingleValueSource<>(type, componentType);
     }
 
     @Override
@@ -160,30 +212,21 @@ public class LongConstantColumn implements SelectColumn {
         }
 
         @Override
-        public Long get(final long rowKey) {
-            return TypeUtils.box(outputValue);
-        }
-
-        @Override
-        public Long getPrev(final long rowKey) {
-            return get(rowKey);
-        }
-
-        // region getTypedMethods
-        @Override
-        public long getLong(long rowKey) {
+        public Object get(final long rowKey) {
             return outputValue;
         }
 
         @Override
-        public long getPrevLong(long rowKey) {
-            return getLong(rowKey);
+        public Object getPrev(final long rowKey) {
+            return get(rowKey);
         }
+
+        // region getTypedMethods
         // endregion getTypedMethods
 
         @Override
         protected ChunkType getChunkType() {
-            return ChunkType.Long;
+            return ChunkType.Object;
         }
 
         @Override
@@ -197,7 +240,7 @@ public class LongConstantColumn implements SelectColumn {
                 @NotNull final WritableChunk<? super Values> destination,
                 @NotNull final RowSequence rowSequence) {
             destination.setSize(rowSequence.intSize());
-            destination.asWritableLongChunk().fillWithValue(0, destination.size(), outputValue);
+            destination.asWritableObjectChunk().fillWithValue(0, destination.size(), outputValue);
         }
 
         @Override

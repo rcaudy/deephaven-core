@@ -1,10 +1,6 @@
 //
 // Copyright (c) 2016-2026 Deephaven Data Labs and Patent Pending
 //
-// ****** AUTO-GENERATED CLASS - DO NOT EDIT MANUALLY
-// ****** Edit CharConstantColumn and run "./gradlew replicateConstantColumns" to regenerate
-//
-// @formatter:off
 package io.deephaven.engine.table.impl.select;
 
 import io.deephaven.chunk.ChunkType;
@@ -14,7 +10,7 @@ import io.deephaven.engine.rowset.RowSequence;
 import io.deephaven.engine.rowset.TrackingRowSet;
 import io.deephaven.engine.table.*;
 import io.deephaven.engine.table.impl.MatchPair;
-import io.deephaven.engine.table.impl.sources.LongSingleValueSource;
+import io.deephaven.engine.table.impl.sources.CharacterSingleValueSource;
 import io.deephaven.engine.table.impl.sources.ViewColumnSource;
 import io.deephaven.util.type.TypeUtils;
 import org.jetbrains.annotations.NotNull;
@@ -24,40 +20,40 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * {@link SelectColumn} implementation to assign a constant {@code long} value.
+ * {@link SelectColumn} implementation to assign a constant {@code char} value.
  * <p>
  * The C-harConstantColumn is replicated to all other types with
  * io.deephaven.replicators.ReplicateConstantColumns.
  * <p>
  * (C-har is deliberately spelled that way in order to prevent Replicate from altering this very comment).
  */
-public class LongConstantColumn implements SelectColumn {
+public class CharConstantColumn implements SelectColumn {
 
     private final String outputColumnName;
 
     // region Typed Fields
-    private final long outputValue;
+    private final char outputValue;
     // endregion Typed Fields
 
     // region Constructor
-    private LongConstantColumn(
+    private CharConstantColumn(
             @NotNull final String outputColumnName,
-            final long outputValue) {
+            final char outputValue) {
         this.outputColumnName = outputColumnName;
         this.outputValue = outputValue;
     }
 
     /**
-     * Create a LongConstantColumn.
+     * Create a CharConstantColumn.
      *
      * @param outputColumnName the name of the output column
      * @param outputValue the constant value
-     * @return the new LongConstantColumn
+     * @return the new CharConstantColumn
      */
-    public static LongConstantColumn of(
+    public static CharConstantColumn of(
             @NotNull final String outputColumnName,
-            final long outputValue) {
-        return new LongConstantColumn(outputColumnName, outputValue);
+            final char outputValue) {
+        return new CharConstantColumn(outputColumnName, outputValue);
     }
     // endregion Constructor
 
@@ -81,7 +77,7 @@ public class LongConstantColumn implements SelectColumn {
     @NotNull
     @Override
     public ColumnSource<?> getDataView() {
-        return new ViewColumnSource<>(long.class, new OutputFormula(), true);
+        return new ViewColumnSource<>(char.class, new OutputFormula(), true);
     }
 
     @Override
@@ -96,13 +92,13 @@ public class LongConstantColumn implements SelectColumn {
 
     @Override
     public final Class<?> getReturnedType() {
-        return long.class;
+        return char.class;
     }
 
     // region getReturnedComponentType
     @Override
     public Class<?> getReturnedComponentType() {
-        // long does not have a component type
+        // char does not have a component type
         return null;
     }
     // endregion getReturnedComponentType
@@ -125,12 +121,12 @@ public class LongConstantColumn implements SelectColumn {
 
     @Override
     public final WritableColumnSource<?> newDestInstance(final long size) {
-        return new LongSingleValueSource();
+        return new CharacterSingleValueSource();
     }
 
     @Override
     public final WritableColumnSource<?> newFlatDestInstance(final long size) {
-        return new LongSingleValueSource();
+        return new CharacterSingleValueSource();
     }
 
     @Override
@@ -160,30 +156,30 @@ public class LongConstantColumn implements SelectColumn {
         }
 
         @Override
-        public Long get(final long rowKey) {
+        public Character get(final long rowKey) {
             return TypeUtils.box(outputValue);
         }
 
         @Override
-        public Long getPrev(final long rowKey) {
+        public Character getPrev(final long rowKey) {
             return get(rowKey);
         }
 
         // region getTypedMethods
         @Override
-        public long getLong(long rowKey) {
+        public char getChar(long rowKey) {
             return outputValue;
         }
 
         @Override
-        public long getPrevLong(long rowKey) {
-            return getLong(rowKey);
+        public char getPrevChar(long rowKey) {
+            return getChar(rowKey);
         }
         // endregion getTypedMethods
 
         @Override
         protected ChunkType getChunkType() {
-            return ChunkType.Long;
+            return ChunkType.Char;
         }
 
         @Override
@@ -197,7 +193,7 @@ public class LongConstantColumn implements SelectColumn {
                 @NotNull final WritableChunk<? super Values> destination,
                 @NotNull final RowSequence rowSequence) {
             destination.setSize(rowSequence.intSize());
-            destination.asWritableLongChunk().fillWithValue(0, destination.size(), outputValue);
+            destination.asWritableCharChunk().fillWithValue(0, destination.size(), outputValue);
         }
 
         @Override
