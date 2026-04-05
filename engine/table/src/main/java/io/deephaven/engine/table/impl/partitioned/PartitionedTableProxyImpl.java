@@ -26,7 +26,6 @@ import io.deephaven.engine.table.impl.chunkboxer.ChunkBoxer;
 import io.deephaven.engine.table.impl.filter.ExtractBarriers;
 import io.deephaven.engine.table.impl.filter.ExtractInnerConjunctiveFilters;
 import io.deephaven.engine.table.impl.filter.ExtractRespectedBarriers;
-import io.deephaven.engine.table.impl.select.LongConstantColumn;
 import io.deephaven.engine.table.impl.select.MatchFilter;
 import io.deephaven.engine.table.impl.select.SelectColumn;
 import io.deephaven.engine.table.impl.select.SourceColumn;

@@ -14,7 +14,7 @@ import io.deephaven.engine.rowset.RowSequence;
 import io.deephaven.engine.rowset.TrackingRowSet;
 import io.deephaven.engine.table.*;
 import io.deephaven.engine.table.impl.MatchPair;
-import io.deephaven.engine.table.impl.sources.LongSingleValueSource;
+import io.deephaven.engine.table.impl.sources.FloatSingleValueSource;
 import io.deephaven.engine.table.impl.sources.ViewColumnSource;
 import io.deephaven.util.type.TypeUtils;
 import org.jetbrains.annotations.NotNull;
@@ -24,40 +24,40 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * {@link SelectColumn} implementation to assign a constant {@code long} value.
+ * {@link SelectColumn} implementation to assign a constant {@code float} value.
  * <p>
  * The C-harConstantColumn is replicated to all other types with
  * io.deephaven.replicators.ReplicateConstantColumns.
  * <p>
  * (C-har is deliberately spelled that way in order to prevent Replicate from altering this very comment).
  */
-public class LongConstantColumn implements SelectColumn {
+public class FloatConstantColumn implements SelectColumn {
 
     private final String outputColumnName;
 
     // region Typed Fields
-    private final long outputValue;
+    private final float outputValue;
     // endregion Typed Fields
 
     // region Constructor
-    private LongConstantColumn(
+    private FloatConstantColumn(
             @NotNull final String outputColumnName,
-            final long outputValue) {
+            final float outputValue) {
         this.outputColumnName = outputColumnName;
         this.outputValue = outputValue;
     }
 
     /**
-     * Create a LongConstantColumn.
+     * Create a FloatConstantColumn.
      *
      * @param outputColumnName the name of the output column
      * @param outputValue the constant value
-     * @return the new LongConstantColumn
+     * @return the new FloatConstantColumn
      */
-    public static LongConstantColumn of(
+    public static FloatConstantColumn of(
             @NotNull final String outputColumnName,
-            final long outputValue) {
-        return new LongConstantColumn(outputColumnName, outputValue);
+            final float outputValue) {
+        return new FloatConstantColumn(outputColumnName, outputValue);
     }
     // endregion Constructor
 
@@ -81,7 +81,7 @@ public class LongConstantColumn implements SelectColumn {
     @NotNull
     @Override
     public ColumnSource<?> getDataView() {
-        return new ViewColumnSource<>(long.class, new OutputFormula(), true);
+        return new ViewColumnSource<>(float.class, new OutputFormula(), true);
     }
 
     @Override
@@ -96,13 +96,13 @@ public class LongConstantColumn implements SelectColumn {
 
     @Override
     public final Class<?> getReturnedType() {
-        return long.class;
+        return float.class;
     }
 
     // region getReturnedComponentType
     @Override
     public Class<?> getReturnedComponentType() {
-        // long does not have a component type
+        // float does not have a component type
         return null;
     }
     // endregion getReturnedComponentType
@@ -125,12 +125,12 @@ public class LongConstantColumn implements SelectColumn {
 
     @Override
     public final WritableColumnSource<?> newDestInstance(final long size) {
-        return new LongSingleValueSource();
+        return new FloatSingleValueSource();
     }
 
     @Override
     public final WritableColumnSource<?> newFlatDestInstance(final long size) {
-        return new LongSingleValueSource();
+        return new FloatSingleValueSource();
     }
 
     @Override
@@ -160,30 +160,30 @@ public class LongConstantColumn implements SelectColumn {
         }
 
         @Override
-        public Long get(final long rowKey) {
+        public Float get(final long rowKey) {
             return TypeUtils.box(outputValue);
         }
 
         @Override
-        public Long getPrev(final long rowKey) {
+        public Float getPrev(final long rowKey) {
             return get(rowKey);
         }
 
         // region getTypedMethods
         @Override
-        public long getLong(long rowKey) {
+        public float getFloat(long rowKey) {
             return outputValue;
         }
 
         @Override
-        public long getPrevLong(long rowKey) {
-            return getLong(rowKey);
+        public float getPrevFloat(long rowKey) {
+            return getFloat(rowKey);
         }
         // endregion getTypedMethods
 
         @Override
         protected ChunkType getChunkType() {
-            return ChunkType.Long;
+            return ChunkType.Float;
         }
 
         @Override
@@ -197,7 +197,7 @@ public class LongConstantColumn implements SelectColumn {
                 @NotNull final WritableChunk<? super Values> destination,
                 @NotNull final RowSequence rowSequence) {
             destination.setSize(rowSequence.intSize());
-            destination.asWritableLongChunk().fillWithValue(0, destination.size(), outputValue);
+            destination.asWritableFloatChunk().fillWithValue(0, destination.size(), outputValue);
         }
 
         @Override
