@@ -14,7 +14,7 @@ import io.deephaven.engine.rowset.RowSequence;
 import io.deephaven.engine.rowset.TrackingRowSet;
 import io.deephaven.engine.table.*;
 import io.deephaven.engine.table.impl.MatchPair;
-import io.deephaven.engine.table.impl.sources.LongSingleValueSource;
+import io.deephaven.engine.table.impl.sources.ByteSingleValueSource;
 import io.deephaven.engine.table.impl.sources.ViewColumnSource;
 import io.deephaven.util.type.TypeUtils;
 import org.jetbrains.annotations.NotNull;
@@ -24,40 +24,40 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * {@link SelectColumn} implementation to assign a constant {@code long} value.
+ * {@link SelectColumn} implementation to assign a constant {@code byte} value.
  * <p>
  * The C-harConstantColumn is replicated to all other types with
  * io.deephaven.replicators.ReplicateConstantColumns.
  * <p>
  * (C-har is deliberately spelled that way in order to prevent Replicate from altering this very comment).
  */
-public class LongConstantColumn implements SelectColumn {
+public class ByteConstantColumn implements SelectColumn {
 
     private final String outputColumnName;
 
     // region Typed Fields
-    private final long outputValue;
+    private final byte outputValue;
     // endregion Typed Fields
 
     // region Constructor
-    private LongConstantColumn(
+    private ByteConstantColumn(
             @NotNull final String outputColumnName,
-            final long outputValue) {
+            final byte outputValue) {
         this.outputColumnName = outputColumnName;
         this.outputValue = outputValue;
     }
 
     /**
-     * Create a LongConstantColumn.
+     * Create a ByteConstantColumn.
      *
      * @param outputColumnName the name of the output column
      * @param outputValue the constant value
-     * @return the new LongConstantColumn
+     * @return the new ByteConstantColumn
      */
-    public static LongConstantColumn of(
+    public static ByteConstantColumn of(
             @NotNull final String outputColumnName,
-            final long outputValue) {
-        return new LongConstantColumn(outputColumnName, outputValue);
+            final byte outputValue) {
+        return new ByteConstantColumn(outputColumnName, outputValue);
     }
     // endregion Constructor
 
@@ -81,7 +81,7 @@ public class LongConstantColumn implements SelectColumn {
     @NotNull
     @Override
     public ColumnSource<?> getDataView() {
-        return new ViewColumnSource<>(long.class, new OutputFormula(), true);
+        return new ViewColumnSource<>(byte.class, new OutputFormula(), true);
     }
 
     @Override
@@ -96,13 +96,13 @@ public class LongConstantColumn implements SelectColumn {
 
     @Override
     public final Class<?> getReturnedType() {
-        return long.class;
+        return byte.class;
     }
 
     // region getReturnedComponentType
     @Override
     public Class<?> getReturnedComponentType() {
-        // long does not have a component type
+        // byte does not have a component type
         return null;
     }
     // endregion getReturnedComponentType
@@ -125,12 +125,12 @@ public class LongConstantColumn implements SelectColumn {
 
     @Override
     public final WritableColumnSource<?> newDestInstance(final long size) {
-        return new LongSingleValueSource();
+        return new ByteSingleValueSource();
     }
 
     @Override
     public final WritableColumnSource<?> newFlatDestInstance(final long size) {
-        return new LongSingleValueSource();
+        return new ByteSingleValueSource();
     }
 
     @Override
@@ -160,30 +160,30 @@ public class LongConstantColumn implements SelectColumn {
         }
 
         @Override
-        public Long get(final long rowKey) {
+        public Byte get(final long rowKey) {
             return TypeUtils.box(outputValue);
         }
 
         @Override
-        public Long getPrev(final long rowKey) {
+        public Byte getPrev(final long rowKey) {
             return get(rowKey);
         }
 
         // region getTypedMethods
         @Override
-        public long getLong(long rowKey) {
+        public byte getByte(long rowKey) {
             return outputValue;
         }
 
         @Override
-        public long getPrevLong(long rowKey) {
-            return getLong(rowKey);
+        public byte getPrevByte(long rowKey) {
+            return getByte(rowKey);
         }
         // endregion getTypedMethods
 
         @Override
         protected ChunkType getChunkType() {
-            return ChunkType.Long;
+            return ChunkType.Byte;
         }
 
         @Override
@@ -197,7 +197,7 @@ public class LongConstantColumn implements SelectColumn {
                 @NotNull final WritableChunk<? super Values> destination,
                 @NotNull final RowSequence rowSequence) {
             destination.setSize(rowSequence.intSize());
-            destination.asWritableLongChunk().fillWithValue(0, destination.size(), outputValue);
+            destination.asWritableByteChunk().fillWithValue(0, destination.size(), outputValue);
         }
 
         @Override
