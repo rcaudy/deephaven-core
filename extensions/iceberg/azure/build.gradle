@@ -1,0 +1,66 @@
+plugins {
+    id 'java-library'
+    id 'io.deephaven.project.register'
+    id 'io.deephaven.hadoop-common-dependencies'
+}
+
+evaluationDependsOn Docker.registryProject('azurite')
+
+description 'Iceberg: Support to read iceberg catalogs backed by Azure Blob Storage.'
+
+dependencies {
+    api project(':extensions-iceberg')
+
+    api platform(libs.iceberg.bom)
+    api libs.iceberg.api
+    implementation libs.iceberg.core
+    implementation libs.iceberg.bundled.guava
+
+    implementation project(':extensions-azure')
+    implementation project(':Configuration')
+    implementation libs.iceberg.azure
+
+    implementation platform(libs.azure.sdk.bom)
+    implementation libs.azure.storage.blob
+    implementation libs.azure.storage.file.datalake
+    implementation libs.azure.identity
+
+    implementation libs.guava
+
+    compileOnly libs.autoservice
+    annotationProcessor libs.autoservice.compiler
+
+    testImplementation project(':engine-test-utils')
+
+    testImplementation libs.testcontainers
+    testImplementation libs.testcontainers.junit.jupiter
+
+    testImplementation TestTools.projectDependency(project, 'extensions-azure')
+    testImplementation TestTools.projectDependency(project, 'extensions-iceberg')
+
+    testRuntimeOnly project(':test-configs')
+    testRuntimeOnly project(':log-to-slf4j')
+    testRuntimeOnly libs.slf4j.simple
+
+    testImplementation libs.assertj
+    testImplementation platform(libs.junit.bom)
+    testImplementation libs.junit.jupiter
+    testImplementation libs.junit.jupiter.params
+    testRuntimeOnly libs.junit.jupiter.engine
+    testRuntimeOnly libs.junit.platform.launcher
+}
+
+test {
+    useJUnitPlatform {
+        excludeTags("testcontainers")
+    }
+}
+
+tasks.register('testOutOfBand', Test) {
+    useJUnitPlatform {
+        includeTags("testcontainers")
+    }
+
+    dependsOn Docker.registryTask(project, 'azurite')
+    systemProperty 'testcontainers.azurite.image', Docker.localImageName('azurite')
+}

@@ -1,0 +1,60 @@
+plugins {
+    id 'java-library'
+    id 'io.deephaven.project.register'
+}
+
+evaluationDependsOn Docker.registryProject('azurite')
+
+description 'Used to create a channel provider plugin for reading and writing files stored in Azure Blob Storage.'
+
+dependencies {
+    api project(':util-channel')
+
+    implementation project(':Base')
+    implementation project(':Util')
+    implementation project(':Configuration')
+    implementation project(':log-factory')
+    implementation project(':util-thread')
+    implementation project(':engine-read-tracker')
+
+    implementation platform(libs.azure.sdk.bom)
+    implementation libs.azure.storage.blob
+    implementation libs.azure.identity
+
+    compileOnly libs.jetbrains.annotations
+
+    compileOnly libs.autoservice
+    annotationProcessor libs.autoservice.compiler
+
+    compileOnly project(':util-immutables')
+    annotationProcessor libs.immutables.value
+
+    testImplementation libs.assertj
+    testImplementation platform(libs.junit.bom)
+    testImplementation libs.junit.jupiter
+    testImplementation libs.junit.jupiter.params
+    testRuntimeOnly libs.junit.jupiter.engine
+    testRuntimeOnly libs.junit.platform.launcher
+
+    testImplementation libs.testcontainers
+    testImplementation libs.testcontainers.junit.jupiter
+
+    testRuntimeOnly project(':test-configs')
+    testRuntimeOnly project(':log-to-slf4j')
+    testRuntimeOnly libs.slf4j.simple
+}
+
+test {
+    useJUnitPlatform {
+        excludeTags("testcontainers")
+    }
+}
+
+tasks.register('testOutOfBand', Test) {
+    useJUnitPlatform {
+        includeTags("testcontainers")
+    }
+
+    dependsOn Docker.registryTask(project, 'azurite')
+    systemProperty 'testcontainers.azurite.image', Docker.localImageName('azurite')
+}

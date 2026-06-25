@@ -3,6 +3,7 @@
 //
 package io.deephaven.iceberg.util;
 
+import com.google.auto.service.AutoService;
 import org.apache.iceberg.CatalogProperties;
 import org.jetbrains.annotations.NotNull;
 
@@ -11,11 +12,12 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Static helper that injects Deephaven-specific AWS/S3 settings into the property map passed to
+ * {@link PropertyInjector} that injects Deephaven-specific AWS/S3 settings into the property map passed to
  * {@link BuildCatalogOptions}. The keys are duplicated from Iceberg’s <em>iceberg-aws</em> modules to avoid adding an
  * extra dependency.
  */
-class InjectAWSProperties {
+@AutoService(PropertyInjector.class)
+public class InjectAWSProperties implements PropertyInjector {
 
     /** -- Duplicated from AwsClientProperties -- **/
     private static final String CLIENT_CREDENTIALS_PROVIDER = "client.credentials-provider";
@@ -71,6 +73,11 @@ class InjectAWSProperties {
                 properties.put(injectedKey, properties.get(key));
             }
         }
+    }
+
+    @Override
+    public Map<String, String> injectProperties(@NotNull final Map<String, String> inputProperties) {
+        return injectDeephavenProperties(inputProperties);
     }
 
     /**

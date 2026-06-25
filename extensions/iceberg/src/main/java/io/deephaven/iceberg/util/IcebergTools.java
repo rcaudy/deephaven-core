@@ -11,6 +11,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
+import java.util.ServiceLoader;
 
 /**
  * Tools for accessing tables in the Iceberg table format.
@@ -170,12 +171,17 @@ public final class IcebergTools {
 
     /**
      * Create a new {@link java.util.Map} containing the caller-supplied properties plus additional properties that work
-     * around upstream issues and supply defaults needed for Deephaven’s Iceberg usage.
+     * around upstream issues and supply defaults needed for Deephaven’s Iceberg usage. All {@link PropertyInjector}
+     * implementations discovered via {@link ServiceLoader} are applied in sequence.
      *
      * @param inputProperties the input properties to inject into
      * @return a new map with the injected properties
      */
     public static Map<String, String> injectDeephavenProperties(@NotNull final Map<String, String> inputProperties) {
-        return InjectAWSProperties.injectDeephavenProperties(inputProperties);
+        Map<String, String> result = inputProperties;
+        for (final PropertyInjector injector : ServiceLoader.load(PropertyInjector.class)) {
+            result = injector.injectProperties(result);
+        }
+        return result;
     }
 }
