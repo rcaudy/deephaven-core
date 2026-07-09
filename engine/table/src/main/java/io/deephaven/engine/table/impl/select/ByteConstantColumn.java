@@ -16,6 +16,7 @@ import io.deephaven.engine.table.*;
 import io.deephaven.engine.table.impl.MatchPair;
 import io.deephaven.engine.table.impl.sources.ByteSingleValueSource;
 import io.deephaven.engine.table.impl.sources.ViewColumnSource;
+import io.deephaven.util.QueryConstants;
 import io.deephaven.util.type.TypeUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -48,15 +49,19 @@ public class ByteConstantColumn implements SelectColumn {
     }
 
     /**
-     * Create a ByteConstantColumn.
+     * Create a {@link SelectColumn} that assigns a constant {@code byte} value.
      *
      * @param outputColumnName the name of the output column
      * @param outputValue the constant value
-     * @return the new ByteConstantColumn
+     * @return a {@link NullSelectColumn} if {@code outputValue} is {@link QueryConstants#NULL_BYTE}, otherwise a new
+     *         ByteConstantColumn
      */
-    public static ByteConstantColumn of(
+    public static SelectColumn of(
             @NotNull final String outputColumnName,
             final byte outputValue) {
+        if (outputValue == QueryConstants.NULL_BYTE) {
+            return new NullSelectColumn<>(byte.class, null, outputColumnName);
+        }
         return new ByteConstantColumn(outputColumnName, outputValue);
     }
     // endregion Constructor

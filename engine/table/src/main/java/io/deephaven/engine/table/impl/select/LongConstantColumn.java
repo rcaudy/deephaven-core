@@ -16,6 +16,7 @@ import io.deephaven.engine.table.*;
 import io.deephaven.engine.table.impl.MatchPair;
 import io.deephaven.engine.table.impl.sources.LongSingleValueSource;
 import io.deephaven.engine.table.impl.sources.ViewColumnSource;
+import io.deephaven.util.QueryConstants;
 import io.deephaven.util.type.TypeUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -48,15 +49,19 @@ public class LongConstantColumn implements SelectColumn {
     }
 
     /**
-     * Create a LongConstantColumn.
+     * Create a {@link SelectColumn} that assigns a constant {@code long} value.
      *
      * @param outputColumnName the name of the output column
      * @param outputValue the constant value
-     * @return the new LongConstantColumn
+     * @return a {@link NullSelectColumn} if {@code outputValue} is {@link QueryConstants#NULL_LONG}, otherwise a new
+     *         LongConstantColumn
      */
-    public static LongConstantColumn of(
+    public static SelectColumn of(
             @NotNull final String outputColumnName,
             final long outputValue) {
+        if (outputValue == QueryConstants.NULL_LONG) {
+            return new NullSelectColumn<>(long.class, null, outputColumnName);
+        }
         return new LongConstantColumn(outputColumnName, outputValue);
     }
     // endregion Constructor

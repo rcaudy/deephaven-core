@@ -16,6 +16,7 @@ import io.deephaven.engine.table.*;
 import io.deephaven.engine.table.impl.MatchPair;
 import io.deephaven.engine.table.impl.sources.FloatSingleValueSource;
 import io.deephaven.engine.table.impl.sources.ViewColumnSource;
+import io.deephaven.util.QueryConstants;
 import io.deephaven.util.type.TypeUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -48,15 +49,19 @@ public class FloatConstantColumn implements SelectColumn {
     }
 
     /**
-     * Create a FloatConstantColumn.
+     * Create a {@link SelectColumn} that assigns a constant {@code float} value.
      *
      * @param outputColumnName the name of the output column
      * @param outputValue the constant value
-     * @return the new FloatConstantColumn
+     * @return a {@link NullSelectColumn} if {@code outputValue} is {@link QueryConstants#NULL_FLOAT}, otherwise a new
+     *         FloatConstantColumn
      */
-    public static FloatConstantColumn of(
+    public static SelectColumn of(
             @NotNull final String outputColumnName,
             final float outputValue) {
+        if (outputValue == QueryConstants.NULL_FLOAT) {
+            return new NullSelectColumn<>(float.class, null, outputColumnName);
+        }
         return new FloatConstantColumn(outputColumnName, outputValue);
     }
     // endregion Constructor
