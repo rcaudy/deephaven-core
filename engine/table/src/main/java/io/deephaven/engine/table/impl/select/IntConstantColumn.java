@@ -16,6 +16,7 @@ import io.deephaven.engine.table.*;
 import io.deephaven.engine.table.impl.MatchPair;
 import io.deephaven.engine.table.impl.sources.IntegerSingleValueSource;
 import io.deephaven.engine.table.impl.sources.ViewColumnSource;
+import io.deephaven.util.QueryConstants;
 import io.deephaven.util.type.TypeUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -48,15 +49,19 @@ public class IntConstantColumn implements SelectColumn {
     }
 
     /**
-     * Create a IntConstantColumn.
+     * Create a {@link SelectColumn} that assigns a constant {@code int} value.
      *
      * @param outputColumnName the name of the output column
      * @param outputValue the constant value
-     * @return the new IntConstantColumn
+     * @return a {@link NullSelectColumn} if {@code outputValue} is {@link QueryConstants#NULL_INT}, otherwise a new
+     *         IntConstantColumn
      */
-    public static IntConstantColumn of(
+    public static SelectColumn of(
             @NotNull final String outputColumnName,
             final int outputValue) {
+        if (outputValue == QueryConstants.NULL_INT) {
+            return new NullSelectColumn<>(int.class, null, outputColumnName);
+        }
         return new IntConstantColumn(outputColumnName, outputValue);
     }
     // endregion Constructor
