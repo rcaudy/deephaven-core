@@ -12,6 +12,7 @@ import io.deephaven.engine.table.*;
 import io.deephaven.engine.table.impl.MatchPair;
 import io.deephaven.engine.table.impl.sources.CharacterSingleValueSource;
 import io.deephaven.engine.table.impl.sources.ViewColumnSource;
+import io.deephaven.util.QueryConstants;
 import io.deephaven.util.type.TypeUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -44,15 +45,19 @@ public class CharConstantColumn implements SelectColumn {
     }
 
     /**
-     * Create a CharConstantColumn.
+     * Create a {@link SelectColumn} that assigns a constant {@code char} value.
      *
      * @param outputColumnName the name of the output column
      * @param outputValue the constant value
-     * @return the new CharConstantColumn
+     * @return a {@link NullSelectColumn} if {@code outputValue} is {@link QueryConstants#NULL_CHAR}, otherwise a new
+     *         CharConstantColumn
      */
-    public static CharConstantColumn of(
+    public static SelectColumn of(
             @NotNull final String outputColumnName,
             final char outputValue) {
+        if (outputValue == QueryConstants.NULL_CHAR) {
+            return new NullSelectColumn<>(char.class, null, outputColumnName);
+        }
         return new CharConstantColumn(outputColumnName, outputValue);
     }
     // endregion Constructor

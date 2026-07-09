@@ -44,7 +44,7 @@ public class ObjectConstantColumn<T> implements SelectColumn {
     // region Constructor
     private ObjectConstantColumn(
             @NotNull final String outputColumnName,
-            final T outputValue,
+            @NotNull final T outputValue,
             @NotNull final Class<T> type,
             final Class<?> componentType) {
         this.outputColumnName = outputColumnName;
@@ -54,52 +54,59 @@ public class ObjectConstantColumn<T> implements SelectColumn {
     }
 
     /**
-     * Create an ObjectConstantColumn with explicit type and component type.
+     * Create a {@link SelectColumn} that assigns a constant {@code Object} value with explicit type and
+     * component type.
      *
      * @param outputColumnName the name of the output column
      * @param outputValue the constant value
      * @param type the type of the value
      * @param componentType the component type (for array/vector types), or null
-     * @return the new ObjectConstantColumn
+     * @return a {@link NullSelectColumn} if {@code outputValue} is null, otherwise a new
+     *         ObjectConstantColumn
      */
-    public static <T> ObjectConstantColumn<T> of(
+    public static <T> SelectColumn of(
             @NotNull final String outputColumnName,
             final T outputValue,
             @NotNull final Class<T> type,
             final Class<?> componentType) {
+        if (outputValue == null) {
+            return new NullSelectColumn<>(type, componentType, outputColumnName);
+        }
         return new ObjectConstantColumn<>(outputColumnName, outputValue, type, componentType);
     }
 
     /**
-     * Create an ObjectConstantColumn with explicit type and null component type.
+     * Create a {@link SelectColumn} that assigns a constant {@code Object} value with explicit type and
+     * null component type.
      *
      * @param outputColumnName the name of the output column
      * @param outputValue the constant value
      * @param type the type of the value
-     * @return the new ObjectConstantColumn
+     * @return a {@link NullSelectColumn} if {@code outputValue} is null, otherwise a new
+     *         ObjectConstantColumn
      */
-    public static <T> ObjectConstantColumn<T> of(
+    public static <T> SelectColumn of(
             @NotNull final String outputColumnName,
             final T outputValue,
             @NotNull final Class<T> type) {
-        return new ObjectConstantColumn<>(outputColumnName, outputValue, type, null);
+        return of(outputColumnName, outputValue, type, null);
     }
 
     /**
-     * Create an ObjectConstantColumn inferring the type and component type from the value.
-     * If the value is null, the type will be {@code Object}.
+     * Create a {@link SelectColumn} that assigns a constant {@code Object} value, inferring the type and
+     * component type from the value. If the value is null, the type will be {@code Object}.
      *
      * @param outputColumnName the name of the output column
      * @param outputValue the constant value
-     * @return the new ObjectConstantColumn
+     * @return a {@link NullSelectColumn} if {@code outputValue} is null, otherwise a new
+     *         ObjectConstantColumn
      */
     @SuppressWarnings("unchecked")
-    public static <T> ObjectConstantColumn<T> of(
+    public static <T> SelectColumn of(
             @NotNull final String outputColumnName,
             final T outputValue) {
         if (outputValue == null) {
-            return (ObjectConstantColumn<T>) new ObjectConstantColumn<>(
-                    outputColumnName, null, Object.class, null);
+            return of(outputColumnName, null, (Class<T>) (Class<?>) Object.class, null);
         }
         final Class<T> type = (Class<T>) outputValue.getClass();
         final Class<?> componentType;
@@ -110,7 +117,7 @@ public class ObjectConstantColumn<T> implements SelectColumn {
         } else {
             componentType = null;
         }
-        return new ObjectConstantColumn<>(outputColumnName, outputValue, type, componentType);
+        return of(outputColumnName, outputValue, type, componentType);
     }
     // endregion Constructor
 
