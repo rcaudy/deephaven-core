@@ -27,8 +27,7 @@ import java.util.Map;
 /**
  * {@link SelectColumn} implementation to assign a constant {@code int} value.
  * <p>
- * The C-harConstantColumn is replicated to all other types with
- * io.deephaven.replicators.ReplicateConstantColumns.
+ * The C-harConstantColumn is replicated to all other types with io.deephaven.replicators.ReplicateConstantColumns.
  * <p>
  * (C-har is deliberately spelled that way in order to prevent Replicate from altering this very comment).
  */
