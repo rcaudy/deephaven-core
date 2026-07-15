@@ -161,7 +161,7 @@ class FilterSelectColumn implements SelectColumn {
     @NotNull
     @Override
     public ColumnSource<Boolean> getDataView() {
-        return new ViewColumnSource<>(Boolean.class, new FilterFormula(), isStateless());
+        return new ViewColumnSource<>(Boolean.class, new FilterFormula(), isStateless(), false);
     }
 
     @NotNull

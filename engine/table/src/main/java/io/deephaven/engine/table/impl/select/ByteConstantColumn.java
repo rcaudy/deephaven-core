@@ -86,7 +86,7 @@ public class ByteConstantColumn implements SelectColumn {
     @NotNull
     @Override
     public ColumnSource<?> getDataView() {
-        return new ViewColumnSource<>(byte.class, new OutputFormula(), true);
+        return new ViewColumnSource<>(byte.class, new OutputFormula(), true, true);
     }
 
     @Override

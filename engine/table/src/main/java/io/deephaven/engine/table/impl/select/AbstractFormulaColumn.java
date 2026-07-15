@@ -250,7 +250,7 @@ public abstract class AbstractFormulaColumn implements FormulaColumn {
         final Formula formula = getFormula(lazy, columnSources, params);
         // noinspection unchecked,rawtypes
         return new ViewColumnSource((returnedType == boolean.class ? Boolean.class : returnedType), formula,
-                isStateless);
+                isStateless, false);
     }
 
     private Formula getFormula(boolean initLazyMap,
