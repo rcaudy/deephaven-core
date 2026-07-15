@@ -23,12 +23,74 @@ public class ReplicateConstantColumns {
     private static final String CHAR_CONSTANT_COLUMN_PATH =
             "engine/table/src/main/java/io/deephaven/engine/table/impl/select/CharConstantColumn.java";
 
+    private static final String CHAR_CONSTANT_COLUMN_TEST_PATH =
+            "engine/table/src/test/java/io/deephaven/engine/table/impl/select/CharConstantColumnTest.java";
+
     public static void main(String[] args) throws IOException {
         // Replicate to all primitive types except boolean and char (char is the source, boolean uses Object)
         ReplicatePrimitiveCode.charToAllButBoolean(TASK, CHAR_CONSTANT_COLUMN_PATH);
 
         // Replicate to Object
         fixupObjectConstantColumn(ReplicatePrimitiveCode.charToObject(TASK, CHAR_CONSTANT_COLUMN_PATH));
+
+        // Replicate the unit tests to all primitive types except boolean and char, substituting a representative value
+        // for each type (the char source's literal does not read naturally for numeric types).
+        fixupPrimitiveTestValue(
+                ReplicatePrimitiveCode.charToByte(TASK, CHAR_CONSTANT_COLUMN_TEST_PATH),
+                "    private static final byte TEST_VALUE = (byte) 42;");
+        fixupPrimitiveTestValue(
+                ReplicatePrimitiveCode.charToShort(TASK, CHAR_CONSTANT_COLUMN_TEST_PATH, null),
+                "    private static final short TEST_VALUE = (short) 12_345;");
+        fixupPrimitiveTestValue(
+                ReplicatePrimitiveCode.charToInteger(TASK, CHAR_CONSTANT_COLUMN_TEST_PATH, null),
+                "    private static final int TEST_VALUE = 1_000_000;");
+        fixupPrimitiveTestValue(
+                ReplicatePrimitiveCode.charToLong(TASK, CHAR_CONSTANT_COLUMN_TEST_PATH),
+                "    private static final long TEST_VALUE = 1_000_000_000_000L;");
+        fixupPrimitiveTestValue(
+                ReplicatePrimitiveCode.charToFloat(TASK, CHAR_CONSTANT_COLUMN_TEST_PATH, null),
+                "    private static final float TEST_VALUE = 3.5f;");
+        fixupPrimitiveTestValue(
+                ReplicatePrimitiveCode.charToDouble(TASK, CHAR_CONSTANT_COLUMN_TEST_PATH, null),
+                "    private static final double TEST_VALUE = 2.718281828459045;");
+
+        // Replicate the unit tests to Object. The Object-specific type-inference and null-typing behavior lives in the
+        // hand-written ObjectConstantColumnTypeInferenceTest.
+        fixupObjectConstantColumnTest(ReplicatePrimitiveCode.charToObject(TASK, CHAR_CONSTANT_COLUMN_TEST_PATH));
+    }
+
+    private static void fixupPrimitiveTestValue(@NotNull final String path, @NotNull final String valueDeclaration)
+            throws IOException {
+        final File file = new File(path);
+        List<String> lines = FileUtils.readLines(file, Charset.defaultCharset());
+        lines = ReplicationUtils.replaceRegion(lines, "TestValue", List.of(valueDeclaration));
+        FileUtils.writeLines(file, lines);
+    }
+
+    private static void fixupObjectConstantColumnTest(@NotNull final String path) throws IOException {
+        final File file = new File(path);
+        List<String> lines = FileUtils.readLines(file, Charset.defaultCharset());
+
+        // Object chunks carry an extra element-type parameter.
+        lines = ReplicationUtils.fixupChunkAttributes(lines, "Object");
+
+        // Object has no primitive typed accessors (getObject/getPrevObject) and no null sentinel constant, so drop the
+        // typed-accessor assertions and the null-sentinel test. Object null typing is covered by the hand-written
+        // ObjectConstantColumnTypeInferenceTest.
+        lines = ReplicationUtils.removeRegion(lines, "getTypedMethods");
+        lines = ReplicationUtils.removeRegion(lines, "nullValue");
+
+        // Use a representative Object value; its concrete type is String, not Object.
+        lines = ReplicationUtils.replaceRegion(lines, "TestValue", List.of(
+                "    private static final String TEST_VALUE = \"TestValue\";"));
+        lines = ReplicationUtils.globalReplacements(lines,
+                "isEqualTo\\(Object\\.class\\)", "isEqualTo(String.class)");
+
+        // QueryConstants is only referenced by the (now removed) null-sentinel test.
+        lines = ReplicationUtils.removeImport(lines,
+                "\\s*import\\s+io\\.deephaven\\.util\\.QueryConstants\\s*;");
+
+        FileUtils.writeLines(file, lines);
     }
 
     private static void fixupObjectConstantColumn(@NotNull final String objectPath) throws IOException {
