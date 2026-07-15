@@ -19,17 +19,21 @@ public class ViewColumnSource<T> extends AbstractColumnSource<T> {
 
     private final boolean isStateless;
 
-    public ViewColumnSource(Class<T> type, Formula formula, boolean isStateless) {
+    private final boolean isImmutable;
+
+    public ViewColumnSource(Class<T> type, Formula formula, boolean isStateless, boolean isImmutable) {
         super(type);
         this.formula = formula;
         this.isStateless = isStateless;
+        this.isImmutable = isImmutable;
     }
 
     public ViewColumnSource(Class<T> type, Class elementType, Formula formula,
-            boolean isStateless) {
+            boolean isStateless, boolean isImmutable) {
         super(type, elementType);
         this.formula = formula;
         this.isStateless = isStateless;
+        this.isImmutable = isImmutable;
     }
 
     @Override
@@ -185,7 +189,7 @@ public class ViewColumnSource<T> extends AbstractColumnSource<T> {
 
     @Override
     public boolean isImmutable() {
-        return false;
+        return isImmutable;
     }
 
     @Override

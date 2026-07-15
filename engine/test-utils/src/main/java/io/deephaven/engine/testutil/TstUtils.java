@@ -1012,7 +1012,7 @@ public class TstUtils {
         final Map<String, ? extends ColumnSource<?>> outputColumnSources;
         {
             final RowRedirection densifyingRedirection = new LongColumnSourceRowRedirection<>(
-                    new ViewColumnSource<>(Long.class, new DensifyRowKeysFormula(sparsityFactor), true));
+                    new ViewColumnSource<>(Long.class, new DensifyRowKeysFormula(sparsityFactor), true, false));
             outputColumnSources = table.getColumnSourceMap().entrySet().stream().collect(Collectors.toMap(
                     (Function<Map.Entry<String, ? extends ColumnSource<?>>, String>) Map.Entry::getKey,
                     (final Map.Entry<String, ? extends ColumnSource<?>> entry) -> RedirectedColumnSource

@@ -86,7 +86,7 @@ public class IntConstantColumn implements SelectColumn {
     @NotNull
     @Override
     public ColumnSource<?> getDataView() {
-        return new ViewColumnSource<>(int.class, new OutputFormula(), true);
+        return new ViewColumnSource<>(int.class, new OutputFormula(), true, true);
     }
 
     @Override

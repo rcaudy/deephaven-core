@@ -86,7 +86,7 @@ public class FloatConstantColumn implements SelectColumn {
     @NotNull
     @Override
     public ColumnSource<?> getDataView() {
-        return new ViewColumnSource<>(float.class, new OutputFormula(), true);
+        return new ViewColumnSource<>(float.class, new OutputFormula(), true, true);
     }
 
     @Override

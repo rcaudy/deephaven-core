@@ -141,7 +141,7 @@ public class ObjectConstantColumn<T> implements SelectColumn {
     @NotNull
     @Override
     public ColumnSource<?> getDataView() {
-        return new ViewColumnSource<>(type, new OutputFormula(), true);
+        return new ViewColumnSource<>(type, new OutputFormula(), true, true);
     }
 
     @Override
