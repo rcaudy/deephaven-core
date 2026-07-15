@@ -86,7 +86,7 @@ public class ShortConstantColumn implements SelectColumn {
     @NotNull
     @Override
     public ColumnSource<?> getDataView() {
-        return new ViewColumnSource<>(short.class, new OutputFormula(), true);
+        return new ViewColumnSource<>(short.class, new OutputFormula(), true, true);
     }
 
     @Override

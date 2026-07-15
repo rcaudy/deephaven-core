@@ -82,7 +82,7 @@ public class CharConstantColumn implements SelectColumn {
     @NotNull
     @Override
     public ColumnSource<?> getDataView() {
-        return new ViewColumnSource<>(char.class, new OutputFormula(), true);
+        return new ViewColumnSource<>(char.class, new OutputFormula(), true, true);
     }
 
     @Override

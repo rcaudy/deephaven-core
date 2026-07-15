@@ -191,7 +191,7 @@ public class FunctionalColumn<S, D> implements SelectColumn {
                 final FunctionalColumnFillContext ctx = (FunctionalColumnFillContext) fillContext;
                 ctx.chunkFiller.fillPrevByIndices(this, rowSequence, destination);
             }
-        }, isStateless());
+        }, isStateless(), false);
     }
 
     private static class FunctionalColumnFillContext implements Formula.FillContext {
