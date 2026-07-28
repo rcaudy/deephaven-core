@@ -9,6 +9,7 @@ import io.deephaven.engine.table.impl.locations.TableLocationKey;
 import io.deephaven.parquet.table.ParquetInstructions;
 import io.deephaven.parquet.table.location.ParquetTableLocationKey;
 import io.deephaven.util.annotations.InternalUseOnly;
+import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.ManifestFile;
 import io.deephaven.util.channel.SeekableChannelsProvider;
@@ -47,19 +48,24 @@ public class IcebergTableParquetLocationKey extends ParquetTableLocationKey impl
     private final TableIdentifier tableIdentifier;
 
     /**
-     * The {@link DataFile#dataSequenceNumber()} of the data file backing this keyed location.
+     * The {@link ContentFile#dataSequenceNumber()} of the data file backing this keyed location.
      */
     private final long dataSequenceNumber;
 
     /**
-     * The {@link DataFile#fileSequenceNumber()} of the data file backing this keyed location.
+     * The {@link ContentFile#fileSequenceNumber()} of the data file backing this keyed location.
      */
     private final long fileSequenceNumber;
 
     /**
-     * The {@link DataFile#pos()} of data file backing this keyed location.
+     * The {@link ContentFile#pos()} of data file backing this keyed location.
      */
     private final long dataFilePos;
+
+    /**
+     * The {@link ContentFile#fileSizeInBytes()} of the data file backing this keyed location.
+     */
+    private final long dataFileSizeInBytes;
 
     private final PartitionSpec manifestPartitionSpec;
 
@@ -82,6 +88,8 @@ public class IcebergTableParquetLocationKey extends ParquetTableLocationKey impl
      * @param catalogName The name of the catalog using which the table is accessed
      * @param tableUuid The UUID of the table, or {@code null} if not available
      * @param tableIdentifier The table identifier used to access the table
+     * @param manifestPartitionSpec The {@link PartitionSpec} that applies to the manifest file from which the data file
+     *        was discovered
      * @param manifestFile The manifest file from which the data file was discovered
      * @param dataFile The data file that backs the keyed location
      * @param fileUri The {@link URI} for the file that backs the keyed location
@@ -121,12 +129,18 @@ public class IcebergTableParquetLocationKey extends ParquetTableLocationKey impl
 
         // This should never be null because we are discovering this data file through a non-null manifest file
         dataFilePos = Require.neqNull(dataFile.pos(), "dataFile.pos()");
+        dataFileSizeInBytes = Require.gtZero(dataFile.fileSizeInBytes(), "dataFile.fileSizeInBytes()");
 
         this.manifestPartitionSpec = Objects.requireNonNull(manifestPartitionSpec);
         manifestSequenceNumber = manifestFile.sequenceNumber();
 
         this.readInstructions = readInstructions;
         this.sortedColumns = Require.neqNull(sortedColumns, "sortedColumns");
+    }
+
+    @Override
+    public long dataFileSizeInBytes() {
+        return dataFileSizeInBytes;
     }
 
     public PartitionSpec manifestPartitionSpec() {

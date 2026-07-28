@@ -16,4 +16,6 @@ public interface IcebergTableLocationKey extends ImmutableTableLocationKey {
      * @return the read instructions
      */
     Object readInstructions();
+
+    long dataFileSizeInBytes();
 }
